@@ -127,21 +127,14 @@ def train_model_generator(kmodel, loss_fn):
     # print('Test accuracy:', score[1])
 
 
-# for gen in train_generator:
-    # aa = gen
-
-
-# define two groups of layers: feature (convolutions) and classification (dense)
-
-
 # feature_layers = [
-#     Conv2D(filters, kernel_size,
+#     Conv1D(filters, kernel_size,
 #            padding='valid',
 #            input_shape=input_shape),
 #     Activation('relu'),
-#     Conv2D(filters, kernel_size),
+#     Conv1D(filters, kernel_size),
 #     Activation('relu'),
-#     MaxPooling2D(pool_size=pool_size),
+#     MaxPooling1D(pool_size=pool_size),
 #     Dropout(0.25),
 #     Flatten(),
 # ]
@@ -150,68 +143,36 @@ def train_model_generator(kmodel, loss_fn):
 #     Dense(128),
 #     Activation('relu'),
 #     Dropout(0.5),
-#     Dense(num_classes),
-#     Activation('softmax')
+#     Dense(1),
+#     Activation('linear')
 # ]
 
-# # create complete model
-# model = Sequential(feature_layers + classification_layers)
+
+# feature_layers = [
+#     Dense(128, activation='relu', input_shape=(input_shape,)),
+#     # Dropout(0.5),
+#     Dense(128, activation='relu')
+#     # Dropout(0.5)
 
 
-# # train model for 5-digit classification [0..4]
-# train_model(model,
-#             (x_train_lt5, y_train_lt5),
-    # (x_test_lt5, y_test_lt5), num_classes)
+# ]
+
+# classification_layers = [
+#     Dense(1, input_shape=(input_shape,)),
+#     Activation('relu')
+# ]
 
 
-# new model
+# kmodel = Sequential(classification_layers)
 
-
-feature_layers = [
-    Conv1D(filters, kernel_size,
-           padding='valid',
-           input_shape=input_shape),
-    Activation('relu'),
-    Conv1D(filters, kernel_size),
-    Activation('relu'),
-    MaxPooling1D(pool_size=pool_size),
-    Dropout(0.25),
-    Flatten(),
-]
-
-classification_layers = [
-    Dense(128),
-    Activation('relu'),
-    Dropout(0.5),
-    Dense(1),
-    Activation('linear')
-]
-
-
-feature_layers = [
-    Dense(128, activation='relu', input_shape=(input_shape,)),
-    # Dropout(0.5),
-    Dense(128, activation='relu')
-    # Dropout(0.5)
-
-
-]
-
-classification_layers = [
-    Dense(1, input_shape=(input_shape,)),
-    Activation('relu')
-]
-
-
-kmodel = Sequential(classification_layers)
-
-classification_layers = [
-    # Dense(10, input_shape=(input_shape,)),
-    Dense(1, activation='linear')
-]
-kmodel = Sequential(feature_layers + classification_layers)
+# classification_layers = [
+#     # Dense(10, input_shape=(input_shape,)),
+#     Dense(1, activation='linear')
+# ]
+# kmodel = Sequential(feature_layers + classification_layers)
 
 # most stable version
+
 keras.backend.clear_session()
 inputs = Input(shape=(input_shape,), name='encoder_input')
 x = inputs
@@ -225,6 +186,7 @@ kmodel = Model(inputs, preds, name='encoder_output')
 kmodel.summary()
 loss_fn = gn.negative_log_partial_likelihood
 # loss_fn = keras.losses.mean_squared_error
+
 
 # train model for 5-digit classification [0..4]
 learning_rate = .0001

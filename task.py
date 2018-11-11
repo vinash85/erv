@@ -16,7 +16,6 @@ from keras.models import Sequential, Model, Input
 from keras.layers import Dense, Dropout, Activation, Flatten
 from keras.layers import Conv1D, MaxPooling1D, Conv2D, MaxPooling2D
 from keras import backend as K
-import trainer.data_generator as gn
 import tensorflow as tf
 import time
 
@@ -29,8 +28,7 @@ from keras.callbacks import Callback, ModelCheckpoint, TensorBoard, EarlyStoppin
 from keras.models import load_model
 from tensorflow.python.lib.io import file_io
 
-import trainer.data_generator as gn
-import trainer.model as model
+import data_generator as gn
 
 now = datetime.datetime.now
 
@@ -42,7 +40,7 @@ checkpoint_epochs = 5
 
 train_steps = 80
 
-num_epochs = 400
+num_epochs = 10
 
 early_stop = 40
 
@@ -73,37 +71,6 @@ eval_files = ["/home/pzs2/capstone/proj/TCGA_processed/pancancer_all_immune/Eval
 # input_shape = (1, img_rows, img_cols)
 # else:
 # input_shape = (img_rows, img_cols, 1)
-
-
-def negative_log_partial_likelihood(censor, risk):
-    """Return the negative log-partial likelihood of the prediction
-    y_true contains the survival time
-    risk is the risk output from the neural network
-    censor is the vector of inputs that are censored
-    regularization is the regularization constant (not used currently in model)
-
-    Uses the Keras backend to perform calculations
-
-    Sorts the surv_time by sorted reverse time
-    """
-
-    # calculate negative log likelihood from estimated risk
-    epsilon = 0.001
-    risk = K.reshape(risk, [-1])  # flatten
-    hazard_ratio = K.exp(risk)
-
-    # cumsum on sorted surv time accounts for concordance
-    log_risk = K.log(tf.cumsum(hazard_ratio) + epsilon)
-    log_risk = K.reshape(log_risk, [-1])
-    uncensored_likelihood = risk - log_risk
-
-    # apply censor mask: 1 - dead, 0 - censor
-    censored_likelihood = uncensored_likelihood * censor
-    num_observed_events = K.sum(censor)
-    neg_likelihood = - K.sum(censored_likelihood) / \
-        tf.cast(num_observed_events, tf.float32)
-
-    return neg_likelihood
 
 
 def train_model_generator(kmodel, loss_fn):
@@ -244,6 +211,8 @@ classification_layers = [
 ]
 kmodel = Sequential(feature_layers + classification_layers)
 
+# most stable version
+keras.backend.clear_session()
 inputs = Input(shape=(input_shape,), name='encoder_input')
 x = inputs
 x = Dense(64, activation='relu')(x)
@@ -254,7 +223,7 @@ preds = Dense(1, activation='linear')(x)
 
 kmodel = Model(inputs, preds, name='encoder_output')
 kmodel.summary()
-loss_fn = negative_log_partial_likelihood
+loss_fn = gn.negative_log_partial_likelihood
 # loss_fn = keras.losses.mean_squared_error
 
 # train model for 5-digit classification [0..4]

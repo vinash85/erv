@@ -73,6 +73,37 @@ eval_files = ["/home/pzs2/capstone/proj/TCGA_processed/pancancer_all_immune/Eval
 # input_shape = (img_rows, img_cols, 1)
 
 
+def negative_log_partial_likelihood(censor, risk):
+    """Return the negative log-partial likelihood of the prediction
+    y_true contains the survival time
+    risk is the risk output from the neural network
+    censor is the vector of inputs that are censored
+    regularization is the regularization constant (not used currently in model)
+
+    Uses the Keras backend to perform calculations
+
+    Sorts the surv_time by sorted reverse time
+    """
+
+    # calculate negative log likelihood from estimated risk
+    epsilon = 0.001
+    risk = K.reshape(risk, [-1])  # flatten
+    hazard_ratio = K.exp(risk)
+
+    # cumsum on sorted surv time accounts for concordance
+    log_risk = K.log(tf.cumsum(hazard_ratio) + epsilon)
+    log_risk = K.reshape(log_risk, [-1])
+    uncensored_likelihood = risk - log_risk
+
+    # apply censor mask: 1 - dead, 0 - censor
+    censored_likelihood = uncensored_likelihood * censor
+    num_observed_events = K.sum(censor)
+    neg_likelihood = - K.sum(censored_likelihood) / \
+        tf.cast(num_observed_events, tf.float32)
+
+    return neg_likelihood
+
+
 def train_model_generator(kmodel, loss_fn):
 
     kmodel.compile(loss=loss_fn,

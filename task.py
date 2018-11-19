@@ -30,6 +30,14 @@ from tensorflow.python.lib.io import file_io
 
 import data_generator as gn
 from lifelines.utils import concordance_index
+from tensorflow.python import debug as tf_debug
+
+isdebug = True
+# if isdebug:
+sess = K.get_session()
+sess = tf_debug.LocalCLIDebugWrapperSession(sess)
+K.set_session(sess)
+
 
 now = datetime.datetime.now
 
@@ -59,26 +67,41 @@ kernel_size = 3
 
 eval_ci = True
 
+
+input_shape = 1076
+input_shape = 100
+input_shape = 4872
+
+
 timestr = time.strftime("%Y%m%d_%H%M")
 
 
 # data_dir = "../data/pancancer_all_immune/"
-data_dir = "../data/simulation/"
+# data_dir = "../data/simulation/"
+data_dir = "/home/as892/project/icb/data/"
+data_dir = "../data/ssgsea/"
+
 job_dir_prefix = "../results/model/"
 
 # if os
 
-job_dir = job_dir_prefix + "batch_by_type_normalized_" + timestr
+job_dir = job_dir_prefix + "batch_ssgsea_" + timestr
 
 
 def add2stringlist(prefix, List):
     return [prefix + elem for elem in List]
 
 
-input_shape = 1076
-input_shape = 100
+train_files = add2stringlist(data_dir, ["tcga_ssgsea_train.txt", "tcga_survival_train.txt"])
+validation_files = add2stringlist(data_dir, ["tcga_ssgsea_test.txt", "tcga_survival_test.txt"])
+eval_files = add2stringlist(data_dir, ["tcga_ssgsea_eval.txt", "tcga_survival_eval.txt"])
 
-eval_files = validation_files = train_files = add2stringlist(data_dir, ["survival.data.txt", "survival.train.txt"])
+
+# train_files = ["/home/pzs2/capstone/proj/TCGA_processed/pancancer_all_immune/TrainingData.txt", "/home/pzs2/capstone/proj/TCGA_processed/pancancer_all_immune/surv.train.txt"]
+# validation_files = ["/home/pzs2/capstone/proj/TCGA_processed/pancancer_all_immune/TestData.txt", "/home/pzs2/capstone/proj/TCGA_processed/pancancer_all_immune/surv.test.txt"]
+
+
+# eval_files = validation_files = train_files = add2stringlist(data_dir, ["survival.data.txt", "survival.train.txt"])
 # train_files = add2stringlist(data_dir, ["TrainingData.txt", "surv.train.txt"])
 # validation_files = add2stringlist(data_dir, ["TestData.txt", "surv.test.txt"])
 # eval_files = add2stringlist(data_dir, ["EvalData.txt", "surv.eval.txt"])
@@ -279,21 +302,6 @@ def train_model_generator(kmodel, loss_fn):
 #     Activation('linear')
 # ]
 
-keras.backend.clear_session()
-
-embedder = [
-    Dense(64, activation='relu', input_shape=(input_shape,)),
-    Dropout(0.1),
-    Dense(64, activation='relu'),
-    Dropout(0.1)
-]
-
-survival_layers = [
-    Dense(1, input_shape=(input_shape,))
-]
-survival_model = Sequential(embedder + survival_layers)
-
-survival_model.summary()
 
 # kmodel = Sequential(classification_layers)
 
@@ -303,32 +311,51 @@ survival_model.summary()
 # ]
 # kmodel = Sequential(feature_layers + classification_layers)
 
+
 # most stable version
 #
-keras.backend.clear_session()
+if False:
+    keras.backend.clear_session()
+
+    embedder = [
+        Dense(64, activation='relu', input_shape=(input_shape,)),
+        Dropout(0.1),
+        Dense(64, activation='relu'),
+        Dropout(0.1)
+    ]
+
+    survival_layers = [
+        Dense(1, input_shape=(input_shape,))
+    ]
+    survival_model = Sequential(embedder + survival_layers)
+
+    survival_model.summary()
+
+
+    keras.backend.clear_session()
+    inputs = Input(shape=(input_shape,), name='encoder_input')
+    x = inputs
+    x = Dense(64, activation='relu')(x)
+    # x = Dropout(0.1)(x)
+    # x = BatchNormalization()(x)
+    # x = Dense(64, activation='relu')(x)
+    # x = Dropout(0.1)(x)
+    # embedding = BatchNormalization()(x)
+    embedding = Dense(1, activation='linear')(x)
+    embedder = Model(inputs, embedding, name='encoder_output')
+    embedder.summary()
+
+
+# keras.backend.clear_session()
 inputs = Input(shape=(input_shape,), name='encoder_input')
 x = inputs
 x = Dense(64, activation='relu')(x)
 x = Dropout(0.1)(x)
 x = BatchNormalization()(x)
-x = Dense(64, activation='relu')(x)
-x = Dropout(0.1)(x)
-embedding = BatchNormalization()(x)
-embedding = Dense(1, activation='linear')(embedding)
-embedder = Model(inputs, embedding, name='encoder_output')
-embedder.summary()
-
-
-keras.backend.clear_session()
-inputs = Input(shape=(input_shape,), name='encoder_input')
-x = inputs
-x = Dense(64, activation='relu')(x)
-x = Dropout(0.1)(x)
-x = BatchNormalization()(x)
-x = Dense(64, activation='relu')(x)
-x = Dropout(0.1)(x)
-embedding = BatchNormalization()(x)
-embedder = Model(inputs, embedding, name='encoder_output')
+# x = Dense(64, activation='relu')(x)
+# embedding = Dropout(0.1)(x)
+# embedding = BatchNormalization()(embedding)
+embedder = Model(inputs, x, name='encoder_output')
 embedder.summary()
 
 # embedder(inputs)
@@ -345,10 +372,11 @@ survival_model.summary()
 # loss_fn = negative_log_partial_likelihood
 
 # train model for 5-digit classification [0..4]
-learning_rate = .0001
+learning_rate = .00001
 num_epochs = 30
 train_model_generator(survival_model, loss_fn=negative_log_partial_likelihood)
 
+train_model_generator(embedder, loss_fn=negative_log_partial_likelihood)
 
 if False:
     # freeze feature layers and rebuild model
@@ -408,3 +436,4 @@ if False:
     #     return(grad_out_model.predict(train))
 
     # aa = get_gradients(kmodel, aa[0])
+    #

@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 import torchvision
 import torchvision.transforms as transforms
-from ... import data_generator as gn
+# from ... import data_generator as gn
+import data_generator as gn
 
 
 # Device configuration
@@ -11,7 +12,7 @@ cudnn.benchmark = True
 
 # Hyper parameters
 num_epochs = 5
-num_classes = 10
+num_classes = 1
 batch_size = 100
 learning_rate = 0.001
 

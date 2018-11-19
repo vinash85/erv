@@ -173,7 +173,7 @@ for epoch in range(num_epochs):
         optimizer.step()
 
         if (i + 1) % 1 == 0:
-            c_index = metrics.concordance_metric(outputs.detach().numpy(), survival)
+            c_index = metrics.concordance_metric(outputs.detach().cpu().numpy(), survival)
             print ('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, c_index: {:.4f} '
                    .format(epoch + 1, num_epochs, i + 1, total_step, loss.item(), c_index))
 
@@ -185,7 +185,7 @@ with torch.no_grad():
     features = (torch.from_numpy(test_features)).to(device)
     # censor = (torch.from_numpy(test_labels[:, 1])).to(device)
     outputs = model(features)
-    c_index = metrics.concordance_metric(outputs.detach().numpy(), test_labels)
+    c_index = metrics.concordance_metric(outputs.cpu().detach().numpy(), test_labels)
     # for features, survival in train_generator:
     #     features = (torch.from_numpy(features)).to(device)
     #     censor = (torch.from_numpy(survival[:, 1])).to(device)

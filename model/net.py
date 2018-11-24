@@ -14,11 +14,14 @@ class NeuralNet(nn.Module):
         super(NeuralNet, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
+        self.dense1_bn = nn.BatchNorm1d(hidden_size)
         self.fc2 = nn.Linear(hidden_size, num_classes)
+        # self.dense2_bn = nn.BatchNorm1d(num_classes)
 
     def forward(self, x):
         out = self.fc1(x)
         out = self.relu(out)
+        out = self.dense1_bn(out)
         out = self.fc2(out)
         return out
 
@@ -143,7 +146,23 @@ def loss_fn(outputs, labels):
     return -torch.sum(outputs[range(num_examples), labels]) / num_examples
 
 
-def negative_log_partial_likelihood(censor, risk):
+def checkNaNInf(x):
+    torch.isnan(x).any() or x.eq(float('inf')).any() or x.eq(float('-inf')).any()
+
+
+def isfinite(x):
+    """
+    Quick pytorch test that there are no nan's or infs.
+
+    note: torch now has torch.isnan
+    url: https://gist.github.com/wassname/df8bc03e60f81ff081e1895aabe1f519
+    """
+    not_inf = ((x + 1) != x)
+    not_nan = (x == x)
+    return not_inf & not_nan
+
+
+def negative_log_partial_likelihood(censor, risk, debug=False):
     """Return the negative log-partial likelihood of the prediction
     y_true contains the survival time
     risk is the risk output from the neural network
@@ -157,7 +176,11 @@ def negative_log_partial_likelihood(censor, risk):
 
     # calculate negative log likelihood from estimated risk
     epsilon = 0.00001
+    max_value = 10
+    alpha = 0.1
     risk = torch.reshape(risk, [-1])  # flatten
+    risk = risk - torch.mean(risk)
+    # risk[risk > max_value] = max_value
     hazard_ratio = torch.exp(risk)
 
     # cumsum on sorted surv time accounts for concordance
@@ -170,13 +193,17 @@ def negative_log_partial_likelihood(censor, risk):
     num_observed_events = torch.sum(censor)
     neg_likelihood = - torch.sum(censored_likelihood) / \
         num_observed_events
+    if(not isfinite(neg_likelihood) or debug):
+        import ipdb
+        ipdb.set_trace()
+
     # print(type(neg_likelihood))
 
-    if (neg_likelihood != neg_likelihood):
-        print(neg_likelihood)
-        print(censor[np.isnan(censor)])
-        print(risk[np.isnan(risk)])
-        raise ValueError("nan found")
+    # if (neg_likelihood != neg_likelihood):
+    #     print(neg_likelihood)
+    #     print(censor[np.isnan(censor)])
+    #     print(risk[np.isnan(risk)])
+    #     raise ValueError("nan found")
 
     return neg_likelihood
 

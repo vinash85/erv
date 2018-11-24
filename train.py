@@ -1,4 +1,6 @@
 """Train the model"""
+
+
 import torch
 # import torch.nn as nn
 # import torchvision
@@ -69,18 +71,24 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
 
     # Use tqdm for progress bar
     # with tqdm(total=len(dataloader)) as t:
-    with tqdm(total=36) as t:
-        for i, (features, survival) in zip(range(total_step), train_generator):
-            labels_batch = survival[:, 1]
+    with tqdm(total=params.dict['num_batches_per_epoch']) as t:
+        for i, (features, survival) in zip(range(params.dict['num_batches_per_epoch']), dataloader):
+            # labels_batch = survival[:, 1]
+            train_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(survival[:, 1]).float()
             # move to GPU if available
             if params.cuda:
                 train_batch, labels_batch = train_batch.cuda(async=True), labels_batch.cuda(async=True)
             # convert to torch Variables
-            train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
+            # train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
 
             # compute model output and loss
             output_batch = model(train_batch)
-            loss = loss_fn(output_batch, labels_batch)
+            loss = loss_fn(labels_batch, output_batch)
+            if(torch.isnan(loss)):
+                import ipdb
+                ipdb.set_trace()
+            # import ipdb
+            # ipdb.set_trace()
 
             # clear previous gradients, compute gradients of all variables wrt loss
             optimizer.zero_grad()
@@ -89,22 +97,27 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             # performs updates using calculated gradients
             optimizer.step()
 
+            output_batch1 = model(train_batch)
+            if(torch.any(torch.isnan(output_batch1))):
+                import ipdb
+                ipdb.set_trace()
+
             # Evaluate summaries only once in a while
             if i % params.save_summary_steps == 0:
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
-                output_batch = output_batch.data.cpu().numpy()
-                labels_batch = labels_batch.data.cpu().numpy()
-                c_index = metrics.concordance_metric(output_batch, survival)
+                output_batch = output_batch.data.detach().cpu().numpy()
+                labels_batch = labels_batch.data.detach().cpu().numpy()
+                # c_index = metrics.concordance_metric(output_batch, survival)
 
                 # compute all metrics on this batch
                 # summary_batch = {'c_index': c_index}
                 summary_batch = {metric: metrics[metric](output_batch, survival)
                                  for metric in metrics}
-                summary_batch['loss'] = loss.data[0]
+                summary_batch['loss'] = loss.item()
                 summ.append(summary_batch)
 
             # update the average loss
-            loss_avg.update(loss.data[0])
+            loss_avg.update(loss.item())
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()
@@ -145,10 +158,11 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
         train(model, optimizer, loss_fn, train_dataloader, metrics, params)
 
         # Evaluate for one epoch on validation set
-        val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
+        # val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
+        val_metrics = {'c_index': 0.5}
 
         val_acc = val_metrics['c_index']
-        is_best = val_acc >= best_val_acc
+        is_best = val_acc > best_val_acc
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch + 1,
@@ -179,16 +193,16 @@ if __name__ == '__main__':
     json_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
-    print(type(params))
-    print(params)
+    # print(type(params))
+    # print(params)
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
-    if params.cuda:
-        torch.cuda.manual_seed(230)
+    # if params.cuda:
+    # torch.cuda.manual_seed(230)
 
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
@@ -201,12 +215,13 @@ if __name__ == '__main__':
     train_steps_gen, train_input_size, train_dl = dataloaders['train']
     _, _, val_dl = dataloaders['val']
     input_size = train_input_size
+    params.dict['num_batches_per_epoch'] = train_steps_gen
     logging.info("- done.")
 
     # Define the model and optimizer
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
-    model = net.NeuralNet(input_size, 256, 1).cuda() if params.cuda else net.NeuralNet(input_size, 256, 1)
-    optimizer = optim.Adam(model.parameters(), lr=params.learning_rate)
+    model = net.NeuralNet(input_size, params.hidden_size, 1).cuda() if params.cuda else net.NeuralNet(input_size, params.hidden_size, 1)
+    optimizer = optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
 
     # fetch loss function and metrics
     loss_fn = net.negative_log_partial_likelihood

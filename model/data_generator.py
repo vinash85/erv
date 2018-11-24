@@ -79,6 +79,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
 
     # features, labels, cancertype = processDataLabels(
     #     input_file, batch_by_type=batch_by_type, normalize=normalize)
+    print(shuffle)
 
     if (batch_by_type):
         if cancertype == None:
@@ -130,6 +131,9 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
                 end_index = min((batch_num + 1) * batch_size, data_size)
                 X, y = shuffled_features[start_index:
                                          end_index], shuffled_labels[start_index: end_index]
+
+                # import ipdb
+                # ipdb.set_trace()
 
                 # Sort X and y by survival time in each batch
                 # This is required for the negative binomial log likelihood to work as a loss function

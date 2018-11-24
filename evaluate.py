@@ -9,7 +9,7 @@ import torch
 from torch.autograd import Variable
 import utils
 import model.net as net
-import model.data_loader as data_loader
+import model.data_loader as data_generator
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='data/64x64_SIGNS', help="Directory containing the dataset")
@@ -37,30 +37,32 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     summ = []
 
     # compute metrics over the dataset
-    for data_batch, labels_batch in dataloader:
 
+    for features, survival in dataloader:
+        data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(survival[:, 1]).float()
         # move to GPU if available
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(async=True), labels_batch.cuda(async=True)
         # fetch the next evaluation batch
         data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
-        
+
         # compute model output
         output_batch = model(data_batch)
         loss = loss_fn(output_batch, labels_batch)
 
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
-        labels_batch = labels_batch.data.cpu().numpy()
+        # labels_batch = labels_batch.data.cpu().numpy()
 
         # compute all metrics on this batch
-        summary_batch = {metric: metrics[metric](output_batch, labels_batch)
+        summary_batch = {metric: metrics[metric](output_batch, survival)
                          for metric in metrics}
-        summary_batch['loss'] = loss.data[0]
+        # summary_batch['loss'] = loss.data[0]
+        summary_batch['loss'] = loss.item()
         summ.append(summary_batch)
 
     # compute mean of all metrics in summary
-    metrics_mean = {metric:np.mean([x[metric] for x in summ]) for metric in summ[0]} 
+    metrics_mean = {metric: np.mean([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
     return metrics_mean
@@ -81,8 +83,9 @@ if __name__ == '__main__':
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
-    if params.cuda: torch.cuda.manual_seed(230)
-        
+    if params.cuda:
+        torch.cuda.manual_seed(230)
+
     # Get the logger
     utils.set_logger(os.path.join(args.model_dir, 'evaluate.log'))
 
@@ -97,10 +100,10 @@ if __name__ == '__main__':
 
     # Define the model
     model = net.Net(params).cuda() if params.cuda else net.Net(params)
-    
+
     loss_fn = net.loss_fn
     metrics = net.metrics
-    
+
     logging.info("Starting evaluation")
 
     # Reload weights from the saved file

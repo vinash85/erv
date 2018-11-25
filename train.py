@@ -97,10 +97,10 @@ def train(model, optimizer, loss_fn, dataloader, metrics, params):
             # performs updates using calculated gradients
             optimizer.step()
 
-            output_batch1 = model(train_batch)
-            if(torch.any(torch.isnan(output_batch1))):
-                import ipdb
-                ipdb.set_trace()
+            # output_batch1 = model(train_batch)
+            # if(torch.any(torch.isnan(output_batch1))):
+            #     import ipdb
+            #     ipdb.set_trace()
 
             # Evaluate summaries only once in a while
             if i % params.save_summary_steps == 0:

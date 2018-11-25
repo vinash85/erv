@@ -16,6 +16,7 @@ class NeuralNet(nn.Module):
         self.relu = nn.ReLU()
         self.dense1_bn = nn.BatchNorm1d(hidden_size)
         self.fc2 = nn.Linear(hidden_size, num_classes)
+        self.dense2_bn = nn.BatchNorm1d(num_classes)
         # self.dense2_bn = nn.BatchNorm1d(num_classes)
 
     def forward(self, x):
@@ -23,6 +24,7 @@ class NeuralNet(nn.Module):
         out = self.relu(out)
         out = self.dense1_bn(out)
         out = self.fc2(out)
+        out = self.dense2_bn(out)
         return out
 
 
@@ -179,7 +181,7 @@ def negative_log_partial_likelihood(censor, risk, debug=False):
     max_value = 10
     alpha = 0.1
     risk = torch.reshape(risk, [-1])  # flatten
-    risk = risk - torch.mean(risk)
+    # risk = risk - torch.mean(risk)
     # risk[risk > max_value] = max_value
     hazard_ratio = torch.exp(risk)
 

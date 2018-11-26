@@ -1,4 +1,4 @@
-data_dir="/homes6/asahu/project/deeplearning/icb/data/ssgsea/dataset/"
+data_dir="/homes6/asahu/project/deeplearning/icb/data/ssgsea/datasets/"
 model_dir="/homes6/asahu/project/deeplearning/icb/data/ssgsea/models/"
 
 # python train.py --data_dir ~/project/code/deeplearning/icb/results/simulation/dataset

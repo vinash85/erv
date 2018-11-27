@@ -6,8 +6,34 @@ import torch.nn as nn
 import torch.nn.functional as F
 from lifelines.utils import concordance_index
 
-# Fully connected neural network with one hidden layer
 
+class ImmuneEmbed(nn.Module):
+    def __init__(self, input_size, hidden_layers):
+        super(ImmuneEmbed, self).__init__()
+
+    def forward(self, x)
+        out = nn.Linear(self.input_size, self.hidden_layer[0])(x)
+        out = nn.ReLU()(out)
+        out = nn.BatchNorm1d(self.hidden_layer[0])(out)
+        for layer_size in self.hidden_layers:
+            out = nn.Linear(layer_size)(out)
+            out = nn.ReLU()(out)
+            out = nn.BatchNorm1d(layer_size)(out)
+        return out
+
+
+class oneLayerNet(nn.Module):
+    def __init__(self, input_size, num_classes):
+        super(oneLayerNet, self).__init__()
+
+    def forward(self, x):
+        out = nn.Linear(self.input_size, self.num_classes)(x)
+        out = nn.ReLU()(out)
+        out = nn.BatchNorm1d(self.num_classes)(out)
+        return out
+
+
+# Fully connected neural network with one hidden layer
 
 class NeuralNet(nn.Module):
     def __init__(self, input_size, hidden_size, num_classes):

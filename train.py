@@ -158,8 +158,8 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
         train(model, optimizer, loss_fn, train_dataloader, metrics, params)
 
         # Evaluate for one epoch on validation set
-        # val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
-        val_metrics = {'c_index': 0.5}
+        val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
+        # val_metrics = {'c_index': 0.5}
 
         val_acc = val_metrics['c_index']
         is_best = val_acc > best_val_acc
@@ -220,7 +220,10 @@ if __name__ == '__main__':
 
     # Define the model and optimizer
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
-    model = net.NeuralNet(input_size, params.hidden_size, 1).cuda() if params.cuda else net.NeuralNet(input_size, params.hidden_size, 1)
+    model = net.NeuralNet(input_size, params.hidden_size, 1)
+
+    if params.cuda:
+        model = model.cuda()
     optimizer = optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
 
     # fetch loss function and metrics
@@ -231,3 +234,5 @@ if __name__ == '__main__':
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
     train_and_evaluate(model, train_dl, val_dl, optimizer, loss_fn, metrics, params, args.model_dir,
                        args.restore_file)
+
+    # train_and_evaluate_response(model, train_dl, val_dl, optimizer, loss_fn, metrics, params, args.model_dir, args.restore_file)

@@ -158,8 +158,8 @@ def train_and_evaluate(model, train_dataloader, val_dataloader, optimizer, loss_
         train(model, optimizer, loss_fn, train_dataloader, metrics, params)
 
         # Evaluate for one epoch on validation set
-        val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
-        # val_metrics = {'c_index': 0.5}
+        # val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
+        val_metrics = {'c_index': 0.5}
 
         val_acc = val_metrics['c_index']
         is_best = val_acc > best_val_acc
@@ -220,7 +220,8 @@ if __name__ == '__main__':
 
     # Define the model and optimizer
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
-    model = net.NeuralNet(input_size, params.hidden_size, 1)
+    # model = net.NeuralNet(input_size, params.hidden_size, 1)
+    model = net.ConvNet1D(input_size)
 
     if params.cuda:
         model = model.cuda()

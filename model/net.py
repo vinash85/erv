@@ -5,13 +5,14 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from lifelines.utils import concordance_index
+import math
 
 
 class ImmuneEmbed(nn.Module):
     def __init__(self, input_size, hidden_layers):
         super(ImmuneEmbed, self).__init__()
 
-    def forward(self, x)
+    def forward(self, x):
         out = nn.Linear(self.input_size, self.hidden_layer[0])(x)
         out = nn.ReLU()(out)
         out = nn.BatchNorm1d(self.hidden_layer[0])(out)
@@ -33,14 +34,29 @@ class oneLayerNet(nn.Module):
         return out
 
 
+class ImmuneEmbed(nn.Module):
+    def __init__(self, input_size, hidden_layers):
+        super(ImmuneEmbed, self).__init__()
+
+    def forward(self, x):
+        out = nn.Linear(self.input_size, self.hidden_layer[0])(x)
+        out = nn.ReLU()(out)
+        out = nn.BatchNorm1d(self.hidden_layer[0])(out)
+        for layer_size in self.hidden_layers:
+            out = nn.Linear(layer_size)(out)
+            out = nn.ReLU()(out)
+            out = nn.BatchNorm1d(layer_size)(out)
+        return out
+
+
 # Fully connected neural network with one hidden layer
 
 class NeuralNet(nn.Module):
-    def __init__(self, input_size, hidden_size, num_classes):
+    def __init__(self, input_size, hidden_size, num_classes=1):
         super(NeuralNet, self).__init__()
         self.fc1 = nn.Linear(input_size, hidden_size)
         self.relu = nn.ReLU()
-        self.dense1_bn = nn.BatchNorm1d(hidden_size)
+        self.dense1_bn = nn.BatchNorm1d(hidden_size)  # batchnorm takes both channels or hidden size as input
         self.fc2 = nn.Linear(hidden_size, num_classes)
         self.dense2_bn = nn.BatchNorm1d(num_classes)
         # self.dense2_bn = nn.BatchNorm1d(num_classes)
@@ -53,8 +69,47 @@ class NeuralNet(nn.Module):
         out = self.dense2_bn(out)
         return out
 
+# 1D Convolutional neural network (two convolutional layers)
+
+
+class ConvNet1D(nn.Module):
+    def __init__(self, input_size, num_classes=1):
+        super(ConvNet1D, self).__init__()
+        layer1_size = math.floor(input_size / 2)
+        output_size = math.floor(layer1_size / 2)
+        self.layer1 = nn.Sequential(
+            nn.Conv1d(1, 32, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2))
+        self.layer2 = nn.Sequential(
+            nn.Conv1d(32, 32, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2))
+        # self.output_size = math_ceiling
+        self.fc = nn.Linear(output_size * 32, num_classes)
+        self.dense1_bn = nn.BatchNorm1d(num_classes)
+
+    def forward(self, x):
+        gene_len, batch_size = x.size()  # x is gene_len x batch_size
+        # print(x.shape)
+        # Turn (gene_len x batch_size) into (batch_size x input_size x gene_len) for CNN, where input_size = 1
+        # x = x.transpose(0, 1)
+        # print(x.shape)
+        x = x.reshape(batch_size, 1, gene_len)
+        # print(x.shape)
+        out = self.layer1(x)
+        # print(out.shape)
+        out = self.layer2(out)
+        out = out.reshape(out.size(0), -1)
+        out = self.fc(out)
+        out = self.dense1_bn(out)
+        return out
 
 # Convolutional neural network (two convolutional layers)
+
+
 class ConvNet(nn.Module):
     def __init__(self, num_classes=10):
         super(ConvNet, self).__init__()
@@ -221,9 +276,9 @@ def negative_log_partial_likelihood(censor, risk, debug=False):
     num_observed_events = torch.sum(censor)
     neg_likelihood = - torch.sum(censored_likelihood) / \
         num_observed_events
-    if(not isfinite(neg_likelihood) or debug):
-        import ipdb
-        ipdb.set_trace()
+    # if(not isfinite(neg_likelihood) or debug):
+    #     import ipdb
+    #     ipdb.set_trace()
 
     # print(type(neg_likelihood))
 

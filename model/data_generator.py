@@ -212,6 +212,8 @@ def fetch_dataloader(types, data_dir, params):
     for split in ['train', 'val', 'test']:
         if split in types:
             path = os.path.join(data_dir, "{}".format(split))
+            # import ipdb
+            # ipdb.set_trace()
             features = readFile(path + ".txt")
             survival = readFile(path + "_survival.txt")
             dl = generator_survival(

@@ -8,19 +8,24 @@ from lifelines.utils import concordance_index
 import math
 
 
-class ImmuneEmbed(nn.Module):
-    def __init__(self, input_size, hidden_layers):
-        super(ImmuneEmbed, self).__init__()
-
-    def forward(self, x):
-        out = nn.Linear(self.input_size, self.hidden_layer[0])(x)
-        out = nn.ReLU()(out)
-        out = nn.BatchNorm1d(self.hidden_layer[0])(out)
-        for layer_size in self.hidden_layers:
-            out = nn.Linear(layer_size)(out)
-            out = nn.ReLU()(out)
-            out = nn.BatchNorm1d(layer_size)(out)
-        return out
+class embedding_conv(nn.Module):
+    def __init__(self, input_size, num_classes=1):
+        super(ConvNet1D, self).__init__()
+        layer1_size = math.floor(input_size / 2)
+        output_size = math.floor(layer1_size / 2)
+        self.layer1 = nn.Sequential(
+            nn.Conv1d(1, 32, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2))
+        self.layer2 = nn.Sequential(
+            nn.Conv1d(32, 32, kernel_size=5, stride=1, padding=2),
+            nn.BatchNorm1d(32),
+            nn.ReLU(),
+            nn.MaxPool1d(kernel_size=2, stride=2))
+        # self.output_size = math_ceiling
+        self.fc = nn.Linear(output_size * 32, num_classes)
+        self.dense1_bn = nn.BatchNorm1d(num_classes)
 
 
 class oneLayerNet(nn.Module):

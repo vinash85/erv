@@ -49,6 +49,85 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 
 # train_batch_size = 256
 
+def train_general(embedding, outputLayer, optimizer, loss_fns, dataloader, metrics, params):
+    """Train the model on `num_steps` batches
+    Args:
+        model: (torch.nn.Module) the neural network
+        optimizer: (torch.optim) optimizer for parameters of model
+        loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
+        dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
+        metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
+        params: (Params) hyperparameters
+        num_steps: (int) number of batches to train on, each of size params.batch_size
+    """
+
+    # set model to training mode
+    model.train()
+
+    # summary for current training loop and a running average object for loss
+    summ = []
+    loss_avg = utils.RunningAverage()
+
+    # Use tqdm for progress bar
+    # with tqdm(total=len(dataloader)) as t:
+    with tqdm(total=params.dict['num_batches_per_epoch']) as t:
+        for i, (features, survival) in zip(range(params.dict['num_batches_per_epoch']), dataloader):
+            # labels_batch = survival[:, 1]
+            train_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(survival[:, 1]).float()
+            # move to GPU if available
+            if params.cuda:
+                train_batch, labels_batch = train_batch.cuda(async=True), labels_batch.cuda(async=True)
+            # convert to torch Variables
+            # train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
+
+            # compute model output and loss
+            embedding_batch = embedding(train_batch)
+            output_batch = outputLayer(embedding_batch)
+
+            loss = calculate_loss(loss_fns, labels_batch, output_batch)
+            if(torch.isnan(loss)):
+                import ipdb
+                ipdb.set_trace()
+            # import ipdb
+            # ipdb.set_trace()
+
+            # clear previous gradients, compute gradients of all variables wrt loss
+            optimizer.zero_grad()
+            loss.backward()
+
+            # performs updates using calculated gradients
+            optimizer.step()
+
+            # output_batch1 = model(train_batch)
+            # if(torch.any(torch.isnan(output_batch1))):
+            #     import ipdb
+            #     ipdb.set_trace()
+
+            # Evaluate summaries only once in a while
+            if i % params.save_summary_steps == 0:
+                # extract data from torch Variable, move to cpu, convert to numpy arrays
+                output_batch = output_batch.data.detach().cpu().numpy()
+                labels_batch = labels_batch.data.detach().cpu().numpy()
+                # c_index = metrics.concordance_metric(output_batch, survival)
+
+                # compute all metrics on this batch
+                # summary_batch = {'c_index': c_index}
+                summary_batch = {metric: metrics[metric](output_batch, survival)
+                                 for metric in metrics}
+                summary_batch['loss'] = loss.item()
+                summ.append(summary_batch)
+
+            # update the average loss
+            loss_avg.update(loss.item())
+
+            t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
+            t.update()
+
+    # compute mean of all metrics in summary
+    metrics_mean = {metric: np.mean([x[metric] for x in summ]) for metric in summ[0]}
+    metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
+    logging.info("- Train metrics: " + metrics_string)
+
 
 def train(model, optimizer, loss_fn, dataloader, metrics, params):
     """Train the model on `num_steps` batches

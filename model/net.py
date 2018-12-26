@@ -1,4 +1,4 @@
-"""Defines the neural network, losss function and metrics"""
+"""Defines the neural network, loss function and metrics"""
 
 import numpy as np
 import torch
@@ -7,6 +7,73 @@ import torch.nn.functional as F
 from lifelines.utils import concordance_index
 import math
 
+
+# 3x3 convolution
+def conv1d(in_channels, out_channels, kernel_size=5, stride=2):
+    padding_size = kernel_size - 1 
+    return nn.Conv1d(in_channels, out_channels, kernel_size=3, 
+                     stride=stride, padding=1, bias=False)
+
+# Residual block
+class ConvolutionBlock(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size = 5, stride=2):
+        super(ResidualBlock, self).__init__()
+        self.conv1 = conv1d(in_channels, out_channels, kernel_size, stride=1)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.relu = nn.Residual(inplace=True)
+        self.maxpool = nn.MaxPool1d(kernel_size=kernel_size, stride=stride)
+        
+    def forward(self, x):
+        residual = x
+        out = self.conv1(residual)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = self.maxpool(out)
+        return out
+
+
+
+
+# EmbeddingNet
+class EmbeddingNet(nn.Module):
+    def __init__(self, block, layers, input_size, embedding_size = 32, blocks = 1, kernel_size = 5, strides = [2]):
+        super(EmbeddingNet, self).__init__()
+        self.in_channels = 1
+        
+    def make_layer(self, block, out_channels, blocks, stride):
+        layers = []
+        layers.append(block(self.in_channels, out_channels, kernel_size, stride))
+        self.in_channels = out_channels
+        for i in range(1, blocks):
+            layers.append(block(out_channels, out_channels, kernel_size, stride=1))
+        return nn.Sequential(*layers)
+    
+    def forward(self, x):
+        out = self.make_layer(self.block, self.layers[0], kernel_size =5, stride = self.strides[0])
+        for layer in range(1, len(layers)):
+            out = self.make_layer(self.block,  self.layers[layer], kernel_size =5, stride = self.strides[layer])
+        out = out.view(out.size(0), -1)
+        out_size = out.size(0)
+        out = nn.Linear(out_size, self.embedding_size)
+        return out
+            
+
+
+class outputLayer(nn.Module):
+    def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
+        super(outputLayer, self).__init__()
+        self.linear1 = nn.Linear(embedding_size, linear_output_size) 
+        self.linear2 = nn.Linear(embedding_size, binary_output_size)
+        self.relu = nn.ReLU()
+        self.dense1_bn = nn.BatchNorm1d(1)  
+        
+    def forward(self, x):
+        linear1_out = self.linear1(x)
+        survival_out  = self.dense1_bn(linear1_out[0])
+        linear2_out = self.linear2(x)
+        binary_output = self.relu(linear2_out)
+        out = concat(survival_out, linear1_out[1:], binary_output) # define concat
+        return out
 
 class embedding_conv(nn.Module):
     def __init__(self, input_size, num_classes=1):
@@ -325,3 +392,6 @@ metrics = {
     'c_index': c_index,
     # could add more metrics such as accuracy for each token type
 }
+
+
+

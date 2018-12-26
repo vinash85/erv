@@ -1,35 +1,16 @@
-cancertype,Checkmate,Nivo,Ipi
-All Lung Cancer,959,18000,1800
-Melanoma,627,13000,5000
-Advanced Cancer,270,7316,952
-Renal Cell Carcinoma,257,7288,861
-Hepatocellular,166,2431,255
-Head and Neck,159,3583,391
-Hodgkin,134,1211,NA
-Colorectal,113,1293,375
-Prostate Cancer,105,NA,NA
-Lymphoma,80,505,16
-Urothelial,73,1893,503
-Brain Neoplasms,62,NA,NA
-Recurrent Glioblastoma,55,NA,NA
-Mesothelioma,52,704,178
-Solid Tumor,49,2897,NA
-Brain/Glioblastoma,48,2356,457
-Soft Tissue,41,119,82
-Bladder Cancer,40,1910,NA
-Myeloma,36,570,1
-Gastric,17,3638,258
-Pan Tumor,15,NA,NA
-Non-Hodgkin Disease,14,3824,309
-Breast,NA,597,361
-Cervical,NA,45,NA
-Colon,NA,198,201
-Esophageal,NA,519,121
-Gliomas,NA,37,NA
-Hematologic,NA,268,NA
-Leukemia,NA,399,58
-Ovarian,NA,1959,284
-Pancreatic,NA,1452,518
-Prostate,NA,917,1286
-Thyroid,NA,54,97
-liver,NA,33,188
+All Lung Cancer
+Melanoma
+Renal Cell Carcinoma
+Hepatocellular
+Head and Neck
+Hodgkin
+Colorectal
+Prostate Cancer
+Lymphoma
+Urothelial
+All brain cancer
+Mesothelioma
+Bladder Cancer
+Myeloma
+Gastric
+Other advanced cancers

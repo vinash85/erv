@@ -74,6 +74,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     Returns:
     num_batches_per_epoch -- The number of batches per epoch based on data size
     input_size -- the dimensions of the input data
+    it also sort the survival data 
     data_generator() -- the generator function to yield the features and labels
     """
 

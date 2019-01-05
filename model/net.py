@@ -8,20 +8,27 @@ from lifelines.utils import concordance_index
 import math
 
 
+
+
 # 3x3 convolution
 def conv1d(in_channels, out_channels, kernel_size=5, stride=2):
-    padding_size = kernel_size - 1 
-    return nn.Conv1d(in_channels, out_channels, kernel_size=3, 
-                     stride=stride, padding=1, bias=False)
+    padding_size = int((kernel_size - 1)/2)
+    # print(padding_size)
+    # print(in_channels)
+    return nn.Conv1d(in_channels, out_channels, kernel_size=kernel_size, 
+                     stride=stride, padding=padding_size, bias=False)
 
 # Residual block
 class ConvolutionBlock(nn.Module):
     def __init__(self, in_channels, out_channels, kernel_size = 5, stride=2):
-        super(ResidualBlock, self).__init__()
+        super(ConvolutionBlock, self).__init__()
+        print(in_channels)
+        print(out_channels)
         self.conv1 = conv1d(in_channels, out_channels, kernel_size, stride=1)
         self.bn1 = nn.BatchNorm1d(out_channels)
-        self.relu = nn.Residual(inplace=True)
-        self.maxpool = nn.MaxPool1d(kernel_size=kernel_size, stride=stride)
+        # self.relu = nn.Residual(inplace=True)
+        self.relu = nn.ReLU(inplace=True)
+        self.maxpool = nn.MaxPool1d(kernel_size = kernel_size, stride=stride)
         
     def forward(self, x):
         residual = x
@@ -33,28 +40,82 @@ class ConvolutionBlock(nn.Module):
 
 
 
-
-# EmbeddingNet
-class EmbeddingNet(nn.Module):
-    def __init__(self, block, layers, input_size, embedding_size = 32, blocks = 1, kernel_size = 5, strides = [2]):
-        super(EmbeddingNet, self).__init__()
+# tempNet
+class tempNet(nn.Module):
+    def __init__(self, block, input_size, out_channels_list = [32, 32, 32], 
+     embedding_size = 32, blocks = 1, kernel_sizes = [5], strides = [2]):
+        super(tempNet, self).__init__()
         self.in_channels = 1
+        self.block = block
+        if len(kernel_sizes) ==1:
+            self.kernel_sizes = [kernel_sizes] * len(out_channels_list)
+        if len(strides) ==1:
+            self.strides = [strides] * len(out_channels_list)
         
-    def make_layer(self, block, out_channels, blocks, stride):
+        self.lay1 = self.make_layer(block,  out_channels_list[0], kernel_sizes = self.kernel_sizes, strides = self.strides[0])
+        # self.embedding_size = embedding_size
+        # self.blocks = blocks
+        # self.kernel_size = kernel_size
+        # self.strides = strides
+       # (1, 64, 5, stride=2 
+
+    def make_layer(self, block, out_channels, kernel_sizes,  strides):
         layers = []
-        layers.append(block(self.in_channels, out_channels, kernel_size, stride))
+        layers.append(block(self.in_channels, out_channels, kernel_sizes[0], stride))
         self.in_channels = out_channels
         for i in range(1, blocks):
             layers.append(block(out_channels, out_channels, kernel_size, stride=1))
         return nn.Sequential(*layers)
     
     def forward(self, x):
-        out = self.make_layer(self.block, self.layers[0], kernel_size =5, stride = self.strides[0])
-        for layer in range(1, len(layers)):
-            out = self.make_layer(self.block,  self.layers[layer], kernel_size =5, stride = self.strides[layer])
+        out = x
+        # out = self.make_layer(self.block,  self.out_channels_list[0], kernel_size = self.kernel_size, stride = self.strides[0], blocks=self.blocks)(out)
+        out = self.lay1(out)
+        print("here")
+        print(out)
+        return out
+
+
+# EmbeddingNet
+class EmbeddingNet(nn.Module):
+    def __init__(self, block, input_size, out_channels_list, 
+     embedding_size = 32, kernel_sizes = [5],  strides = [2]):
+        super(EmbeddingNet, self).__init__()
+        self.in_channels = 1
+        if len(kernel_sizes) ==1:
+            self.kernel_sizes = [kernel_sizes[0]] * len(out_channels_list)
+        if len(strides) == 1:
+            self.strides = [strides[0]] * len(out_channels_list)
+        self.output_size = input_size
+        print(self.output_size)
+        self.layers_block1 = self.make_layers(block, out_channels_list, kernel_sizes = self.kernel_sizes, strides = self.strides)
+        ## output_size is updated 
+        print(self.output_size)
+
+        self.fc_input_size = self.output_size * out_channels_list[-1]
+        self.fc1 = nn.Linear(self.fc_input_size, embedding_size)
+
+        
+    def make_layers(self, block, out_channels_list, kernel_sizes, strides):
+        layers = []
+        num_layers = len(out_channels_list)
+        for i in range(0, num_layers):
+            layers.append(block(self.in_channels, out_channels_list[i], kernel_sizes[i], stride=strides[i]))
+            self.in_channels = out_channels_list[i]
+            padding_size = (self.kernel_sizes[i] - 1)/2 
+            convolution_stride = 1
+
+            self.output_size = int((self.output_size + 2 * padding_size - kernel_sizes[i]) /convolution_stride + 1) ## convolution layer output_size 
+            self.output_size = int((self.output_size  - kernel_sizes[i])/strides[i] + 1) ## maxpool output_size 
+        return nn.Sequential(*layers)
+
+    
+    def forward(self, x):
+        out = x.view(x.size(0), 1,-1) ## reshape numbatch * num_dim to numbatch * num_in_channel * num_dim 
+        out = self.layers_block1(out)
         out = out.view(out.size(0), -1)
-        out_size = out.size(0)
-        out = nn.Linear(out_size, self.embedding_size)
+        # out_size = out.size(0)
+        out = self.fc1(out)
         return out
             
 
@@ -69,10 +130,12 @@ class outputLayer(nn.Module):
         
     def forward(self, x):
         linear1_out = self.linear1(x)
-        survival_out  = self.dense1_bn(linear1_out[0])
+        print(linear1_out.shape)
+        survival_out  = self.dense1_bn(linear1_out[:,0:1])
         linear2_out = self.linear2(x)
         binary_output = self.relu(linear2_out)
-        out = concat(survival_out, linear1_out[1:], binary_output) # define concat
+        out = torch.cat((survival_out, linear1_out[:,1:], binary_output),1) # define concat
+        print(out.shape)
         return out
 
 class embedding_conv(nn.Module):
@@ -138,6 +201,7 @@ class NeuralNet(nn.Module):
         out = self.relu(out)
         out = self.dense1_bn(out)
         out = self.fc2(out)
+        # print(out.shape)
         out = self.dense2_bn(out)
         return out
 
@@ -377,6 +441,13 @@ def accuracy(outputs, labels):
     return np.sum(outputs == labels) / float(labels.size)
 
 
+def negative_log_partial_likelihood_loss( risk, censor, debug=False):
+    '''
+    function to change the order of censor and risk 
+    '''
+
+    return negative_log_partial_likelihood(censor, risk, debug)
+
 def c_index(predicted_risk, survival):
     # calculate the concordance index
     survival_time, censor = survival[:, 0], survival[:, 1]
@@ -395,3 +466,44 @@ metrics = {
 
 
 
+
+
+
+def calculate_loss(labels, net_outputs, loss_fns):
+    '''
+    define loss function :
+    list of loss function suported are : 
+    1. remove NA from the labels 
+    2. If there are no observations loss = 0, s.t no derivate.
+    Need to test if NA then loss are properly scaled.
+    '''
+
+    total_loss = torch.zeros(1)
+
+    # ## survival output 
+    # survival = labels[:,0:2]
+    # na_inx = ~( np.isnan(survival[:,1]) | np.isnan(survival[:,1]))
+    # survival, net_output = survival[na_inx,:], net_outputs[na_inx,0]
+    # if(len(label) > 1 ):
+    #     loss_curr = loss_fns[0](net_output, label)
+    # else:
+    #     loss_curr = 0
+    
+    # total_loss = total_loss + loss_curr  
+
+    # label, net_output, loss_fn = labels[:,i], net_outputs[:, i], loss_fns[i]
+
+    len_fns = len(loss_fns)
+
+    for i in range(len_fns):
+        label, net_output, loss_fn = labels[:,i], net_outputs[:, i], loss_fns[i]
+        na_inx = ~np.isnan(labels)
+        label, net_output = label[na_inx], net_output[na_inx]
+        if(len(label) > 1 ):
+            loss_curr = loss_fn(net_output, label) # in case of survival label is censor; censored data assumed to sorted based on patient event time.
+        else:
+            loss_curr = 0
+        total_loss = total_loss + loss_curr 
+
+
+    return total_loss

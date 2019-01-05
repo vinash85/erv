@@ -1,8 +1,9 @@
 """Train the model"""
 
 
+
 import torch
-# import torch.nn as nn
+import torch.nn as nn
 # import torchvision
 # import torchvision.transforms as transforms
 # from ... import data_generator as gn
@@ -27,6 +28,7 @@ import model.data_generator as data_generator
 from evaluate import evaluate
 
 parser = argparse.ArgumentParser()
+parser.add_argument('--embedding_size', default=32, help="Size of immune embedding (default:8)")
 parser.add_argument('--data_dir', default='data/64x64_SIGNS', help="Directory containing the dataset")
 parser.add_argument('--model_dir', default='experiments/base_model', help="Directory containing params.json")
 parser.add_argument('--restore_file', default=None,
@@ -35,7 +37,9 @@ parser.add_argument('--restore_file', default=None,
 
 # Device configuration
 device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
+
 # cudnn.benchmark = True
+
 
 # # Hyper parameters
 # num_epochs = 200
@@ -50,7 +54,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # train_batch_size = 256
 
 
-train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss_fn, dataloader, metrics, params):
+def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss_fn, dataloader, metrics, params):
     """Train the model on `num_steps` batches
     Args:
         model: (torch.nn.Module) the neural network
@@ -79,14 +83,16 @@ train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss_fn,
             train_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(survival[:, 1]).float()
             # move to GPU if available
             if params.cuda:
-                train_batch, labels_batch = train_batch.cuda(async=True), labels_batch.cuda(async=True)
+                train_batch, labels_batch = train_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
             # convert to torch Variables
             # train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
 
             # compute model output and loss
             embedding_batch  = embedding_model(train_batch)
-            output_batch = ouputs(embedding_batch)
-            loss = loss_fns(labels_batch, output_batch) ## TODO define
+            print("embedding_batch")
+            print(embedding_batch.shape)
+            output_batch = outputs(embedding_batch)
+            loss = net.calculate_loss(labels_batch, output_batch, params.loss_fns) ## TODO define
             if(torch.isnan(loss)):
                 import ipdb
                 ipdb.set_trace()
@@ -200,11 +206,17 @@ if __name__ == '__main__':
     json_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
+    if params.loss_fns==0:
+    	params.loss_fns  = [net.negative_log_partial_likelihood] + [nn.MSELoss] * (params.linear_output_size-1) + [nn.CrossEntropyLoss] * (params.binary_output_size -1)
+
+    print(params.loss_fns)
+
     # print(type(params))
     # print(params)
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
+    print(params.cuda)
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
@@ -228,18 +240,22 @@ if __name__ == '__main__':
     # Define the model and optimizer
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
     # model = net.NeuralNet(input_size, params.hidden_size, 1)
-    # model = net.ConvNet1D(input_size)
-    # model = ResNet(ResidualBlock, [2, 2, 2, 2]).to(device)
-    embedding_model = net.EmbeddingNet(ConvolutionBlock, [2, 2, 2, 2], input_size)
-    ouputs = net.outputLayer(embedding_size)
+    embedding_model = net.EmbeddingNet(net.ConvolutionBlock,  input_size, [32] * 3)
+    # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
+    # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
+
+    outputs = net.outputLayer(params.embedding_size, linear_output_size=params.linear_output_size, binary_output_size =params.binary_output_size)
 
     if params.cuda:
         # model = model.cuda()
         embedding_model = embedding_model.cuda()
-        ouputs = ouputs.cuda()
+        outputs = outputs.cuda()
     # optimizer = optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
+
+    # paramsx = list(embedding_model.parameters())
+    # print( len(paramsx))
     embedding_optimizer = optim.Adam(embedding_model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
-    outputs_optimizer = optim.Adam(ouputs.parameters(), lr=params.learning_rate, weight_decay=1e-3)
+    outputs_optimizer = optim.Adam(outputs.parameters(), lr=params.learning_rate, weight_decay=1e-3)
 
     # fetch loss function and metrics
     loss_fn = net.negative_log_partial_likelihood

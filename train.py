@@ -1,7 +1,6 @@
 """Train the model"""
 
 
-
 import torch
 import torch.nn as nn
 # import torchvision
@@ -28,9 +27,12 @@ import model.data_generator as data_generator
 from evaluate import evaluate
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--embedding_size', default=32, help="Size of immune embedding (default:8)")
-parser.add_argument('--data_dir', default='data/64x64_SIGNS', help="Directory containing the dataset")
-parser.add_argument('--model_dir', default='experiments/base_model', help="Directory containing params.json")
+parser.add_argument('--embedding_size', default=32,
+                    help="Size of immune embedding (default:8)")
+parser.add_argument('--data_dir', default='data/64x64_SIGNS',
+                    help="Directory containing the dataset")
+parser.add_argument('--model_dir', default='experiments/base_model',
+                    help="Directory containing params.json")
 parser.add_argument('--restore_file', default=None,
                     help="Optional, name of the file in --model_dir containing weights to reload before \
                     training")  # 'best' or 'train'
@@ -70,7 +72,6 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
     embedding_model.train()
     outputs.train()
 
-
     # summary for current training loop and a running average object for loss
     summ = []
     loss_avg = utils.RunningAverage()
@@ -78,21 +79,25 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
     # Use tqdm for progress bar
     # with tqdm(total=len(dataloader)) as t:
     with tqdm(total=params.dict['num_batches_per_epoch']) as t:
-        for i, (features, survival) in zip(range(params.dict['num_batches_per_epoch']), dataloader):
-            # labels_batch = survival[:, 1]
-            train_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(survival[:, 1]).float()
+        for i, (features, all_labels) in zip(range(params.dict['num_batches_per_epoch']), dataloader):
+            survival = all_labels[:, 0:2]
+            train_batch, labels_batch = torch.from_numpy(
+                features).float(), torch.from_numpy(all_labels[:, 1:]).float()
             # move to GPU if available
             if params.cuda:
-                train_batch, labels_batch = train_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
+                train_batch, labels_batch = train_batch.cuda(
+                    non_blocking=True), labels_batch.cuda(non_blocking=True)
+
             # convert to torch Variables
             # train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
 
             # compute model output and loss
-            embedding_batch  = embedding_model(train_batch)
-            print("embedding_batch")
-            print(embedding_batch.shape)
+            embedding_batch = embedding_model(train_batch)
+            # print("embedding_batch")
+            # print(embedding_batch.shape)
             output_batch = outputs(embedding_batch)
-            loss = net.calculate_loss(labels_batch, output_batch, params.loss_fns) ## TODO define
+            loss = net.calculate_loss(
+                labels_batch, output_batch, params.loss_fns)  # TODO define
             if(torch.isnan(loss)):
                 import ipdb
                 ipdb.set_trace()
@@ -101,14 +106,13 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
 
             # clear previous gradients, compute gradients of all variables wrt loss
             embedding_optimizer.zero_grad()
-            output_optimizer.zero_grad()
+            outputs_optimizer.zero_grad()
 
             loss.backward()
 
             # performs updates using calculated gradients
             embedding_optimizer.step()
-            output_optimizer.step()
-
+            outputs_optimizer.step()
 
             # output_batch1 = model(train_batch)
             # if(torch.any(torch.isnan(output_batch1))):
@@ -124,7 +128,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
 
                 # compute all metrics on this batch
                 # summary_batch = {'c_index': c_index}
-                summary_batch = {metric: metrics[metric](output_batch, survival)
+                # print(output_batch.shape)
+                # print(survival.shape)
+                summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
                                  for metric in metrics}
                 summary_batch['loss'] = loss.item()
                 summ.append(summary_batch)
@@ -136,12 +142,14 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
             t.update()
 
     # compute mean of all metrics in summary
-    metrics_mean = {metric: np.mean([x[metric] for x in summ]) for metric in summ[0]}
-    metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
+    metrics_mean = {metric: np.mean([x[metric]
+                                     for x in summ]) for metric in summ[0]}
+    metrics_string = " ; ".join("{}: {:05.3f}".format(k, v)
+                                for k, v in metrics_mean.items())
     logging.info("- Train metrics: " + metrics_string)
 
 
-def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloader, embedding_optimizer, output_optimizer, loss_fn, metrics, params, model_dir,
+def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloader, embedding_optimizer, outputs_optimizer, loss_fn, metrics, params, model_dir,
                        restore_file=None):
     """Train the model and evaluate every epoch.
     Args:
@@ -157,7 +165,8 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
     """
     # reload weights from restore_file if specified
     if restore_file is not None:
-        restore_path = os.path.join(args.model_dir, args.restore_file + '.pth.tar')
+        restore_path = os.path.join(
+            args.model_dir, args.restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
         utils.load_checkpoint(restore_path, model, optimizer)
 
@@ -168,7 +177,8 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
         logging.info("Epoch {}/{}".format(epoch + 1, params.num_epochs))
 
         # compute number of batches in one epoch (one full pass over the training set)
-        train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss_fn, train_dataloader, metrics, params)
+        train(embedding_model, outputs, embedding_optimizer,
+              outputs_optimizer, loss_fn, train_dataloader, metrics, params)
 
         # Evaluate for one epoch on validation set
         # val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
@@ -179,8 +189,11 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch + 1,
-                               'state_dict': model.state_dict(),
-                               'optim_dict': optimizer.state_dict()},
+                               'embedding_state_dict': embedding_model.state_dict(),
+                               'outputs': outputs.state_dict(),
+                               'embedding_optim_dict': embedding_optimizer.state_dict(),
+                               'outputs_optim_dict': outputs_optimizer.state_dict()
+                               },
                               is_best=is_best,
                               checkpoint=model_dir)
 
@@ -190,11 +203,13 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
             best_val_acc = val_acc
 
             # Save best val metrics in a json file in the model directory
-            best_json_path = os.path.join(model_dir, "metrics_val_best_weights.json")
+            best_json_path = os.path.join(
+                model_dir, "metrics_val_best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
 
         # Save latest val metrics in a json file in the model directory
-        last_json_path = os.path.join(model_dir, "metrics_val_last_weights.json")
+        last_json_path = os.path.join(
+            model_dir, "metrics_val_last_weights.json")
         utils.save_dict_to_json(val_metrics, last_json_path)
         # return the trained model
 
@@ -204,15 +219,15 @@ if __name__ == '__main__':
     # Load the parameters from json file
     args = parser.parse_args()
     json_path = os.path.join(args.model_dir, 'params.json')
-    assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
+    assert os.path.isfile(
+        json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
-    if params.loss_fns==0:
-    	params.loss_fns  = [net.negative_log_partial_likelihood] + [nn.MSELoss] * (params.linear_output_size-1) + [nn.CrossEntropyLoss] * (params.binary_output_size -1)
+    if params.loss_fns == 0:
+        params.loss_fns = [net.negative_log_partial_likelihood_loss] + [nn.MSELoss()] * (
+            params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
 
     print(params.loss_fns)
-
-    # print(type(params))
-    # print(params)
+    print(len(params.loss_fns))
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
@@ -230,7 +245,8 @@ if __name__ == '__main__':
     logging.info("Loading the datasets...")
 
     # fetch dataloaders
-    dataloaders = data_generator.fetch_dataloader(['train', 'val'], args.data_dir, params)
+    dataloaders = data_generator.fetch_dataloader(
+        ['train', 'val'], args.data_dir, params)
     train_steps_gen, train_input_size, train_dl = dataloaders['train']
     _, _, val_dl = dataloaders['val']
     input_size = train_input_size
@@ -240,11 +256,13 @@ if __name__ == '__main__':
     # Define the model and optimizer
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
     # model = net.NeuralNet(input_size, params.hidden_size, 1)
-    embedding_model = net.EmbeddingNet(net.ConvolutionBlock,  input_size, [32] * 3)
+    embedding_model = net.EmbeddingNet(
+        net.ConvolutionBlock, input_size, [32] * 3)
     # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
     # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
 
-    outputs = net.outputLayer(params.embedding_size, linear_output_size=params.linear_output_size, binary_output_size =params.binary_output_size)
+    outputs = net.outputLayer(params.embedding_size, linear_output_size=params.linear_output_size,
+                              binary_output_size=params.binary_output_size)
 
     if params.cuda:
         # model = model.cuda()
@@ -254,8 +272,10 @@ if __name__ == '__main__':
 
     # paramsx = list(embedding_model.parameters())
     # print( len(paramsx))
-    embedding_optimizer = optim.Adam(embedding_model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
-    outputs_optimizer = optim.Adam(outputs.parameters(), lr=params.learning_rate, weight_decay=1e-3)
+    embedding_optimizer = optim.Adam(
+        embedding_model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
+    outputs_optimizer = optim.Adam(
+        outputs.parameters(), lr=params.learning_rate, weight_decay=1e-3)
 
     # fetch loss function and metrics
     loss_fn = net.negative_log_partial_likelihood

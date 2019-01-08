@@ -74,7 +74,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     Returns:
     num_batches_per_epoch -- The number of batches per epoch based on data size
     input_size -- the dimensions of the input data
-    it also sort the survival data 
+    it also sort the survival data
     data_generator() -- the generator function to yield the features and labels
     """
 
@@ -83,7 +83,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     print(shuffle)
 
     if (batch_by_type):
-        if cancertype == None:
+        if cancertype is None:
             raise NameError("cancertype not found")
         types = cancertype.dtype.categories
 
@@ -218,7 +218,7 @@ def fetch_dataloader(types, data_dir, params):
             features = readFile(path + ".txt")
             survival = readFile(path + "_survival.txt")
             dl = generator_survival(
-                features, survival, shuffle=True, batch_size=params.batch_size)  # outputs (steps_gen, input_size, generator)
+                features, survival, shuffle=True, batch_size=params.batch_size, normalize=False)  # outputs (steps_gen, input_size, generator)
 
             dataloaders[split] = dl
 

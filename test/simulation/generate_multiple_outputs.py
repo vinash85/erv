@@ -2,7 +2,7 @@ import numpy as np
 # import matplotlib.pyplot as plt
 import sys
 import pandas as pd
-import random 
+import random
 sys.path.insert(0, '~/Dropbox/project/code/deeplearning/antigen_recognition/src')
 sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 import r2python
@@ -38,18 +38,26 @@ survival_final.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulatio
 # numpy.savetxt("../results/simulation/survival.txt", a, delimiter=",")
 feature_df = pd.DataFrame(featureMat)
 
-def create_outputs(featureMat, linear=True):
 
-	# choose two variable
-	out = featureMat[:,random.randint(0, 99)] * random.uniform(-1,1) +  featureMat[:,random.randint(0, 99)] * random.uniform(-1,1) 
-	# out1 = out 
-	if not linear:
-		for i in range(len(out)): 
-			if out[i] > 0 : 
-				out[i] = 1
-			else :
-				out[i] = 0
-	return out
+def create_outputs(featureMat, linear=True, add_nan=False):
+
+        # choose two variable
+    out = featureMat[:, random.randint(0, 99)] * random.uniform(-1, 1) + featureMat[:, random.randint(0, 99)] * random.uniform(-1, 1)
+    # out1 = out
+    if not linear:
+        for i in range(len(out)):
+            if out[i] > 0:
+                out[i] = 1
+            else:
+                out[i] = 0
+    # add nan to 5% of data
+    if add_nan:
+        arr = np.arange(len(out))
+        np.random.shuffle(arr)
+        sel = arr[:math.ceil(len(out) * .05)]
+        out[sel] = np.nan
+
+    return out
 
 linear_output_size = 10
 binary_output_size = 10
@@ -58,13 +66,13 @@ binary_output_size = 10
 
 outputs = survival_final
 
-for i in range(linear_output_size-1) :
- 	tag = "linear" + str(i)
-	outputs[tag] = create_outputs(featureMat)
+for i in range(linear_output_size - 1):
+    tag = "linear" + str(i)
+    outputs[tag] = create_outputs(featureMat, add_nan=True)
 
-for i in range(binary_output_size) :
- 	tag = "binary" + str(i)
-	outputs[tag] = create_outputs(featureMat, linear=False)
+for i in range(binary_output_size):
+    tag = "binary" + str(i)
+    outputs[tag] = create_outputs(featureMat, linear=False)
 
 
 outputs.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/outputs.train.txt", sep='\t', index=False)

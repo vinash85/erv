@@ -500,6 +500,10 @@ metrics = {
 }
 
 
+def isnan(x):
+    return x != x
+
+
 def calculate_loss(labels, net_outputs, loss_fns):
     '''
     define loss function :
@@ -535,7 +539,7 @@ def calculate_loss(labels, net_outputs, loss_fns):
         # print(i)
         label, net_output, loss_fn = labels[
             :, i], net_outputs[:, i], loss_fns[i]
-        na_inx = ~np.isnan(label)
+        na_inx = ~isnan(label)
         label, net_output = label[na_inx], net_output[na_inx]
         if(len(label) > 1):
             # in case of survival label is censor; censored data assumed to

@@ -75,5 +75,5 @@ for i in range(binary_output_size):
     outputs[tag] = create_outputs(featureMat, linear=False)
 
 
-outputs.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/outputs.train.txt", sep='\t', index=False)
+outputs.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/outputs.train.txt", sep='\t', index=False, na_rep='NaN')
 feature_df.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/features.txt", sep='\t', index=False)

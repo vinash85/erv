@@ -513,7 +513,8 @@ def calculate_loss(labels, net_outputs, loss_fns):
     Need to test if NA then loss are properly scaled.
     '''
 
-    total_loss = torch.zeros(1)
+    #total_loss = torch.zeros(1)
+    total_loss = 0. 
 
     # ## survival output
     # survival = labels[:,0:2]
@@ -529,11 +530,11 @@ def calculate_loss(labels, net_outputs, loss_fns):
     # label, net_output, loss_fn = labels[:,i], net_outputs[:, i], loss_fns[i]
 
     len_fns = len(loss_fns)
-    print(len_fns)
+    #print(len_fns)
     # print(loss_fns)
-    # print(labels.shape)
-    # print(net_outputs.shape)
-
+    #print(labels.shape)
+    #print(net_outputs.shape)
+#
     for i in range(len_fns):
         # for i in range(1):
         # print(i)
@@ -546,8 +547,9 @@ def calculate_loss(labels, net_outputs, loss_fns):
             # sorted based on patient event time.
             loss_curr = loss_fn(net_output, label)
         else:
-            loss_curr = torch.zeros(1)
-        print(loss_curr.item())
+            #loss_curr = torch.zeros(1)
+            loss_curr = 0. 
+        #print(loss_curr.item())
         total_loss = total_loss + loss_curr
 
     return total_loss

@@ -130,10 +130,10 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
                 # summary_batch = {'c_index': c_index}
                 # print(output_batch.shape)
                 # print(survival.shape)
-                #summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
-                                 #for metric in metrics}
-                #summary_batch['loss'] = loss.item()
-                #summ.append(summary_batch)
+                summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
+                                 for metric in metrics}
+                summary_batch['loss'] = loss.item()
+                summ.append(summary_batch)
 
             # update the average loss
             loss_avg.update(loss.item())
@@ -142,11 +142,11 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
             t.update()
 
     # compute mean of all metrics in summary
-    #metrics_mean = {metric: np.mean([x[metric]
-                                     #for x in summ]) for metric in summ[0]}
-    #metrics_string = " ; ".join("{}: {:05.3f}".format(k, v)
-                                #for k, v in metrics_mean.items())
-    #logging.info("- Train metrics: " + metrics_string)
+    metrics_mean = {metric: np.mean([x[metric]
+                                     for x in summ]) for metric in summ[0]}
+    metrics_string = " ; ".join("{}: {:05.3f}".format(k, v)
+                                for k, v in metrics_mean.items())
+    logging.info("- Train metrics: " + metrics_string)
 
 
 def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloader, embedding_optimizer, outputs_optimizer, loss_fn, metrics, params, model_dir,

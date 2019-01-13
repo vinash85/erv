@@ -61,12 +61,11 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # train_batch_size = 256
 
 
-def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss_fn, dataloader, metrics, params):
+def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, dataloader, metrics, params):
     """Train the model on `num_steps` batches
     Args:
         model: (torch.nn.Module) the neural network
         optimizer: (torch.optim) optimizer for parameters of model
-        loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
         dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
@@ -76,6 +75,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
     # set model to training mode
     embedding_model.train()
     outputs.train()
+    num_batches_per_epoch, _, dataloader = dataloader
 
     # summary for current training loop and a running average object for loss
     summ = []
@@ -83,8 +83,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
 
     # Use tqdm for progress bar
     # with tqdm(total=len(dataloader)) as t:
-    with tqdm(total=params.dict['num_batches_per_epoch']) as t:
-        for i, (features, all_labels) in zip(range(params.dict['num_batches_per_epoch']), dataloader):
+    with tqdm(total=num_batches_per_epoch) as t:
+        for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
             survival = all_labels[:, 0:2]
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(all_labels[:, 1:]).float()
@@ -102,7 +102,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
             # print(embedding_batch.shape)
             output_batch = outputs(embedding_batch)
             loss = net.calculate_loss(
-                labels_batch, output_batch, params.loss_fns)  # TODO define
+                labels_batch, output_batch, params.loss_fns)
             if(torch.isnan(loss)):
                 import ipdb
                 ipdb.set_trace()
@@ -136,9 +136,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
                 # print(output_batch.shape)
                 # print(survival.shape)
                 # print("line 133")
-                print(survival[0, :])
+                # print(survival[0, :])
                 summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
-                                 for metric in metrics}
+                                 for metric in metrics}  # TODO ugly solution, when more metrics change it!!
                 # print("line 134")
 
                 summary_batch['loss'] = loss.item()
@@ -158,7 +158,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
     logging.info("- Train metrics: " + metrics_string)
 
 
-def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloader, embedding_optimizer, outputs_optimizer, loss_fn, metrics, params, model_dir,
+def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloader, embedding_optimizer, outputs_optimizer, metrics, params, model_dir,
                        restore_file=None):
     """Train the model and evaluate every epoch.
     Args:
@@ -166,7 +166,6 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
         train_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
         val_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches validation data
         optimizer: (torch.optim) optimizer for parameters of model
-        loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
         model_dir: (string) directory containing config, weights and log
@@ -187,11 +186,11 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
 
         # compute number of batches in one epoch (one full pass over the training set)
         train(embedding_model, outputs, embedding_optimizer,
-              outputs_optimizer, loss_fn, train_dataloader, metrics, params)
+              outputs_optimizer, train_dataloader, metrics, params)
 
         # Evaluate for one epoch on validation set
-        # val_metrics = evaluate(model, loss_fn, val_dataloader, metrics, params)
-        val_metrics = {'c_index': 0.5}
+        val_metrics = evaluate(embedding_model, outputs, val_dataloader, metrics, params)
+        # val_metrics = {'c_index': 0.5}
 
         val_acc = val_metrics['c_index']
         is_best = val_acc > best_val_acc
@@ -259,10 +258,12 @@ if __name__ == '__main__':
     # print(args.prefix)
     dataloaders = data_generator.fetch_dataloader(args.prefix,
                                                   ['train', 'val'], args.data_dir, params)
-    train_steps_gen, train_input_size, train_dl = dataloaders['train']
-    _, _, val_dl = dataloaders['val']
+    _, train_input_size, _ = dataloaders['train']
+    # _, _, val_dl = dataloaders['val']
+    train_dl = dataloaders['train']
+    val_dl = dataloaders['val']
     input_size = train_input_size
-    params.dict['num_batches_per_epoch'] = train_steps_gen
+    # params.dict['num_batches_per_epoch'] = train_steps_gen
     logging.info("- done.")
 
     # Define the model and optimizer
@@ -290,12 +291,12 @@ if __name__ == '__main__':
         outputs.parameters(), lr=params.learning_rate, weight_decay=1e-3)
 
     # fetch loss function and metrics
-    loss_fn = net.negative_log_partial_likelihood
+    # loss_fn = net.negative_log_partial_likelihood
     metrics = net.metrics
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    train_and_evaluate(embedding_model, outputs, train_dl, val_dl, embedding_optimizer, outputs_optimizer, loss_fn, metrics, params, args.model_dir,
+    train_and_evaluate(embedding_model, outputs, train_dl, val_dl, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir,
                        args.restore_file)
 
     # train_and_evaluate_response(model, train_dl, val_dl, optimizer, loss_fn, metrics, params, args.model_dir, args.restore_file)

@@ -214,7 +214,9 @@ def fetch_dataloader(prefix, types, data_dir, params):
         if split in types:
             if prefix is not "":
                 prefix = prefix + "_"
+            print(prefix)
             path = os.path.join(data_dir, "{}".format(prefix))
+            print(path)
             # import ipdb
             # ipdb.set_trace()
             features = readFile(path + "ssgsea_" + split + ".txt")

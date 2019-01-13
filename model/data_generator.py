@@ -209,13 +209,13 @@ def fetch_dataloader(prefix, types, data_dir, params):
         data: (dict) contains the DataLoader object for each type in types
     """
     dataloaders = {}
+    if prefix is not "":
+        prefix = prefix + "_"
 
     for split in ['train', 'val', 'test']:
         if split in types:
-            if prefix is not "":
-                prefix_ = prefix + "_"
-            print(prefix_)
-            path = os.path.join(data_dir, "{}".format(prefix_))
+            print(prefix)
+            path = os.path.join(data_dir, "{}".format(prefix))
             print(path)
             # import ipdb
             # ipdb.set_trace()

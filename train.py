@@ -254,7 +254,10 @@ if __name__ == '__main__':
     logging.info("Loading the datasets...")
 
     # fetch dataloaders
-    dataloaders = data_generator.fetch_dataloader(params.prefix,
+    # print(params.num_epochs)
+    # print(257)
+    # print(args.prefix)
+    dataloaders = data_generator.fetch_dataloader(args.prefix,
                                                   ['train', 'val'], args.data_dir, params)
     train_steps_gen, train_input_size, train_dl = dataloaders['train']
     _, _, val_dl = dataloaders['val']

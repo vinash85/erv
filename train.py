@@ -130,8 +130,11 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
                 # summary_batch = {'c_index': c_index}
                 # print(output_batch.shape)
                 # print(survival.shape)
+                print("line 133")
                 summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
                                  for metric in metrics}
+                print("line 134")
+
                 summary_batch['loss'] = loss.item()
                 summ.append(summary_batch)
 

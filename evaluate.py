@@ -16,14 +16,18 @@ parser.add_argument('--data_dir', default='data/64x64_SIGNS', help="Directory co
 parser.add_argument('--model_dir', default='experiments/base_model', help="Directory containing params.json")
 parser.add_argument('--restore_file', default='best', help="name of the file in --model_dir \
                      containing weights to load")
+parser.add_argument('--prefix', default='',
+                    help="Prefix of dataset files  \n \
+                    (e.g. prefix=\"tcga\" implies input files are \n \
+                    tcga_ssgsea_[train,test,val].txt, \n \
+                    tcga_phenotype_[train,test,val].txt )")
 
 
-def evaluate(model, loss_fn, dataloader, metrics, params):
+def evaluate(embedding_model, outputs, dataloader, metrics, params):
     """Evaluate the model on `num_steps` batches.
 
     Args:
         model: (torch.nn.Module) the neural network
-        loss_fn: a function that takes batch_output and batch_labels and computes the loss for the batch
         dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches data
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
@@ -31,15 +35,20 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
     """
 
     # set model to evaluation mode
-    model.eval()
+    embedding_model.train()
+    outputs.train()
+
+    num_batches_per_epoch, _, dataloader = dataloader
 
     # summary for current eval loop
     summ = []
 
     # compute metrics over the dataset
 
-    for features, survival in dataloader:
-        data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(survival[:, 1]).float()
+    for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
+        survival = all_labels[:, 0:2]
+
+        data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(all_labels[:, 1:]).float()
         # move to GPU if available
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
@@ -47,15 +56,18 @@ def evaluate(model, loss_fn, dataloader, metrics, params):
         # data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
 
         # compute model output
-        output_batch = model(data_batch)
-        loss = loss_fn(labels_batch, output_batch)
+        # print(data_batch.shape)
+        embedding_batch = embedding_model(data_batch)
+        output_batch = outputs(embedding_batch)
+        loss = net.calculate_loss(
+            labels_batch, output_batch, params.loss_fns)
 
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
         # labels_batch = labels_batch.data.cpu().numpy()
 
         # compute all metrics on this batch
-        summary_batch = {metric: metrics[metric](output_batch, survival)
+        summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
                          for metric in metrics}
         # summary_batch['loss'] = loss.data[0]
         summary_batch['loss'] = loss.item()

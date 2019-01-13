@@ -33,6 +33,11 @@ parser.add_argument('--data_dir', default='data/64x64_SIGNS',
                     help="Directory containing the dataset")
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
+parser.add_argument('--prefix', default='',
+                    help="Prefix of dataset files  \n \
+                    (e.g. prefix=\"tcga\" implies input files are \n \
+                    tcga_ssgsea_[train,test,val].txt, \n \
+                    tcga_phenotype_[train,test,val].txt )")
 parser.add_argument('--restore_file', default=None,
                     help="Optional, name of the file in --model_dir containing weights to reload before \
                     training")  # 'best' or 'train'
@@ -130,11 +135,11 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, loss
                 # summary_batch = {'c_index': c_index}
                 # print(output_batch.shape)
                 # print(survival.shape)
-                print("line 133")
+                # print("line 133")
                 print(survival[0, :])
                 summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
                                  for metric in metrics}
-                print("line 134")
+                # print("line 134")
 
                 summary_batch['loss'] = loss.item()
                 summ.append(summary_batch)
@@ -249,8 +254,8 @@ if __name__ == '__main__':
     logging.info("Loading the datasets...")
 
     # fetch dataloaders
-    dataloaders = data_generator.fetch_dataloader(
-        ['train', 'val'], args.data_dir, params)
+    dataloaders = data_generator.fetch_dataloader(params.prefix,
+                                                  ['train', 'val'], args.data_dir, params)
     train_steps_gen, train_input_size, train_dl = dataloaders['train']
     _, _, val_dl = dataloaders['val']
     input_size = train_input_size

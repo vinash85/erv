@@ -196,7 +196,7 @@ def add2stringlist(prefix, List):
     return [prefix + elem for elem in List]
 
 
-def fetch_dataloader(types, data_dir, params):
+def fetch_dataloader(prefix, types, data_dir, params):
     """
     Fetches the DataLoader object for each type in types from data_dir.
 
@@ -212,11 +212,14 @@ def fetch_dataloader(types, data_dir, params):
 
     for split in ['train', 'val', 'test']:
         if split in types:
-            path = os.path.join(data_dir, "{}".format(split))
+            if prefix is not "":
+                prefix = prefix + "_"
+            path = os.path.join(data_dir, "{}".format(prefix))
             # import ipdb
             # ipdb.set_trace()
-            features = readFile(path + ".txt")
-            survival = readFile(path + "_survival.txt")
+            features = readFile(path + "ssgsea_" + split + ".txt")
+            # remember survival is no longer survival.
+            survival = readFile(path + "phenotype_" + split + ".txt")
             dl = generator_survival(
                 features, survival, shuffle=True, batch_size=params.batch_size, normalize=False)  # outputs (steps_gen, input_size, generator)
 

@@ -213,9 +213,9 @@ def fetch_dataloader(prefix, types, data_dir, params):
     for split in ['train', 'val', 'test']:
         if split in types:
             if prefix is not "":
-                prefix = prefix + "_"
-            print(prefix)
-            path = os.path.join(data_dir, "{}".format(prefix))
+                prefix_ = prefix + "_"
+            print(prefix_)
+            path = os.path.join(data_dir, "{}".format(prefix_))
             print(path)
             # import ipdb
             # ipdb.set_trace()

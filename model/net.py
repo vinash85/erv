@@ -484,11 +484,15 @@ def negative_log_partial_likelihood_loss(risk, censor, debug=False):
 
 def c_index(predicted_risk, survival):
     # calculate the concordance index
-    survival_time, censor = survival[:, 0], survival[:, 1]
-    epsilon = 0.001
-    partial_hazard = np.exp(-(predicted_risk + epsilon))
-    censor = censor.astype(int)
-    ci = concordance_index(survival_time, partial_hazard, censor)
+    ci = 0  # just to know that concordance index cannot be estimated
+    na_inx = ~(np.isnan(survival[:, 0]) | np.isnan(survival[:, 1]) | np.isnan(predicted_risk))
+    predicted_risk, survival = predicted_risk[na_inx], survival[na_inx]
+    if len(predicted_risk) > 0:
+        survival_time, censor = survival[:, 0], survival[:, 1]
+        epsilon = 0.001
+        partial_hazard = np.exp(-(predicted_risk + epsilon))
+        censor = censor.astype(int)
+        ci = concordance_index(survival_time, partial_hazard, censor)
     return ci
 
 
@@ -514,7 +518,7 @@ def calculate_loss(labels, net_outputs, loss_fns):
     '''
 
     #total_loss = torch.zeros(1)
-    total_loss = 0. 
+    total_loss = 0.
 
     # ## survival output
     # survival = labels[:,0:2]
@@ -530,10 +534,10 @@ def calculate_loss(labels, net_outputs, loss_fns):
     # label, net_output, loss_fn = labels[:,i], net_outputs[:, i], loss_fns[i]
 
     len_fns = len(loss_fns)
-    #print(len_fns)
+    # print(len_fns)
     # print(loss_fns)
-    #print(labels.shape)
-    #print(net_outputs.shape)
+    # print(labels.shape)
+    # print(net_outputs.shape)
 #
     for i in range(len_fns):
         # for i in range(1):
@@ -548,8 +552,8 @@ def calculate_loss(labels, net_outputs, loss_fns):
             loss_curr = loss_fn(net_output, label)
         else:
             #loss_curr = torch.zeros(1)
-            loss_curr = 0. 
-        #print(loss_curr.item())
+            loss_curr = 0.
+        # print(loss_curr.item())
         total_loss = total_loss + loss_curr
 
     return total_loss

@@ -8,6 +8,7 @@
     "embedding_size": 32,
     "save_summary_steps": 100,
     "loss_fns": 0,
+    "prefix" : "", 
     "linear_output_size":38,
     "binary_output_size":4,
     "num_workers": 4

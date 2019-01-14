@@ -87,8 +87,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
             raise NameError("cancertype not found")
         types = cancertype.dtype.categories
 
-    num_batches_per_epoch = int((len(features) - 1) / batch_size) + 1
-
+    num_batches_per_epoch = int((len(features) - 1) / batch_size)
     input_size = features.shape[1]
 
     # Sorts the batches by survival time
@@ -108,7 +107,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
                     shuffled_type = cancertype
 
             num_batches_per_epoch = int(
-                (len(shuffled_labels) - 1) / batch_size) + 1
+                (len(shuffled_labels) - 1) / batch_size)
 
             # Sample from the dataset for each epoch
             if batch_by_type:
@@ -117,7 +116,7 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
                 shuffled_labels = labels[shuffled_type == random_type]
                 data_size = len(shuffled_features)
                 num_batches_per_epoch = int(
-                    (len(shuffled_labels) - 1) / batch_size) + 1
+                    (len(shuffled_labels) - 1) / batch_size)
 
                 if DEBUG:
                     print(random_type)
@@ -129,7 +128,11 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
                     print("batch num {}".format(batch_num))
 
                 start_index = batch_num * batch_size
-                end_index = min((batch_num + 1) * batch_size, data_size)
+                end_index = (batch_num + 1) * batch_size
+                if batch_num == num_batches_per_epoch - 1:
+                    end_index = data_size
+
+                end_index = min(end_index, data_size)
                 X, y = shuffled_features[start_index:
                                          end_index], shuffled_labels[start_index: end_index]
 

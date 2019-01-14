@@ -270,7 +270,7 @@ if __name__ == '__main__':
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
     # model = net.NeuralNet(input_size, params.hidden_size, 1)
     embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, [32] * 3)
+        net.ConvolutionBlock, input_size, [32] * 6)
     # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
     # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
 

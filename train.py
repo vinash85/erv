@@ -269,8 +269,10 @@ if __name__ == '__main__':
     # Define the model and optimizer
     # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
     # model = net.NeuralNet(input_size, params.hidden_size, 1)
+    # embedding_model = net.EmbeddingNet(
+    #     net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32, 32], embedding_size=params.embedding_size, kernel_sizes=[5, 11, 11, 5], strides=[2, 5, 5, 2])
     embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32, 32], embedding_size=params.embedding_size, kernel_sizes=[5, 11, 11, 5], strides=[2, 5, 5, 2])
+        net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32], embedding_size=params.embedding, kernel_sizes=[5, 11, 11], strides=[2, 2, 5])
     # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
     # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
 

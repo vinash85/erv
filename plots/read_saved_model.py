@@ -3,7 +3,7 @@ import torch
 import numpy as np
 
 # model_dir = "./experiments/base_model/"
-model_dir = "./experiments/tcga_43/"
+model_dir = "./experiments/tcga_embedding8/"
 
 checkpoint = model_dir + "best.pth.tar"
 checkpoint = torch.load(checkpoint)

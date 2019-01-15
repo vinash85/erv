@@ -109,3 +109,8 @@ venv.bak/
 # model file 
 
 *.tar
+
+
+experiments/
+
+

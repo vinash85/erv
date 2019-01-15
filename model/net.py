@@ -87,15 +87,19 @@ class EmbeddingNet(nn.Module):
                  embedding_size=32, kernel_sizes=[5], strides=[2]):
         super(EmbeddingNet, self).__init__()
         self.in_channels = 1
+        self.kernel_sizes = kernel_sizes
+        self.strides = strides
         if len(kernel_sizes) == 1:
             self.kernel_sizes = [kernel_sizes[0]] * len(out_channels_list)
         if len(strides) == 1:
             self.strides = [strides[0]] * len(out_channels_list)
         self.output_size = input_size
+        print("initial output size")
         print(self.output_size)
         self.layers_block1 = self.make_layers(
             block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
         ## output_size is updated
+        print("final output size")
         print(self.output_size)
 
         self.fc_input_size = self.output_size * out_channels_list[-1]

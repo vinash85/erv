@@ -101,8 +101,17 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             # print("embedding_batch")
             # print(embedding_batch.shape)
             output_batch = outputs(embedding_batch)
-            loss = net.calculate_loss(
+            loss1 = net.calculate_loss(
                 labels_batch, output_batch, params.loss_fns)
+
+            all_linear1_params = torch.cat([x.view(-1) for x in outputs.linear1.parameters()])
+            all_linear2_params = torch.cat([x.view(-1) for x in outputs.linear2.parameters()])
+            lambda1 = 0.5
+            l1_regularization = lambda1 * torch.norm(all_linear1_params, 1)
+            l1_regularization = lambda1 * torch.norm(all_linear2_params, 1)
+
+            loss = loss1 + l1_regularization + l1_regularization
+
             if(torch.isnan(loss)):
                 import ipdb
                 ipdb.set_trace()
@@ -272,7 +281,7 @@ if __name__ == '__main__':
     # embedding_model = net.EmbeddingNet(
     #     net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32, 32], embedding_size=params.embedding_size, kernel_sizes=[5, 11, 11, 5], strides=[2, 5, 5, 2])
     embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, out_channels_list=[4, 8, 8], embedding_size=params.embedding_size, kernel_sizes=[11, 11, 11], strides=[5, 5, 5])
+        net.ConvolutionBlock, input_size, out_channels_list=[4, 8, 8], embedding_size=params.embedding_size, kernel_sizes=[11, 11, 11], strides=[5, 5, 2])
     # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
     # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
 

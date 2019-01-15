@@ -1,7 +1,7 @@
 library(data.table)
 library(ggplot2)
 
-model_dir = "./experiments/tcga_43/"
+model_dir = "./experiments/tcga_embedding8/"
 plot.dir = paste0(model_dir, "plots")
 load("/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData")
 

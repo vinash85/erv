@@ -23,8 +23,8 @@ class ConvolutionBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels, kernel_size=5, stride=2):
         super(ConvolutionBlock, self).__init__()
-        print(in_channels)
-        print(out_channels)
+        # print(in_channels)
+        # print(out_channels)
         self.conv1 = conv1d(in_channels, out_channels, kernel_size, stride=1)
         self.bn1 = nn.BatchNorm1d(out_channels)
         # self.relu = nn.Residual(inplace=True)
@@ -115,18 +115,23 @@ class EmbeddingNet(nn.Module):
             padding_size = (self.kernel_sizes[i] - 1) / 2
             convolution_stride = 1
 
-            self.output_size = int((self.output_size + 2 * padding_size - kernel_sizes[
-                                   i]) / convolution_stride + 1)  # convolution layer output_size
+            self.output_size = int(((self.output_size + 2 * padding_size - kernel_sizes[
+                                   i]) / convolution_stride) + 1)  # convolution layer output_size
             # maxpool output_size
-            self.output_size = int(
-                (self.output_size - kernel_sizes[i]) / strides[i] + 1)
+            self.output_size = int((
+                (self.output_size - kernel_sizes[i]) / strides[i]) + 1)
+            print(self.output_size)
         return nn.Sequential(*layers)
 
     def forward(self, x):
         # reshape numbatch * num_dim to numbatch * num_in_channel * num_dim
         out = x.view(x.size(0), 1, -1)
         out = self.layers_block1(out)
+        temp = out.size()
         out = out.view(out.size(0), -1)
+        # print("important_check")
+        # print(self.output_size)
+        # print(temp)
         # out_size = out.size(0)
         out = self.fc1(out)
         return out

@@ -146,20 +146,33 @@ class outputLayer(nn.Module):
 
     def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
         super(outputLayer, self).__init__()
-        self.linear1 = nn.Linear(embedding_size, linear_output_size)
-        self.linear2 = nn.Linear(embedding_size, binary_output_size)
+        sel.linear_output_size = linear_output_size
+        sel.binary_output_size = binary_output_size
+        if linear_output_size > 0:
+            self.linear1 = nn.Linear(embedding_size, linear_output_size)
+            self.dense1_bn = nn.BatchNorm1d(1)
+        if binary_output_size > 0:
+            self.linear2 = nn.Linear(embedding_size, binary_output_size)
         # self.sigmoid = nn.Sigmoid()
-        self.dense1_bn = nn.BatchNorm1d(1)
 
     def forward(self, x):
-        linear1_out = self.linear1(x)
-        # print(linear1_out.shape)
-        # add a batch normalization for survival prediction
-        survival_out = self.dense1_bn(linear1_out[:, 0:1])
-        linear2_out = self.linear2(x)
-        # binary_output = self.sigmoid(linear2_out)
-        binary_output = linear2_out  # sigmoid not required with BCEWithLogitsLoss
-        out = torch.cat((survival_out, linear1_out[:, 1:], binary_output), 1)
+        if(self.linear_output_size > 0):
+            linear1_out = self.linear1(x)
+            # print(linear1_out.shape)
+            # add a batch normalization for survival prediction
+            survival_out = self.dense1_bn(linear1_out[:, 0:1])
+
+        if(self.linear_output_size > 0):
+            linear2_out = self.linear2(x)
+            # binary_output = self.sigmoid(linear2_out)
+            binary_output = linear2_out  # sigmoid not required with BCEWithLogitsLoss
+
+        if(self.linear_output_size == 0):
+            out = binary_output
+        elif(self.binary_output_size == 0):
+            out = torch.cat((survival_out, linear1_out[:, 1:]), 1)
+        else:
+            out = torch.cat((survival_out, linear1_out[:, 1:], binary_output), 1)
         # print(out.shape)
         return out
 

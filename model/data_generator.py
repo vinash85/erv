@@ -81,7 +81,10 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     # features, labels, cancertype = processDataLabels(
     #     input_file, batch_by_type=batch_by_type, normalize=normalize)
     print(shuffle)
+    print("survival")
+    print(len(features))
 
+    # print(labels[0:3, 0:3])
     if (batch_by_type):
         if cancertype is None:
             raise NameError("cancertype not found")
@@ -122,6 +125,8 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
                     print(random_type)
                     print(len(shuffled_features))
                     print(num_batches_per_epoch)
+
+            # print(shuffled_labels[0:3, 0:3])
 
             for batch_num in range(num_batches_per_epoch):
                 if DEBUG:

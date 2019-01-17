@@ -281,7 +281,7 @@ if __name__ == '__main__':
     # embedding_model = net.EmbeddingNet(
     #     net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32, 32], embedding_size=params.embedding_size, kernel_sizes=[5, 11, 11, 5], strides=[2, 5, 5, 2])
     embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, out_channels_list=[4, 8, 8], embedding_size=params.embedding_size, kernel_sizes=[11, 11, 11], strides=[5, 5, 2])
+        net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
     # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
     # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
 

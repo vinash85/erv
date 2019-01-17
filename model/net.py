@@ -84,11 +84,13 @@ class tempNet(nn.Module):
 class EmbeddingNet(nn.Module):
 
     def __init__(self, block, input_size, out_channels_list,
-                 embedding_size=32, kernel_sizes=[5], strides=[2]):
+                 embedding_size=32, kernel_sizes=[5], strides=[2],
+                 dropout_rate=0.1):
         super(EmbeddingNet, self).__init__()
         self.in_channels = 1
         self.kernel_sizes = kernel_sizes
         self.strides = strides
+        self.dropout_rate = dropout_rate
         if len(kernel_sizes) == 1:
             self.kernel_sizes = [kernel_sizes[0]] * len(out_channels_list)
         if len(strides) == 1:
@@ -104,6 +106,7 @@ class EmbeddingNet(nn.Module):
 
         self.fc_input_size = self.output_size * out_channels_list[-1]
         self.fc1 = nn.Linear(self.fc_input_size, embedding_size)
+        # self.dropout = nn.Dropout(p=self.dropout_rate, training=self.training)
 
     def make_layers(self, block, out_channels_list, kernel_sizes, strides):
         layers = []
@@ -134,6 +137,8 @@ class EmbeddingNet(nn.Module):
         # print(temp)
         # out_size = out.size(0)
         out = self.fc1(out)
+        # out = self.dropout(out)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
         return out
 
 

@@ -3,11 +3,12 @@ import numpy as np
 import sys
 import pandas as pd
 import random
+import math
 sys.path.insert(0, '~/Dropbox/project/code/deeplearning/antigen_recognition/src')
 sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 import r2python
-numfeat = 100
-numSample = 2000
+numfeat = 5000
+numSample = 20000
 
 feature = np.random.normal(0, 1, numfeat * numSample)
 featureMat = np.mat(feature)

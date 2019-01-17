@@ -11,7 +11,7 @@
     "out_channels_list": [32, 32, 32],
     "kernel_sizes": [11, 11, 11],
     "strides": [2, 2, 2], 
-    "linear_output_size":10,
-    "binary_output_size":10,
+    "linear_output_size":1,
+    "binary_output_size":0,
     "num_workers": 4
 }

@@ -146,8 +146,8 @@ class outputLayer(nn.Module):
 
     def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
         super(outputLayer, self).__init__()
-        sel.linear_output_size = linear_output_size
-        sel.binary_output_size = binary_output_size
+        self.linear_output_size = linear_output_size
+        self.binary_output_size = binary_output_size
         if linear_output_size > 0:
             self.linear1 = nn.Linear(embedding_size, linear_output_size)
             self.dense1_bn = nn.BatchNorm1d(1)
@@ -162,7 +162,7 @@ class outputLayer(nn.Module):
             # add a batch normalization for survival prediction
             survival_out = self.dense1_bn(linear1_out[:, 0:1])
 
-        if(self.linear_output_size > 0):
+        if(self.binary_output_size > 0):
             linear2_out = self.linear2(x)
             # binary_output = self.sigmoid(linear2_out)
             binary_output = linear2_out  # sigmoid not required with BCEWithLogitsLoss

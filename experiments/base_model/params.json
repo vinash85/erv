@@ -7,7 +7,7 @@
     "embedding_size": 8,
     "save_summary_steps": 100,
     "loss_fns": 0,
-    "params_regularization": 0,
+    "params_regularization": 0.5,
     "out_channels_list": [32, 32, 32],
     "kernel_sizes": [11, 11, 11],
     "strides": [2, 2, 2], 

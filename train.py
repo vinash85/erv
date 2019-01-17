@@ -103,18 +103,17 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             output_batch = outputs(embedding_batch)
             loss = net.calculate_loss(
                 labels_batch, output_batch, params.loss_fns)
-            if params.params_regularization:
-                all_linear1_params = 0
-                all_linear2_params = 0
+            # params.lambda1 = 0.5
+            if params.params_regularization > 0:
                 if params.linear_output_size > 0:
                     all_linear1_params = torch.cat([x.view(-1) for x in outputs.linear1.parameters()])
+                    l1_regularization = params.params_regularization * torch.norm(all_linear1_params, 1)
+                    loss = loss + l1_regularization
+
                 if params.binary_output_size > 0:
                     all_linear2_params = torch.cat([x.view(-1) for x in outputs.linear2.parameters()])
-                lambda1 = 0.5
-                l1_regularization = lambda1 * torch.norm(all_linear1_params, 1)
-                l1_regularization = lambda1 * torch.norm(all_linear2_params, 1)
-
-                loss = loss + l1_regularization + l1_regularization
+                    l1_regularization = params.params_regularization * torch.norm(all_linear2_params, 1)
+                    loss = loss + l1_regularization
 
             if(torch.isnan(loss)):
                 import ipdb

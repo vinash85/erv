@@ -105,9 +105,9 @@ class EmbeddingNet(nn.Module):
         print(self.output_size)
 
         self.fc_input_size = self.output_size * out_channels_list[-1]
-        self.fc1 = nn.Linear(input_size, 128)
-        self.fc2 = nn.Linear(128, 64)
-        self.fc3 = nn.Linear(64, embedding_size)
+        self.fc1 = nn.Linear(input_size, 16)
+        self.fc2 = nn.Linear(16, 16)
+        self.fc3 = nn.Linear(16, embedding_size)
         # self.fc1 = nn.Linear(self.fc_input_size, embedding_size)
         # self.dropout = nn.Dropout(p=self.dropout_rate, training=self.training)
 

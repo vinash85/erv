@@ -136,6 +136,7 @@ class EmbeddingNet(nn.Module):
         # print(self.output_size)
         # print(temp)
         # out_size = out.size(0)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.fc1(out)
         # out = self.dropout(out)
         out = F.dropout(out, p=self.dropout_rate, training=self.training)

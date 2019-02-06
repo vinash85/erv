@@ -4,11 +4,14 @@ import sys
 import pandas as pd
 import random
 import math
+import os
 sys.path.insert(0, '~/Dropbox/project/code/deeplearning/antigen_recognition/src')
 sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 import r2python
-numfeat = 500
-numSample = 2000
+dataset_dir = "~/Dropbox/project/code/deeplearning/icb/results/simulation5Feb/"
+numfeat = 100
+numSample = 50000
+noise_level = 2  # amount of noise
 
 feature = np.random.normal(0, 1, numfeat * numSample)
 featureMat = np.mat(feature)
@@ -16,7 +19,7 @@ featureMat = featureMat.reshape(numSample, numfeat)
 
 risk1 = .3 * featureMat[:, 90] - .7 * featureMat[:, 94]
 risk = np.squeeze(np.asarray(risk1))
-risk_noise = risk + np.random.normal(0, np.std(risk) / 2, numSample)
+risk_noise = risk + np.random.normal(0, np.std(risk) * noise_level, numSample)
 risk_noise = risk_noise - min(risk_noise)
 survival = risk_noise
 censor = np.random.choice([0, 1], numSample)
@@ -35,7 +38,7 @@ aa = np.asarray([survival_censored, censor])
 aa = aa.transpose([1, 0])
 survival_final = pd.DataFrame(data=aa, columns=["times", "status"])
 
-survival_final.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/survival.train.txt", sep='\t', index=False)
+survival_final.to_csv(dataset_dir + "survival.train.txt", sep='\t', index=False)
 # numpy.savetxt("../results/simulation/survival.txt", a, delimiter=",")
 feature_df = pd.DataFrame(featureMat)
 
@@ -43,8 +46,9 @@ feature_df = pd.DataFrame(featureMat)
 def create_outputs(featureMat, linear=True, add_nan=False):
 
         # choose two variable
-    out = featureMat[:, random.randint(0, 99)] * random.uniform(-1, 1) + featureMat[:, random.randint(0, 99)] * random.uniform(-1, 1)
-    # out1 = out
+    out1 = featureMat[:, random.randint(0, 99)] * random.uniform(-1, 1) + featureMat[:, random.randint(0, 99)] * random.uniform(-1, 1)
+    noise = np.random.normal(0, np.std(out1) * noise_level, numSample)
+    out = out1 + np.reshape(noise, [numSample, 1])
     if not linear:
         for i in range(len(out)):
             if out[i] > 0:
@@ -57,11 +61,10 @@ def create_outputs(featureMat, linear=True, add_nan=False):
         np.random.shuffle(arr)
         sel = arr[:math.ceil(len(out) * .05)]
         out[sel] = np.nan
-
     return out
 
-linear_output_size = 10
-binary_output_size = 10
+linear_output_size = 2
+binary_output_size = 2
 
 # outputs = np.zeros( numSample , linear_output_size + binary_output_size + 1)
 
@@ -76,5 +79,19 @@ for i in range(binary_output_size):
     outputs[tag] = create_outputs(featureMat, linear=False)
 
 
-outputs.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/outputs.train.txt", sep='\t', index=False, na_rep='NaN')
-feature_df.to_csv("~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/features.txt", sep='\t', index=False)
+outputs.to_csv(dataset_dir + "outputs.train.txt", sep='\t', index=False, na_rep='NaN')
+feature_df.to_csv(dataset_dir + "features.txt", sep='\t', index=False)
+
+
+# split 7 2 1
+dataset_dir1 = dataset_dir + "datasets/"
+os.mkdir(dataset_dir1)
+
+feature_df.iloc[:int(.7 * len(outputs)), :].to_csv(dataset_dir1 + "ssgsea_train.txt", sep='\t', index=False, na_rep='NaN')
+outputs.iloc[:int(.7 * len(outputs)), :].to_csv(dataset_dir1 + "phenotype_train.txt", sep='\t', index=False, na_rep='NaN')
+
+feature_df.iloc[int(.7 * len(outputs)): int(.9 * len(outputs)), :].to_csv(dataset_dir1 + "ssgsea_val.txt", sep='\t', index=False, na_rep='NaN')
+outputs.iloc[int(.7 * len(outputs)): int(.9 * len(outputs)), :].to_csv(dataset_dir1 + "phenotype_val.txt", sep='\t', index=False, na_rep='NaN')
+
+feature_df.iloc[int(.9 * len(outputs)):, :].to_csv(dataset_dir1 + "ssgsea_test.txt", sep='\t', index=False, na_rep='NaN')
+outputs.iloc[int(.9 * len(outputs)):, :].to_csv(dataset_dir1 + "phenotype_test.txt", sep='\t', index=False, na_rep='NaN')

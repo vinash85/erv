@@ -81,6 +81,9 @@ class tempNet(nn.Module):
 
 
 # EmbeddingNet
+
+
+# EmbeddingNet
 class EmbeddingNet(nn.Module):
 
     def __init__(self, block, input_size, out_channels_list,
@@ -98,16 +101,17 @@ class EmbeddingNet(nn.Module):
         self.output_size = input_size
         print("initial output size")
         print(self.output_size)
-        # self.layers_block1 = self.make_layers(
-        #     block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
+        self.layers_block1 = self.make_layers(
+            block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
         ## output_size is updated
         print("final output size")
         print(self.output_size)
 
         self.fc_input_size = self.output_size * out_channels_list[-1]
-        self.fc1 = nn.Linear(input_size, 16)
-        self.fc2 = nn.Linear(16, 16)
-        self.fc3 = nn.Linear(16, embedding_size)
+        # self.fc1 = nn.Linear(input_size, 16)
+        # self.fc2 = nn.Linear(16, 16)
+        print(self.fc_input_size)
+        self.fc3 = nn.Linear(self.fc_input_size, embedding_size)
         # self.fc1 = nn.Linear(self.fc_input_size, embedding_size)
         # self.dropout = nn.Dropout(p=self.dropout_rate, training=self.training)
 
@@ -132,17 +136,16 @@ class EmbeddingNet(nn.Module):
     def forward(self, x):
         # reshape numbatch * num_dim to numbatch * num_in_channel * num_dim
         out = x.view(x.size(0), 1, -1)
-        # out = self.layers_block1(out)
-        # temp = out.size()
-        # out = out.view(out.size(0), -1)
-        # print("important_check")
+        out = self.layers_block1(out)
+        temp = out.size()
+        out = out.view(out.size(0), -1)
         # print(self.output_size)
         # print(temp)
         # out_size = out.size(0)
-        out = self.fc1(x)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        out = self.fc2(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        # out = self.fc1(x)
+        # out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        # out = self.fc2(out)
+        # out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.fc3(out)
         # out = self.dropout(out)
         # out = F.dropout(out, p=self.dropout_rate, training=self.training)

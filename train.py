@@ -30,7 +30,9 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--embedding_size', default=32,
                     help="Size of immune embedding (default:8)")
 parser.add_argument('--data_dir', default='data/64x64_SIGNS',
-                    help="Directory containing the dataset")
+                    help="File containing directory containing datasets")
+# parser.add_argument('--data_dir_list', default=None,
+# help="File contating list of dataset directories data_dirs")
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
 parser.add_argument('--prefix', default='',
@@ -170,11 +172,12 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     logging.info("- Train metrics: " + metrics_string)
 
 
-def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloader, embedding_optimizer, outputs_optimizer, metrics, params, model_dir,
+def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, model_dir,
                        restore_file=None):
     """Train the model and evaluate every epoch.
     Args:
         model: (torch.nn.Module) the neural network
+        datasets : list of dataloaders, each containing train_dataloader and val_dataloader
         train_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches training data
         val_dataloader: (DataLoader) a torch.utils.data.DataLoader object that fetches validation data
         optimizer: (torch.optim) optimizer for parameters of model
@@ -197,14 +200,18 @@ def train_and_evaluate(embedding_model, outputs, train_dataloader, val_dataloade
         logging.info("Epoch {}/{}".format(epoch + 1, params.num_epochs))
 
         # compute number of batches in one epoch (one full pass over the training set)
-        train(embedding_model, outputs, embedding_optimizer,
-              outputs_optimizer, train_dataloader, metrics, params)
+        for dataloader in datasets:
+            train(embedding_model, outputs, embedding_optimizer,
+                  outputs_optimizer, dataloader['train'], metrics, params)
 
         # Evaluate for one epoch on validation set
-        val_metrics = evaluate(embedding_model, outputs, val_dataloader, metrics, params)
-        # val_metrics = {'c_index': 0.5}
+        val_metrics_all = [evaluate(embedding_model, outputs, dataloader['val'], metrics, params)for dataloader in datasets]
+        # val_metrics = []
+        val_metrics = {metric: eval(params.metrics)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
-        val_acc = val_metrics['c_index']
+        # val_metrics = eval(params.metrics)(val_metrics)
+        val_acc = val_metrics['c_index']  # use differnt functions
+
         is_best = val_acc > best_val_acc
 
         # Save weights
@@ -265,15 +272,12 @@ if __name__ == '__main__':
     logging.info("Loading the datasets...")
 
     # fetch dataloaders
-    # print(params.num_epochs)
-    # print(257)
-    # print(args.prefix)
-    dataloaders = data_generator.fetch_dataloader(args.prefix,
-                                                  ['train', 'val'], args.data_dir, params)
-    _, train_input_size, _ = dataloaders['train']
+    datasets = data_generator.fetch_dataloader_list(args.prefix,
+                                                    ['train', 'val'], args.data_dir, params)
+    _, train_input_size, _ = datasets[0]['train']
     # _, _, val_dl = dataloaders['val']
-    train_dl = dataloaders['train']
-    val_dl = dataloaders['val']
+    # train_dl = dataloaders['train']
+    # val_dl = dataloaders['val']
     input_size = train_input_size
     # params.dict['num_batches_per_epoch'] = train_steps_gen
     logging.info("- done.")
@@ -285,8 +289,6 @@ if __name__ == '__main__':
     #     net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32, 32], embedding_size=params.embedding_size, kernel_sizes=[5, 11, 11, 5], strides=[2, 5, 5, 2])
     embedding_model = net.EmbeddingNet(
         net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-    # embedding_model = net.tempNet(net.ConvolutionBlock, input_size, [32, 64, 32])
-    # embedding_model = net.ConvolutionBlock(1, 64, 5, stride=2)
 
     outputs = net.outputLayer(params.embedding_size, linear_output_size=params.linear_output_size,
                               binary_output_size=params.binary_output_size)
@@ -295,10 +297,7 @@ if __name__ == '__main__':
         # model = model.cuda()
         embedding_model = embedding_model.cuda()
         outputs = outputs.cuda()
-    # optimizer = optim.Adam(model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
 
-    # paramsx = list(embedding_model.parameters())
-    # print( len(paramsx))
     embedding_optimizer = optim.Adam(
         embedding_model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
     outputs_optimizer = optim.Adam(
@@ -310,7 +309,5 @@ if __name__ == '__main__':
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    train_and_evaluate(embedding_model, outputs, train_dl, val_dl, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir,
+    train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir,
                        args.restore_file)
-
-    # train_and_evaluate_response(model, train_dl, val_dl, optimizer, loss_fn, metrics, params, args.model_dir, args.restore_file)

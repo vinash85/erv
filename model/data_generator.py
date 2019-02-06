@@ -1,8 +1,7 @@
-# Copyright 2018 Peter Shen. All Rights Reserved.
 # MIT License
 
 """Creates a generator that can feed a stream of data from a file inpt"""
-
+import logging
 import numpy as np
 import pandas as pd
 import os
@@ -217,8 +216,10 @@ def fetch_dataloader(prefix, types, data_dir, params):
         data: (dict) contains the DataLoader object for each type in types
     """
     dataloaders = {}
-    if prefix is not "":
+    if isinstance(prefix, str):
         prefix = prefix + "_"
+    else:
+        prefix = ""
 
     for split in ['train', 'val', 'test']:
         if split in types:
@@ -236,3 +237,24 @@ def fetch_dataloader(prefix, types, data_dir, params):
             dataloaders[split] = dl
 
     return dataloaders
+
+
+def fetch_dataloader_list(prefix, types, data_dir_list, params):
+    """
+    Fetches the DataLoader object for each type in types from data_dir.
+
+    Args:
+        types: (list) has one or more of 'train', 'val', 'test' depending on which data is required
+        data_dir: (string) file containing directories of datasets
+        params: (Params) hyperparameters
+
+    Returns:
+        datasets: list of (dict) contains the DataLoader object for each type in types
+    """
+
+    data_dirs = pd.read_csv(data_dir_list, sep="\t")
+    logging.info("Found {} datasets".format(len(data_dirs)))
+
+    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params) for index, row in data_dirs.iterrows()]
+
+    return datasets

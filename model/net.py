@@ -109,11 +109,10 @@ class EmbeddingNet(nn.Module):
 
         self.fc_input_size = self.output_size * out_channels_list[-1]
         # self.fc1 = nn.Linear(input_size, 16)
-        # self.fc2 = nn.Linear(16, 16)
+        self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
         print(self.fc_input_size)
-        self.fc3 = nn.Linear(self.fc_input_size, embedding_size)
+        self.fc3 = nn.Linear(2 * embedding_size, embedding_size)
         # self.fc1 = nn.Linear(self.fc_input_size, embedding_size)
-        # self.dropout = nn.Dropout(p=self.dropout_rate, training=self.training)
 
     def make_layers(self, block, out_channels_list, kernel_sizes, strides):
         layers = []
@@ -146,9 +145,10 @@ class EmbeddingNet(nn.Module):
         # out = F.dropout(out, p=self.dropout_rate, training=self.training)
         # out = self.fc2(out)
         # out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        out = self.fc2(out)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.fc3(out)
         # out = self.dropout(out)
-        # out = F.dropout(out, p=self.dropout_rate, training=self.training)
         return out
 
 

@@ -109,12 +109,12 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             if params.params_regularization > 0:
                 if params.linear_output_size > 0:
                     all_linear1_params = torch.cat([x.view(-1) for x in outputs.linear1.parameters()])
-                    l1_regularization = params.params_regularization * torch.norm(all_linear1_params, 1)
+                    l1_regularization = params.params_regularization * torch.norm(all_linear1_params, 2)
                     loss = loss + l1_regularization
 
                 if params.binary_output_size > 0:
                     all_linear2_params = torch.cat([x.view(-1) for x in outputs.linear2.parameters()])
-                    l2_regularization = params.params_regularization * torch.norm(all_linear2_params, 1)
+                    l2_regularization = params.params_regularization * torch.norm(all_linear2_params, 2)
                     loss = loss + l2_regularization
 
             if(torch.isnan(loss)):

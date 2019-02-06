@@ -5,7 +5,7 @@ import pandas as pd
 import random
 import math
 import os
-sys.path.insert(0, '~/Dropbox/project/code/deeplearning/antigen_recognition/src')
+# sys.path.insert(0, '~/Dropbox/project/code/deeplearning/antigen_recognition/src')
 # sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 # sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 import r2python

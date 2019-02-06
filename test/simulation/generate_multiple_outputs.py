@@ -6,9 +6,11 @@ import random
 import math
 import os
 sys.path.insert(0, '~/Dropbox/project/code/deeplearning/antigen_recognition/src')
-sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
+# sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
+# sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 import r2python
-dataset_dir = "~/Dropbox/project/code/deeplearning/icb/results/simulation5Feb/"
+# dataset_dir = "~/Dropbox/project/code/deeplearning/icb/results/simulation5Feb/"
+dataset_dir = "../results/simulation5Feb/"
 numfeat = 100
 numSample = 50000
 noise_level = 2  # amount of noise
@@ -85,7 +87,7 @@ feature_df.to_csv(dataset_dir + "features.txt", sep='\t', index=False)
 
 # split 7 2 1
 dataset_dir1 = dataset_dir + "datasets/"
-os.mkdir(dataset_dir1)
+# os.mkdir(dataset_dir1)
 
 feature_df.iloc[:int(.7 * len(outputs)), :].to_csv(dataset_dir1 + "ssgsea_train.txt", sep='\t', index=False, na_rep='NaN')
 outputs.iloc[:int(.7 * len(outputs)), :].to_csv(dataset_dir1 + "phenotype_train.txt", sep='\t', index=False, na_rep='NaN')

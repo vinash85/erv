@@ -1,5 +1,30 @@
+###
+#######
+#processing of datasets
+######
+
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/ICB_GSVA.txt"
+pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB.txt"
+phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
+
+
+
+
+#######
+######
+#######
+######
+#######
+######
+#######
+######
 data_dir="/homes6/asahu/project/deeplearning/icb/data/ssgsea/datasets/"
 model_dir="/homes6/asahu/project/deeplearning/icb/data/ssgsea/models/"
+
+
+
 
 # python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation/datasets
 python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/datasets --prefix "tcga"

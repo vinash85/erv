@@ -66,7 +66,7 @@ def processDataLabels(input_file, normalize=True, batch_by_type=False):
         return features, labels, None
 
 
-def generator_survival(features, labels, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize=False):
+def generator_survival(features, labels, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize=False, dataset_type='non_icb'):
     """
     Parses the input file and creates a generator for the input file
 
@@ -79,9 +79,9 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
 
     # features, labels, cancertype = processDataLabels(
     #     input_file, batch_by_type=batch_by_type, normalize=normalize)
-    print(shuffle)
-    print("survival")
-    print(len(features))
+    # print(shuffle)
+    # print("survival")
+    # print(len(features))
 
     # print(labels[0:3, 0:3])
     if (batch_by_type):
@@ -145,7 +145,9 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
 
                 # Sort X and y by survival time in each batch
                 # This is required for the negative binomial log likelihood to work as a loss function
-                idx = np.argsort(abs(y[:, 0]))[::-1]
+
+                sort_index = (input_size - 3) if dataset_type is 'icb' else 0
+                idx = np.argsort(abs(y[:, sort_index]))[::-1]
                 X = X[idx, :]
                 # sort by survival time and take censored data
                 # y = y[idx, 1].reshape(-1, 1)
@@ -203,7 +205,7 @@ def add2stringlist(prefix, List):
     return [prefix + elem for elem in List]
 
 
-def fetch_dataloader(prefix, types, data_dir, params):
+def fetch_dataloader(prefix, types, data_dir, params, dataset_type='non_icb'):
     """
     Fetches the DataLoader object for each type in types from data_dir.
 
@@ -232,7 +234,7 @@ def fetch_dataloader(prefix, types, data_dir, params):
             # remember survival is no longer survival.
             survival = readFile(path + "phenotype_" + split + ".txt")
             dl = generator_survival(
-                features, survival, shuffle=True, batch_size=params.batch_size, normalize=False)  # outputs (steps_gen, input_size, generator)
+                features, survival, shuffle=True, batch_size=params.batch_size, normalize=False, sort_index)  # outputs (steps_gen, input_size, generator)
 
             dataloaders[split] = dl
 
@@ -255,6 +257,6 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params):
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
 
-    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params) for index, row in data_dirs.iterrows()]
+    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['dataset_type']) for index, row in data_dirs.iterrows()]
 
     return datasets

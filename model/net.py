@@ -6,6 +6,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from lifelines.utils import concordance_index
 import math
+from sklearn import metrics as smetrics
 
 
 # 3x3 convolution
@@ -535,8 +536,13 @@ def c_index(predicted_risk, survival):
 
 # maintain all metrics required in this dictionary- these are used in the
 # training and evaluation loops
+def calculate_auc(y, pred):
+    fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=1)
+    return smetrics.auc(fpr, tpr)
+
 metrics = {
     'c_index': c_index,
+    'auc': calculate_auc
     # could add more metrics such as accuracy for each token type
 }
 

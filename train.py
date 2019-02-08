@@ -88,8 +88,11 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
             survival = all_labels[:, 0:2]
+            mask = np.ones(all_labels.shape[1], dtype=bool)
+            mask[[0, all_labels.shape[1] - 3]] = False
+            labels_san_survival = all_label[:, mask]
             train_batch, labels_batch = torch.from_numpy(
-                features).float(), torch.from_numpy(all_labels[:, 1:]).float()
+                features).float(), torch.from_numpy(all_labels).float()
             # move to GPU if available
             if params.cuda:
                 train_batch, labels_batch = train_batch.cuda(
@@ -151,7 +154,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 # print(survival.shape)
                 # print("line 133")
                 # print(survival[0, :])
-                summary_batch = {metric: metrics[metric](output_batch[:, 0], survival)
+                summary_batch = {metric: metrics[metric](output_batch[:, 0], survival) if metric == 'c_index' else metrics[metric](output_batch[:, -1], labels_san_survival[:, -1])
                                  for metric in metrics}  # TODO ugly solution, when more metrics change it!!
                 # print("line 134")
 

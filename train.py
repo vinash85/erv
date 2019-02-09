@@ -90,9 +90,11 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             survival = all_labels[:, 0:2]
             mask = np.ones(all_labels.shape[1], dtype=bool)
             mask[[0, all_labels.shape[1] - 3]] = False
+            # labels_san_survival = all_labels[:, 1:]
             labels_san_survival = all_labels[:, mask]
+            # print(all_labels.shape)
             train_batch, labels_batch = torch.from_numpy(
-                features).float(), torch.from_numpy(all_labels).float()
+                features).float(), torch.from_numpy(labels_san_survival).float()
             # move to GPU if available
             if params.cuda:
                 train_batch, labels_batch = train_batch.cuda(

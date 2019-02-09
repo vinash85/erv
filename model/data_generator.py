@@ -234,7 +234,7 @@ def fetch_dataloader(prefix, types, data_dir, params, dataset_type='non_icb'):
             # remember survival is no longer survival.
             survival = readFile(path + "phenotype_" + split + ".txt")
             dl = generator_survival(
-                features, survival, shuffle=True, batch_size=params.batch_size, normalize=False, sort_index)  # outputs (steps_gen, input_size, generator)
+                features, survival, shuffle=True, batch_size=params.batch_size, normalize=False, dataset_type = dataset_type)  # outputs (steps_gen, input_size, generator)
 
             dataloaders[split] = dl
 

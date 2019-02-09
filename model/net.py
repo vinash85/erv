@@ -536,7 +536,10 @@ def c_index(predicted_risk, survival):
 
 # maintain all metrics required in this dictionary- these are used in the
 # training and evaluation loops
-def calculate_auc(y, pred):
+def calculate_auc(pred, y):
+    #print(y)
+    #print("pred")
+    #print(pred)
     fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=1)
     return smetrics.auc(fpr, tpr)
 

@@ -495,7 +495,7 @@ def negative_log_partial_likelihood(censor, risk, debug=False):
     #     print(risk[np.isnan(risk)])
     #     raise ValueError("nan found")
 
-    return neg_likelihood
+    return torch.exp(neg_likelihood)
 
 
 def accuracy(outputs, labels):
@@ -537,9 +537,9 @@ def c_index(predicted_risk, survival):
 # maintain all metrics required in this dictionary- these are used in the
 # training and evaluation loops
 def calculate_auc(pred, y):
-    #print(y)
-    #print("pred")
-    #print(pred)
+    # print(y)
+    # print("pred")
+    # print(pred)
     fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=1)
     return smetrics.auc(fpr, tpr)
 
@@ -586,10 +586,11 @@ def calculate_loss(labels, net_outputs, loss_fns):
     # print(net_outputs.shape)
 #
     for i in range(len_fns):
-        # for i in range(1):
+        # print("debug")
         # print(i)
-        label, net_output, loss_fn = labels[
-            :, i], net_outputs[:, i], loss_fns[i]
+        # print(labels.shape)
+
+        label, net_output, loss_fn = labels[:, i], net_outputs[:, i], loss_fns[i]
         na_inx = ~isnan(label)
         label, net_output = label[na_inx], net_output[na_inx]
         if(len(label) > 1):

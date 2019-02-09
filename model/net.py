@@ -540,8 +540,14 @@ def calculate_auc(pred, y):
     # print(y)
     # print("pred")
     # print(pred)
-    fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=1)
-    return smetrics.auc(fpr, tpr)
+    na_inx = ~(isnan(pred) | isnan(y))
+    pred, y = pred[na_inx], y[na_inx]
+    try:
+        fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=1)
+        auc = smetrics.auc(fpr, tpr)
+    except:
+        auc = 0.5
+    return auc
 
 metrics = {
     'c_index': c_index,

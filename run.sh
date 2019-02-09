@@ -43,3 +43,6 @@ ipython -pdb train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ 
 /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_43/*.tar
 
 python train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --model_dir /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_embedding8
+
+
+python train.py --prefix tcga --data_dir experiments/tcga_feb9/datasets_list.txt  --model_dir experiments/tcga_feb9

@@ -24,8 +24,8 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     dataset_phenotype = fread(dataset_phenotype)
     xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
     # phenotype_order = fread(phenotype_order)
-dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
-colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
+    dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
+    colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
 dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
 dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
@@ -49,14 +49,14 @@ colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement
 
 if(ICB_dataset){
 # create groups
-setnames(phenotype_sel, "OS", "survive_ICB")
-setnames(phenotype_sel, "OS.Event", "vital_status_ICB")
+setnames(phenotype_sel, "survive", "survive_ICB")
+setnames(phenotype_sel, "vital_status", "vital_status_ICB")
 prefix = c("^H_VB", "^SRR", "^ERR", "^CA", "^PD", "^SAM")
 phenotype_sel$dataset= rep(NA, nrow(phenotype_sel))
 for (pre in seq(length(prefix))) {
     pre.curr = prefix[pre]
     inx.curr = grep(pre.curr, phenotype_sel$patient.name)
-    phenotypes_sel$survive_ICB[inx.curr] = normalize.std(phenotype_sel$survive_ICB[inx.curr])
+    phenotype_sel$survive_ICB[inx.curr] = normalize.std(phenotype_sel$survive_ICB[inx.curr])
     phenotype_sel$dataset[inx.curr] = pre
 
 }
@@ -65,7 +65,7 @@ phenotype_sel[,response:= ifelse(Response %in% c("1", "CR", "PR"), 1, ifelse(Res
 response.df = phenotype_sel[,list(survive_ICB, vital_status_ICB,  response)] 
 
 phenotype_mat =  as.matrix(phenotype_sel[,-1,with=F])
-phenotype_mat = phenotype_mat[,match(phenotype_order[seq(length(phenotype_order) -3)], colnames(phenotype_sel)) ]
+phenotype_mat = phenotype_mat[,match(phenotype_order[seq(length(phenotype_order) -3)], colnames(phenotype_mat)) ]
 phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, response.df)),2,as.numeric)
 
 

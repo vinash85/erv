@@ -543,7 +543,7 @@ def calculate_auc(pred, y):
     na_inx = ~(isnan(pred) | isnan(y))
     pred, y = pred[na_inx], y[na_inx]
     try:
-        fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=0)
+        fpr, tpr, thresholds = smetrics.roc_curve(y, pred, pos_label=1)
         auc = smetrics.auc(fpr, tpr)
     except:
         auc = 0.5
@@ -607,6 +607,10 @@ def calculate_loss(labels, net_outputs, loss_fns):
             #loss_curr = torch.zeros(1)
             loss_curr = 0.
         # print(loss_curr.item())
+        # manually tries to value response rate
+        if i >= len_fns - 2:
+            loss_curr = loss_curr * 10
+
         total_loss = total_loss + loss_curr
 
     return total_loss

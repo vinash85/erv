@@ -13,7 +13,7 @@ import r2python
 dataset_dir = "../results/simulation5Feb/"
 numfeat = 100
 numSample = 50000
-noise_level = 2  # amount of noise
+noise_level = 1  # amount of noise
 
 feature = np.random.normal(0, 1, numfeat * numSample)
 featureMat = np.mat(feature)
@@ -61,7 +61,7 @@ def create_outputs(featureMat, linear=True, add_nan=False):
     if add_nan:
         arr = np.arange(len(out))
         np.random.shuffle(arr)
-        sel = arr[:math.ceil(len(out) * .05)]
+        sel = arr[:int(math.ceil(len(out) * .05))]
         out[sel] = np.nan
     return out
 

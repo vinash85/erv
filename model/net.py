@@ -592,10 +592,6 @@ def calculate_loss(labels, net_outputs, loss_fns):
     # print(net_outputs.shape)
 #
     for i in range(len_fns):
-        # print("debug")
-        # print(i)
-        # print(labels.shape)
-
         label, net_output, loss_fn = labels[:, i], net_outputs[:, i], loss_fns[i]
         na_inx = ~isnan(label)
         label, net_output = label[na_inx], net_output[na_inx]

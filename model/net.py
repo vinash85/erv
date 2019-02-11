@@ -550,7 +550,7 @@ def calculate_auc(pred, y):
     return auc
 
 metrics = {
-    'c_index': c_index,
+    # 'c_index': c_index,
     'auc': calculate_auc
     # could add more metrics such as accuracy for each token type
 }

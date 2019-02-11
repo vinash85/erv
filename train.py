@@ -90,9 +90,10 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             survival = all_labels[:, 0:2]
             mask = np.ones(all_labels.shape[1], dtype=bool)
             mask[[0, all_labels.shape[1] - 3]] = False
-            # labels_san_survival = all_labels[:, 1:]
-            labels_san_survival = all_labels[:, mask]
+            # labels_san_survival = all_labels[:, mask]
+            labels_san_survival = all_labels[:, 42:]
             # print(all_labels.shape)
+            # print(labels_san_survival.shape)
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()
             # move to GPU if available
@@ -255,11 +256,11 @@ if __name__ == '__main__':
         json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
     if params.loss_fns == 0:
-        params.loss_fns = [net.negative_log_partial_likelihood_loss] + [nn.MSELoss()] * (
+        params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
             params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
 
     print(params.loss_fns)
-    print(len(params.loss_fns))
+    # print(len(params.loss_fns))
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()

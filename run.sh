@@ -2,7 +2,7 @@
 #######
 #processing of datasets
 ######
-
+# ICB dataset 
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/ICB_GSVA.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB.txt"
@@ -10,6 +10,12 @@ phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.R
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
 
 
+# precog dataset 
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/Precog_GSVA.txt"
+pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_Precog.txt"
+phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/precog"
 
 
 #######

@@ -65,8 +65,8 @@ def create_outputs(featureMat, linear=True, add_nan=False):
         out[sel] = np.nan
     return out
 
-linear_output_size = 2
-binary_output_size = 2
+linear_output_size = 41
+binary_output_size = 1
 
 # outputs = np.zeros( numSample , linear_output_size + binary_output_size + 1)
 

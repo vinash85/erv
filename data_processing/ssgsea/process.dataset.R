@@ -42,7 +42,7 @@ common.patients = intersect(patient.name, dataset_phenotype$patient.name)
 dataset_ssgsea_sel = dataset_ssgsea_mat[match(common.patients, patient.name), ] 
 
 phenotype_sel = dataset_phenotype[match(common.patients, dataset_phenotype$patient.name)]
-phenotype_sel[1:2,]
+# phenotype_sel[1:2,]
 
 colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
 colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
@@ -60,6 +60,7 @@ for (pre in seq(length(prefix))) {
     phenotype_sel$dataset[inx.curr] = pre
 
 }
+# O is non-responder and 1 is responder 
 phenotype_sel[,response:= ifelse(Response %in% c("1", "CR", "PR"), 1, ifelse(Response %in% c("0", "SD", "PD"),0, NA))]
 
 response.df = phenotype_sel[,list(survive_ICB, vital_status_ICB,  response)] 
@@ -72,9 +73,11 @@ phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, response.df)),2,as.nume
 
 }else{
 
-    setnames(phenotype_sel, "OS", "survive")
-    setnames(phenotype_sel, "OS.Event", "vital_status")
-    phenotype_mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_sel)) ]
+    # setnames(phenotype_sel, "OS", "survive")
+    # setnames(phenotype_sel, "OS.Event", "vital_status")
+    phenotype_mat =  as.matrix(phenotype_sel[,-1,with=F])
+
+    phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
 }
 
 

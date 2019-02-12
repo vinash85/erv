@@ -81,35 +81,7 @@ phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, response.df)),2,as.nume
     phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
 }
 
-
-write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
-    row.names = F, col.names =T,  sep="\t", quote=F )
-write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = phenotype.ext.mat,
-    row.names = F, col.names =T,  sep="\t", quote=F )
-
-
-
-rand_inx = sample(nrow(dataset_ssgsea_sel))
-dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
-phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel))
-val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel)): ceiling(.9 * nrow(dataset_ssgsea_sel))
-test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
-
-write.table(file=paste0(output.dir, "/ssgsea_train.txt"),x = dataset_ssgsea_sel_shuffle[train.inx,],
-    row.names = F, col.names =T,  sep="\t", quote=F )
-write.table(file=paste0(output.dir, "/phenotype_train.txt"),x = phenotype.ext.mat_shuffle[train.inx,],
-    row.names = F, col.names =T,  sep="\t", quote=F )
-
-write.table(file=paste0(output.dir, "/ssgsea_val.txt"),x = dataset_ssgsea_sel_shuffle[val.inx,],
-    row.names = F, col.names =T,  sep="\t", quote=F )
-write.table(file=paste0(output.dir, "/phenotype_val.txt"),x = phenotype.ext.mat_shuffle[val.inx,],
-    row.names = F, col.names =T,  sep="\t", quote=F )
-
-write.table(file=paste0(output.dir, "/sgsea_test.txt"),x = dataset_ssgsea_sel_shuffle[test.inx,],
-    row.names = F, col.names =T,  sep="\t", quote=F )
-write.table(file=paste0(output.dir, "/phenotype_test.txt"),x = phenotype.ext.mat_shuffle[test.inx,],
-    row.names = F, col.names =T,  sep="\t", quote=F )
+                        
 
 
 }

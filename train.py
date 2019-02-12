@@ -257,7 +257,8 @@ if __name__ == '__main__':
     params = utils.Params(json_path)
     if params.loss_fns == 0:
         params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
-            params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
+            # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
+            params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
 
     print(params.loss_fns)
     # print(len(params.loss_fns))

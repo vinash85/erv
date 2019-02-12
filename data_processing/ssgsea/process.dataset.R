@@ -18,6 +18,7 @@ normalize.std = function(tt){
 process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phenotype_order, output.dir, fix_patient_name =F, ICB_dataset =F) {
 
     library(data.table)
+    dir.create(output.dir, showWarnings = FALSE)
 
     dataset_ssgsea = fread(dataset_ssgsea)
     pathway_order = fread(pathway_order)

@@ -49,8 +49,8 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params):
         survival = all_labels[:, 0:2]
         mask = np.ones(all_labels.shape[1], dtype=bool)
         mask[[0, all_labels.shape[1] - 3]] = False
-        # labels_san_survival = all_labels[:, mask]
-        labels_san_survival = all_labels[:, 42:]
+        labels_san_survival = all_labels[:, mask]
+        # labels_san_survival = all_labels[:, 42:]
 
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
         # move to GPU if available

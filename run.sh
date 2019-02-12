@@ -8,7 +8,9 @@ pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
-
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.pca/"
+fix_patient_name =F; ICB_dataset =T
 
 # precog dataset 
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/Precog_GSVA.txt"

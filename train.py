@@ -89,9 +89,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
             survival = all_labels[:, 0:2]
             mask = np.ones(all_labels.shape[1], dtype=bool)
-            mask[[0, all_labels.shape[1] - 3]] = False
-            # labels_san_survival = all_labels[:, mask]
-            labels_san_survival = all_labels[:, 42:]
+            mask[[0, all_labels.shape[1] - 3]] = False  # assuming the first is naive-survival and n-3 is icb survival
+            labels_san_survival = all_labels[:, mask]
+            # labels_san_survival = all_labels[:, 42:]
             # print(all_labels.shape)
             # print(labels_san_survival.shape)
             train_batch, labels_batch = torch.from_numpy(

@@ -216,7 +216,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         val_metrics = {metric: eval(params.metrics)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
         # val_metrics = eval(params.metrics)(val_metrics)
-        val_acc = val_metrics['auc']  # use differnt functions
+        val_acc = val_metrics['c_index']  # use differnt functions
 
         is_best = val_acc > best_val_acc
 

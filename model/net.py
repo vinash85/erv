@@ -164,7 +164,8 @@ class outputLayer(nn.Module):
             self.dense1_bn = nn.BatchNorm1d(1)
         if binary_output_size > 0:
             self.linear2 = nn.Linear(embedding_size, binary_output_size)
-        # self.sigmoid = nn.Sigmoid()
+        self.sigmoid = nn.Sigmoid()
+        # self.softmax = nn.LogSoftmax()
 
     def forward(self, x):
         if(self.linear_output_size > 0):
@@ -177,6 +178,7 @@ class outputLayer(nn.Module):
             linear2_out = self.linear2(x)
             # binary_output = self.sigmoid(linear2_out)
             binary_output = linear2_out  # sigmoid not required with BCEWithLogitsLoss
+            binary_output = self.sigmoid(binary_output)
 
         if(self.linear_output_size == 0):
             out = binary_output
@@ -604,8 +606,8 @@ def calculate_loss(labels, net_outputs, loss_fns):
             loss_curr = 0.
         # print(loss_curr.item())
         # manually tries to value response rate
-        if i >= len_fns - 2:
-            loss_curr = loss_curr * 10
+        # if i >= len_fns - 2:
+            # loss_curr = loss_curr * 10
 
         total_loss = total_loss + loss_curr
 

@@ -9,6 +9,9 @@ dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed"
+
+
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.pca/"
 fix_patient_name =F; ICB_dataset =T
 
@@ -36,6 +39,8 @@ model_dir="/homes6/asahu/project/deeplearning/icb/data/ssgsea/models/"
 
 # python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation/datasets
 python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/datasets --prefix "tcga"
+python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation15Feb/datasets_list.txt --model_dir  ~/Dropbox/project/code/deeplearning/icb/results/simulation15Feb/
+
 python train.py --data_dir $data_dir --model_dir $model_dir
 
 python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/datasets_list.txt --prefix "tcga"

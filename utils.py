@@ -2,8 +2,8 @@ import json
 import logging
 import os
 import shutil
-
 import torch
+
 
 class Params():
     """Class that loads hyperparameters from a json file.
@@ -24,7 +24,7 @@ class Params():
     def save(self, json_path):
         with open(json_path, 'w') as f:
             json.dump(self.__dict__, f, indent=4)
-            
+
     def update(self, json_path):
         """Loads parameters from json file"""
         with open(json_path) as f:
@@ -39,7 +39,7 @@ class Params():
 
 class RunningAverage():
     """A simple class that maintains the running average of a quantity
-    
+
     Example:
     ```
     loss_avg = RunningAverage()
@@ -48,18 +48,19 @@ class RunningAverage():
     loss_avg() = 3
     ```
     """
+
     def __init__(self):
         self.steps = 0
         self.total = 0
-    
+
     def update(self, val):
         self.total += val
         self.steps += 1
-    
+
     def __call__(self):
-        return self.total/float(self.steps)
-        
-    
+        return self.total / float(self.steps)
+
+
 def set_logger(log_path):
     """Set the logger to log info in terminal and file `log_path`.
 
@@ -122,7 +123,7 @@ def save_checkpoint(state, is_best, checkpoint):
         shutil.copyfile(filepath, os.path.join(checkpoint, 'best.pth.tar'))
 
 
-def load_checkpoint(checkpoint, model, optimizer=None):
+def load_checkpoint(checkpoint, embedding_model, outputs, embedding_optimizer=None, outputs_optimizer=None):
     """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
     optimizer assuming it is present in checkpoint.
 
@@ -132,11 +133,14 @@ def load_checkpoint(checkpoint, model, optimizer=None):
         optimizer: (torch.optim) optional: resume optimizer from checkpoint
     """
     if not os.path.exists(checkpoint):
-        raise("File doesn't exist {}".format(checkpoint))
+        raise "File doesn't exist {}"
     checkpoint = torch.load(checkpoint)
-    model.load_state_dict(checkpoint['state_dict'])
+    embedding_model.load_state_dict(checkpoint['embedding_state_dict'])
+    outputs.load_state_dict(checkpoint['outputs_state_dict'])
 
-    if optimizer:
-        optimizer.load_state_dict(checkpoint['optim_dict'])
+    if embedding_optimizer:
+        embedding_optimizer.load_state_dict(checkpoint['embedding_optim_dict'])
+    if outputs_optimizer:
+        outputs_optimizer.load_state_dict(checkpoint['outputs_optim_dict'])
 
     return checkpoint

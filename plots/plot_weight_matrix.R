@@ -1,7 +1,7 @@
 library(data.table)
 library(ggplot2)
 
-model_dir = "./experiments/reproduce_tcga_43_l1/"
+model_dir = "./experiments/precog_only/"
 plot.dir = paste0(model_dir, "plots")
 load("/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData")
 
@@ -40,7 +40,7 @@ weights_non_empty = weights[!grepl(pattern="empty", rownames(weights)),]
 dat = weights_non_empty
 # dat = dat[,order(new.labs)]
 hc = hclust(as.dist(1-cor(dat, method="spearman")), method="complete")
-dat = dat[,hc$order]
+# dat = dat[,hc$order]
 M<-cor(dat,method="spearman")
 
 # col <- c( rep("#FFFFFF", 25), rep("gray67",9), rep("khaki", 1),  "yellow", "yellow", "orange", "red", "red4")
@@ -66,12 +66,12 @@ dev.off()
 
 dat = t(weights_non_empty)
 hc = hclust(as.dist(1-cor(dat, method="spearman")), method="complete")
-dat = dat[,hc$order]
+# dat = dat[,hc$order]
 M<-cor(dat,method="spearman")
 
 # col <- c( rep("#FFFFFF", 25), rep("gray67",9), rep("khaki", 1),  "yellow", "yellow", "orange", "red", "red4")
 # pdf("ssgsea_correlation_combat_categorical.pdf")
-pdf(paste0(plot.dir,"/output_correlation.pdf"), width = 12, height = 12)
+pdf(paste0(plot.dir,"/output_correlation.pdf"), width = 8, height = 8)
 corrplot(M, 
 	# col=col,
          type="upper",

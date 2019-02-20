@@ -8,8 +8,10 @@ import numpy as np
 import torch
 from torch.autograd import Variable
 import utils
+import pandas as pd
 import model.net as net
-import model.data_loader as data_generator
+import model.data_generator as data_generator
+
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='data/64x64_SIGNS', help="Directory containing the dataset")
@@ -23,7 +25,7 @@ parser.add_argument('--prefix', default='',
                     tcga_phenotype_[train,test,val].txt )")
 
 
-def evaluate(embedding_model, outputs, dataloader, metrics, params):
+def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None):
     """Evaluate the model on `num_steps` batches.
 
     Args:
@@ -35,8 +37,10 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params):
     """
 
     # set model to evaluation mode
-    embedding_model.train()
-    outputs.train()
+    # print(embedding_model.state_dict())
+    embedding_model.eval()
+    outputs.eval()
+    predictions = np.array([])
 
     num_batches_per_epoch, _, dataloader = dataloader
 
@@ -44,12 +48,14 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params):
     summ = []
 
     # compute metrics over the dataset
+    # print(num_batches_per_epoch)
+    # import ipdb
+    # ipdb.set_trace()
 
     for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
         survival = all_labels[:, 0:2]
-        mask = np.ones(all_labels.shape[1], dtype=bool)
-        mask[[0, all_labels.shape[1] - 3]] = False
-        labels_san_survival = all_labels[:, mask]
+        # print(survival.shape)
+        labels_san_survival = all_labels[:, params.mask]
         # labels_san_survival = all_labels[:, 42:]
 
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
@@ -63,11 +69,21 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params):
         # print(data_batch.shape)
         embedding_batch = embedding_model(data_batch)
         output_batch = outputs(embedding_batch)
-        loss = net.calculate_loss(
-            labels_batch, output_batch, params.loss_fns)
-
+        # print(all_labels[:10, :])
+        # print(all_labels[:10, :])
+        loss = net.update_loss_parameters(
+            labels_batch, output_batch, embedding_model, outputs, None, None, params, is_train=False)
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
+
+        if validation_file:
+            # print(labels_san_survival.shape)
+            # print(output_batch.shape)
+            output_and_predictions = np.concatenate([labels_san_survival, output_batch], 1)
+            if i == 0:
+                predictions = output_and_predictions
+            else:
+                predictions = np.concatenate([predictions, output_and_predictions], 0)
         # labels_batch = labels_batch.data.cpu().numpy()
 
         # compute all metrics on this batch
@@ -79,9 +95,15 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params):
         summ.append(summary_batch)
 
     # compute mean of all metrics in summary
+    # print(len(summ))
+    print(summ)
     metrics_mean = {metric: np.mean([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
+    if validation_file:
+        predictions = pd.DataFrame(predictions)
+        predictions.to_csv(validation_file, sep='\t', index=False)
+
     return metrics_mean
 
 
@@ -110,23 +132,48 @@ if __name__ == '__main__':
     logging.info("Creating the dataset...")
 
     # fetch dataloaders
-    dataloaders = data_loader.fetch_dataloader(['test'], args.data_dir, params)
-    test_dl = dataloaders['test']
+    type_file = 'val'  # or 'test'
+
+    # fetch dataloaders
+    datasets = data_generator.fetch_dataloader_list(args.prefix,
+                                                    [type_file], args.data_dir, params)
+    _, input_size, _ = datasets[0][type_file]
 
     logging.info("- done.")
+    params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
 
     # Define the model
-    model = net.Net(params).cuda() if params.cuda else net.Net(params)
+    convolution_encoder = params.convolution_encoder
+    if convolution_encoder:
+        embedding_model = net.EmbeddingNet(
+            net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
+    else:
+        embedding_model = net.EmbeddingNet_FC(
+            net.FullConnectedBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
 
-    loss_fn = net.loss_fn
+    outputs = net.outputLayer(params.embedding_size, linear_output_size=linear_output_size,
+                              binary_output_size=binary_output_size)
+
+    if params.cuda:
+        # model = model.cuda()
+        embedding_model = embedding_model.cuda()
+        outputs = outputs.cuda()
+
     metrics = net.metrics
 
     logging.info("Starting evaluation")
 
     # Reload weights from the saved file
-    utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), model)
+    print(os.path.join(args.model_dir, args.restore_file + '.pth.tar'))
+    utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), embedding_model, outputs)
 
-    # Evaluate
-    test_metrics = evaluate(model, loss_fn, test_dl, metrics, params)
+    metrics = net.metrics
+
+    # Evaluate for one epoch on validation set
+
+    data_dirs = pd.read_csv(args.data_dir, sep="\t")
+    data_dirs = [row['data_dir'] for index, row in data_dirs.iterrows()]
+    val_metrics_all = [evaluate(embedding_model, outputs, dataloader[type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataloader in zip(data_dirs, datasets)]
+    val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
     save_path = os.path.join(args.model_dir, "metrics_test_{}.json".format(args.restore_file))
-    utils.save_dict_to_json(test_metrics, save_path)
+    utils.save_dict_to_json(val_metrics, save_path)

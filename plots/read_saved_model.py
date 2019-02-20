@@ -2,17 +2,16 @@
 import torch
 import numpy as np
 
-# model_dir = "./experiments/base_model/"
-model_dir = "./experiments/reproduce_tcga_43_l1/"
+model_dir = "./experiments/precog_only/"
 
 checkpoint = model_dir + "best.pth.tar"
 checkpoint = torch.load(checkpoint)
 # model.load_state_dict(checkpoint['state_dict'])
 embedding_params = checkpoint['embedding_state_dict']
-inp_embedding_weight = embedding_params['fc1.weight']
+inp_embedding_weight = embedding_params['fc3.weight']
 # note weight matrix AxB output_dim x input_dim
 
-outputs_params = checkpoint['outputs']
+outputs_params = checkpoint['outputs_state_dict']
 linear_output_weights = outputs_params['linear1.weight']
 binary_output_weights = outputs_params['linear2.weight']
 

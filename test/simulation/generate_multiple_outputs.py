@@ -10,16 +10,17 @@ import os
 # sys.path.append('/Users/avi/Dropbox/project/code/deeplearning/antigen_recognition/src')
 import r2python
 # dataset_dir = "~/Dropbox/project/code/deeplearning/icb/results/simulation5Feb/"
-dataset_dir = "../results/simulation5Feb/"
+dataset_dir = "../results/simulation15Feb/"
+os.system("mkdir " + dataset_dir)
 numfeat = 100
-numSample = 50000
-noise_level = 1  # amount of noise
+numSample = 20000
+noise_level = 2.0  # amount of noise
 
 feature = np.random.normal(0, 1, numfeat * numSample)
 featureMat = np.mat(feature)
 featureMat = featureMat.reshape(numSample, numfeat)
 
-risk1 = .3 * featureMat[:, 90] - .7 * featureMat[:, 94]
+risk1 = sum([featureMat[:, random.randint(0, numfeat - 1)] * random.uniform(-1, 1) for ii in range(5)])
 risk = np.squeeze(np.asarray(risk1))
 risk_noise = risk + np.random.normal(0, np.std(risk) * noise_level, numSample)
 risk_noise = risk_noise - min(risk_noise)
@@ -65,7 +66,7 @@ def create_outputs(featureMat, linear=True, add_nan=False):
         out[sel] = np.nan
     return out
 
-linear_output_size = 41
+linear_output_size = 2
 binary_output_size = 1
 
 # outputs = np.zeros( numSample , linear_output_size + binary_output_size + 1)
@@ -87,7 +88,7 @@ feature_df.to_csv(dataset_dir + "features.txt", sep='\t', index=False)
 
 # split 7 2 1
 dataset_dir1 = dataset_dir + "datasets/"
-# os.mkdir(dataset_dir1)
+os.system("mkdir " + dataset_dir1)
 
 feature_df.iloc[:int(.7 * len(outputs)), :].to_csv(dataset_dir1 + "ssgsea_train.txt", sep='\t', index=False, na_rep='NaN')
 outputs.iloc[:int(.7 * len(outputs)), :].to_csv(dataset_dir1 + "phenotype_train.txt", sep='\t', index=False, na_rep='NaN')

@@ -7,9 +7,11 @@ import torch.nn.functional as F
 from lifelines.utils import concordance_index
 import math
 from sklearn import metrics as smetrics
-
+import r2python
 
 # 3x3 convolution
+
+
 def conv1d(in_channels, out_channels, kernel_size=5, stride=2):
     padding_size = int((kernel_size - 1) / 2)
     # print(padding_size)
@@ -104,7 +106,7 @@ class EmbeddingNet(nn.Module):
         print(self.output_size)
         self.layers_block1 = self.make_layers(
             block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
-        ## output_size is updated
+        # output_size is updated
         print("final output size")
         print(self.output_size)
 
@@ -145,7 +147,7 @@ class EmbeddingNet(nn.Module):
         # out = self.fc1(x)
         # out = F.dropout(out, p=self.dropout_rate, training=self.training)
         # out = self.fc2(out)
-        # out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.fc2(out)
         out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.fc3(out)
@@ -187,6 +189,63 @@ class outputLayer(nn.Module):
         else:
             out = torch.cat((survival_out, linear1_out[:, 1:], binary_output), 1)
         # print(out.shape)
+        return out
+
+# FC block
+
+
+class FullConnectedBlock(nn.Module):
+
+    def __init__(self, in_channels, out_channels, dropout_rate):
+        super(FullConnectedBlock, self).__init__()
+        self.fc = nn.Linear(in_channels, out_channels)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.dropout_rate = dropout_rate
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+        residual = x
+        out = self.fc(residual)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        return out
+
+
+# EmbeddingNet
+class EmbeddingNet_FC(nn.Module):
+
+    def __init__(self, block, input_size, out_channels_list,
+                 embedding_size=32,
+                 dropout_rate=0.1):
+        super(EmbeddingNet_FC, self).__init__()
+        self.in_channels = input_size
+        self.output_size = input_size
+        self.dropout_rate = dropout_rate
+        print("initial output size")
+        print(self.output_size)
+        self.layers_block1 = self.make_layers(
+            block, out_channels_list, dropout_rate)
+        # output_size is updated
+        print("final output size")
+        print(self.output_size)
+        self.fc3 = nn.Linear(self.in_channels, embedding_size)
+
+    def make_layers(self, block, out_channels_list, dropout_rate):
+        layers = []
+        num_layers = len(out_channels_list)
+        for i in range(0, num_layers):
+            layers.append(block(self.in_channels, out_channels_list[
+                          i], dropout_rate))
+            self.in_channels = out_channels_list[i]
+        return nn.Sequential(*layers)
+
+    def forward(self, x):
+        # reshape numbatch * num_dim to numbatch * num_in_channel * num_dim
+        # out = x.view(x.size(0), 1, -1)
+        out = x
+        out = self.layers_block1(out)
+        out = self.fc3(out)
         return out
 
 
@@ -328,97 +387,6 @@ class ConvNet(nn.Module):
         return out
 
 
-class Net(nn.Module):
-    """
-    This is the standard way to define your own network in PyTorch. You typically choose the components
-    (e.g. LSTMs, linear layers etc.) of your network in the __init__ function. You then apply these layers
-    on the input step-by-step in the forward function. You can use torch.nn.functional to apply functions
-
-    such as F.relu, F.sigmoid, F.softmax, F.max_pool2d. Be careful to ensure your dimensions are correct after each
-    step. You are encouraged to have a look at the network in pytorch/nlp/model/net.py to get a better sense of how
-    you can go about defining your own network.
-
-    The documentation for all the various components available o you is here: http://pytorch.org/docs/master/nn.html
-    """
-
-    def __init__(self, params):
-        """
-        We define an convolutional network that predicts the sign from an image. The components
-        required are:
-
-        - an embedding layer: this layer maps each index in range(params.vocab_size) to a params.embedding_dim vector
-        - lstm: applying the LSTM on the sequential input returns an output for each token in the sentence
-        - fc: a fully connected layer that converts the LSTM output for each token to a distribution over NER tags
-
-        Args:
-            params: (Params) contains num_channels
-        """
-        super(Net, self).__init__()
-        self.num_channels = params.num_channels
-
-        # each of the convolution layers below have the arguments (input_channels, output_channels, filter_size,
-        # stride, padding). We also include batch normalisation layers that help stabilise training.
-        # For more details on how to use these layers, check out the
-        # documentation.
-        self.conv1 = nn.Conv2d(3, self.num_channels, 3, stride=1, padding=1)
-        self.bn1 = nn.BatchNorm2d(self.num_channels)
-        self.conv2 = nn.Conv2d(
-            self.num_channels, self.num_channels * 2, 3, stride=1, padding=1)
-        self.bn2 = nn.BatchNorm2d(self.num_channels * 2)
-        self.conv3 = nn.Conv2d(self.num_channels * 2,
-                               self.num_channels * 4, 3, stride=1, padding=1)
-        self.bn3 = nn.BatchNorm2d(self.num_channels * 4)
-
-        # 2 fully connected layers to transform the output of the convolution
-        # layers to the final output
-        self.fc1 = nn.Linear(8 * 8 * self.num_channels *
-                             4, self.num_channels * 4)
-        self.fcbn1 = nn.BatchNorm1d(self.num_channels * 4)
-        self.fc2 = nn.Linear(self.num_channels * 4, 6)
-        self.dropout_rate = params.dropout_rate
-
-    def forward(self, s):
-        """
-        This function defines how we use the components of our network to operate on an input batch.
-
-        Args:
-            s: (Variable) contains a batch of images, of dimension batch_size x 3 x 64 x 64 .
-
-        Returns:
-            out: (Variable) dimension batch_size x 6 with the log probabilities for the labels of each image.
-
-        Note: the dimensions after each step are provided
-        """
-        #                                                  -> batch_size x 3 x 64 x 64
-        # we apply the convolution layers, followed by batch normalisation,
-        # maxpool and relu x 3
-        # batch_size x num_channels x 64 x 64
-        s = self.bn1(self.conv1(s))
-        # batch_size x num_channels x 32 x 32
-        s = F.relu(F.max_pool2d(s, 2))
-        # batch_size x num_channels*2 x 32 x 32
-        s = self.bn2(self.conv2(s))
-        # batch_size x num_channels*2 x 16 x 16
-        s = F.relu(F.max_pool2d(s, 2))
-        # batch_size x num_channels*4 x 16 x 16
-        s = self.bn3(self.conv3(s))
-        # batch_size x num_channels*4 x 8 x 8
-        s = F.relu(F.max_pool2d(s, 2))
-
-        # flatten the output for each image
-        # batch_size x 8*8*num_channels*4
-        s = s.view(-1, 8 * 8 * self.num_channels * 4)
-
-        # apply 2 fully connected layers with dropout
-        s = F.dropout(F.relu(self.fcbn1(self.fc1(s))),
-                      p=self.dropout_rate, training=self.training)    # batch_size x self.num_channels*4
-        s = self.fc2(s)                                     # batch_size x 6
-
-        # apply log softmax on each image's output (this is recommended over applying softmax
-        # since it is numerically more stable)
-        return F.log_softmax(s, dim=1)
-
-
 def loss_fn(outputs, labels):
     """
     Compute the cross entropy loss given outputs and labels.
@@ -454,7 +422,7 @@ def isfinite(x):
     return not_inf & not_nan
 
 
-def negative_log_partial_likelihood(censor, risk, debug=False):
+def negative_log_partial_likelihood(survival, risk, debug=False):
     """Return the negative log-partial likelihood of the prediction
     y_true contains the survival time
     risk is the risk output from the neural network
@@ -466,7 +434,17 @@ def negative_log_partial_likelihood(censor, risk, debug=False):
     Sorts the surv_time by sorted reverse time
     """
 
-    # calculate negative log likelihood from estimated risk
+    # calculate negative log likelihood from estimated risk\
+
+    # temp = survival
+    # temp[:, 1] = risk
+
+    # print(torch.stack([survival[:, 0], risk]))
+    _, idx = torch.sort(survival[:, 0], descending=True)
+    censor = survival[idx, 1]
+    risk = risk[idx]
+    # print(temp[idx, :])
+    # print(survival[idx, :])
     epsilon = 0.00001
     max_value = 10
     alpha = 0.1
@@ -497,7 +475,8 @@ def negative_log_partial_likelihood(censor, risk, debug=False):
     #     print(risk[np.isnan(risk)])
     #     raise ValueError("nan found")
 
-    return torch.exp(neg_likelihood)
+    # return torch.exp(neg_likelihood)
+    return neg_likelihood
 
 
 def accuracy(outputs, labels):
@@ -525,6 +504,8 @@ def negative_log_partial_likelihood_loss(risk, censor, debug=False):
 def c_index(predicted_risk, survival):
     # calculate the concordance index
     ci = 0  # just to know that concordance index cannot be estimated
+    # print(r2python.cbind(np.reshape(predicted_risk, (-1, 1)), survival))
+
     na_inx = ~(np.isnan(survival[:, 0]) | np.isnan(survival[:, 1]) | np.isnan(predicted_risk))
     predicted_risk, survival = predicted_risk[na_inx], survival[na_inx]
     if len(predicted_risk) > 0:
@@ -552,8 +533,8 @@ def calculate_auc(pred, y):
     return auc
 
 metrics = {
-    'c_index': c_index,
-    # 'auc': calculate_auc
+    'auc': calculate_auc,
+    'c_index': c_index
     # could add more metrics such as accuracy for each token type
 }
 
@@ -565,13 +546,9 @@ def isnan(x):
 def calculate_loss(labels, net_outputs, loss_fns):
     '''
     define loss function :
-    list of loss function suported are :
-    1. remove NA from the labels
-    2. If there are no observations loss = 0, s.t no derivate.
-    Need to test if NA then loss are properly scaled.
     '''
 
-    #total_loss = torch.zeros(1)
+    # total_loss = torch.zeros(1)
     total_loss = 0.
 
     # ## survival output
@@ -588,21 +565,32 @@ def calculate_loss(labels, net_outputs, loss_fns):
     # label, net_output, loss_fn = labels[:,i], net_outputs[:, i], loss_fns[i]
 
     len_fns = len(loss_fns)
-    # print(len_fns)
-    # print(loss_fns)
-    # print(labels.shape)
-    # print(net_outputs.shape)
-#
+    label_inx = 0
+
     for i in range(len_fns):
-        label, net_output, loss_fn = labels[:, i], net_outputs[:, i], loss_fns[i]
-        na_inx = ~isnan(label)
-        label, net_output = label[na_inx], net_output[na_inx]
+        net_output, loss_fn = net_outputs[:, i], loss_fns[i]
+        # print(loss_fn)
+        # print(loss_fn.__name__ is 'negative_log_partial_likelihood_loss')
+        if hasattr(loss_fn, '__name__'):
+            if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
+                label = labels[:, label_inx:(label_inx + 2)]
+                label_inx = label_inx + 2
+                # print(label.shape)
+                na_inx = ~(isnan(label[:, 0]) | isnan(label[:, 1]))
+                label, net_output = label[na_inx, :], net_output[na_inx]
+                # print(label)
+        else:
+            label = labels[:, label_inx]
+            label_inx = label_inx + 1
+            na_inx = ~isnan(label)
+            label, net_output = label[na_inx], net_output[na_inx]
+
         if(len(label) > 1):
             # in case of survival label is censor; censored data assumed to
             # sorted based on patient event time.
             loss_curr = loss_fn(net_output, label)
         else:
-            #loss_curr = torch.zeros(1)
+            # loss_curr = torch.zeros(1)
             loss_curr = 0.
         # print(loss_curr.item())
         # manually tries to value response rate
@@ -610,5 +598,113 @@ def calculate_loss(labels, net_outputs, loss_fns):
             # loss_curr = loss_curr * 10
 
         total_loss = total_loss + loss_curr
+
+    return total_loss
+
+
+def max_na(xx):
+    return (0 if len(xx) == 0 else max(xx))
+
+
+def create_lossfns_mask(params):
+    survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
+    continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
+    binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
+
+    survival_output_size = len(survival_indices) / 2
+    linear_output_size = survival_output_size + len(continuous_phenotype_indices)
+    binary_output_size = len(binary_phentoype_indices)
+    loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
+        [nn.MSELoss()] * len(continuous_phenotype_indices) + \
+        [nn.BCELoss()] * len(binary_phentoype_indices)
+    # BCEWithLogitsLoss is other option
+
+    # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phentoype_indices))
+
+    survival_indices_new, continuous_indices_new, binary_indices_new = survival_indices, continuous_phenotype_indices, binary_phentoype_indices
+    print(survival_indices_new)
+
+    # for sur in survival_indices:
+    #     print(sur)
+    #     print(survival_indices_new > sur)
+    #     survival_indices_new[survival_indices_new > sur] = survival_indices_new[survival_indices_new > sur] - 1
+    #     continuous_indices_new[continuous_indices_new > sur] = continuous_indices_new[continuous_indices_new > sur] - 1
+    #     binary_indices_new[binary_indices_new > sur] = binary_indices_new[binary_indices_new > sur] - 1
+    mask = np.concatenate([survival_indices_new, continuous_indices_new, binary_indices_new])
+    # print(survival_indices_new)
+    print(mask)
+
+    return loss_fns, mask, linear_output_size, binary_output_size
+
+
+def regularized_loss(model, params, index="all"):
+
+    loss_curr = 0.
+
+    for name, parameters in model.named_parameters():
+        if name.endswith('weight') and name.endswith('linear'):
+            if index is "all":
+                loss_curr = loss_curr + \
+                    torch.norm(parameters.view(-1), 1) * params.l1_regularizer \
+                    + torch.norm(parameters.view(-1), 2) * params.l2_regularizer
+            else:
+                loss_curr = loss_curr + \
+                    torch.norm(parameters[index].view(-1), 1) * params.l1_regularizer \
+                    + torch.norm(parameters[index].view(-1), 2) * params.l2_regularizer
+    return loss_curr
+
+
+def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, is_train):
+    '''
+    define loss function and update parameters
+    '''
+
+    def update_parameters(loss):
+        # clear previous gradients, compute gradients of all variables wrt loss
+        embedding_optimizer.zero_grad()
+        outputs_optimizer.zero_grad()
+        loss.backward(retain_graph=True)
+        # performs updates using calculated gradients
+        embedding_optimizer.step()
+        outputs_optimizer.step()
+
+    total_loss = 0.
+    loss_fns = params.loss_fns
+    len_fns = len(loss_fns)
+
+    label_inx = 0
+    for i in range(len_fns):
+        net_output, loss_fn = net_outputs[:, i], loss_fns[i]
+        if hasattr(loss_fn, '__name__'):
+            if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
+                label = labels[:, label_inx:(label_inx + 2)]
+                label_inx = label_inx + 2
+                # print(label.shape)
+                na_inx = ~(isnan(label[:, 0]) | isnan(label[:, 1]))
+                label, net_output = label[na_inx, :], net_output[na_inx]
+        else:
+            label = labels[:, label_inx]
+            label_inx = label_inx + 1
+            na_inx = ~isnan(label)
+            label, net_output = label[na_inx], net_output[na_inx]
+
+        if(len(label) > 1):
+            # in case of survival label is censor; censored data assumed to
+            # sorted based on patient event time.
+            loss_curr = loss_fn(net_output, label)
+            # import ipdb
+            # ipdb.set_trace()
+            loss_curr = loss_curr + regularized_loss(outputs, params, i)
+        else:
+            # loss_curr = torch.zeros(1)
+            loss_curr = 0.
+
+        if is_train and params.pipeline_optimization:
+            update_parameters(loss_curr)
+
+        total_loss = total_loss + loss_curr
+
+    if is_train and not params.pipeline_optimization:
+        update_parameters(total_loss)
 
     return total_loss

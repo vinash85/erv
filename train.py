@@ -21,14 +21,14 @@ from torch.autograd import Variable
 from tqdm import tqdm
 
 import utils
+import datetime
 import model.net as net
 # import model.data_loader as data_loader
 import model.data_generator as data_generator
 from evaluate import evaluate
+from tensorboardX import SummaryWriter
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--embedding_size', default=32,
-                    help="Size of immune embedding (default:8)")
 parser.add_argument('--data_dir', default='data/64x64_SIGNS',
                     help="File containing directory containing datasets")
 # parser.add_argument('--data_dir_list', default=None,
@@ -85,59 +85,25 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
 
     # Use tqdm for progress bar
     # with tqdm(total=len(dataloader)) as t:
+    # print(num_batches_per_epoch)
+
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-            survival = all_labels[:, 0:2]
-            mask = np.ones(all_labels.shape[1], dtype=bool)
-            mask[[0, all_labels.shape[1] - 3]] = False  # assuming the first is naive-survival and n-3 is icb survival
-            labels_san_survival = all_labels[:, mask]
-            # labels_san_survival = all_labels[:, 42:]
-            # print(all_labels.shape)
-            # print(labels_san_survival.shape)
+
+            survival = all_labels[:, 0:2]  # throw error if # phenotype < 2
+            labels_san_survival = all_labels[:, params.mask]
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()
             # move to GPU if available
             if params.cuda:
                 train_batch, labels_batch = train_batch.cuda(
                     non_blocking=True), labels_batch.cuda(non_blocking=True)
-
             # convert to torch Variables
-            # train_batch, labels_batch = Variable(train_batch), Variable(labels_batch)
 
-            # compute model output and loss
             embedding_batch = embedding_model(train_batch)
-            # print("embedding_batch")
-            # print(embedding_batch.shape)
             output_batch = outputs(embedding_batch)
-            loss = net.calculate_loss(
-                labels_batch, output_batch, params.loss_fns)
-            # params.lambda1 = 0.5
-            if params.params_regularization > 0:
-                if params.linear_output_size > 0:
-                    all_linear1_params = torch.cat([x.view(-1) for x in outputs.linear1.parameters()])
-                    l1_regularization = params.params_regularization * torch.norm(all_linear1_params, 2)
-                    loss = loss + l1_regularization
 
-                if params.binary_output_size > 0:
-                    all_linear2_params = torch.cat([x.view(-1) for x in outputs.linear2.parameters()])
-                    l2_regularization = params.params_regularization * torch.norm(all_linear2_params, 2)
-                    loss = loss + l2_regularization
-
-            if(torch.isnan(loss)):
-                import ipdb
-                ipdb.set_trace()
-            # import ipdb
-            # ipdb.set_trace()
-
-            # clear previous gradients, compute gradients of all variables wrt loss
-            embedding_optimizer.zero_grad()
-            outputs_optimizer.zero_grad()
-
-            loss.backward()
-
-            # performs updates using calculated gradients
-            embedding_optimizer.step()
-            outputs_optimizer.step()
+            loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, is_train=True)
 
             # output_batch1 = model(train_batch)
             # if(torch.any(torch.isnan(output_batch1))):
@@ -147,8 +113,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             # Evaluate summaries only once in a while
             if i % params.save_summary_steps == 0:
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
-                output_batch = output_batch.data.detach().cpu().numpy()
-                labels_batch = labels_batch.data.detach().cpu().numpy()
+                output_batch = output_batch.data.cpu().numpy()
+                labels_batch = labels_batch.data.cpu().numpy()
+
                 # c_index = metrics.concordance_metric(output_batch, survival)
 
                 # compute all metrics on this batch
@@ -176,6 +143,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v)
                                 for k, v in metrics_mean.items())
     logging.info("- Train metrics: " + metrics_string)
+    return metrics_mean
 
 
 def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, model_dir,
@@ -205,25 +173,38 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         # Run one epoch
         logging.info("Epoch {}/{}".format(epoch + 1, params.num_epochs))
 
-        # compute number of batches in one epoch (one full pass over the training set)
-        for dataloader in datasets:
-            train(embedding_model, outputs, embedding_optimizer,
-                  outputs_optimizer, dataloader['train'], metrics, params)
+        train_metrics_all = []
+        val_metrics_all = []
+        for index, dataloader in enumerate(datasets):
+            # compute number of batches in one epoch (one full pass over the training set)
+            train_metrics = train(embedding_model, outputs, embedding_optimizer,
+                                  outputs_optimizer, dataloader['train'], metrics, params)
+            train_metrics_all.append(train_metrics)
 
-        # Evaluate for one epoch on validation set
-        val_metrics_all = [evaluate(embedding_model, outputs, dataloader['val'], metrics, params)for dataloader in datasets]
-        # val_metrics = []
-        val_metrics = {metric: eval(params.metrics)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
+            # Evaluate for one epoch on validation set
+            val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params)
+            val_metrics_all.append(val_metrics)
 
-        # val_metrics = eval(params.metrics)(val_metrics)
-        val_acc = val_metrics['c_index']  # use differnt functions
+            # tensorboard logging
 
+            writer.add_scalars('train_' + str(index), train_metrics, epoch)
+            writer.add_scalars('val_' + str(index), val_metrics, epoch)
+
+        for name, param1 in outputs.named_parameters():
+            writer.add_histogram("outputs" + name, param1.clone().cpu().data.numpy(), epoch)
+
+        val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
+
+        # val_metrics = eval(params.aggregate)(val_metrics)
+        # val_acc = val_metrics[params.best_model_metric]  # use differnt functions
+        # val_acc = min(val_metrics['c_index'], val_metrics['auc'])  # use differnt functions
+        val_acc = val_metrics[params.best_model_metric]
         is_best = val_acc > best_val_acc
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch + 1,
                                'embedding_state_dict': embedding_model.state_dict(),
-                               'outputs': outputs.state_dict(),
+                               'outputs_state_dict': outputs.state_dict(),
                                'embedding_optim_dict': embedding_optimizer.state_dict(),
                                'outputs_optim_dict': outputs_optimizer.state_dict()
                                },
@@ -232,7 +213,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
         # If best_eval, best_save_path
         if is_best:
-            logging.info("- Found new best cindex")
+            logging.info("- Found new best metric {} {}".format(params.best_model_metric, val_acc))
             best_val_acc = val_acc
 
             # Save best val metrics in a json file in the model directory
@@ -255,13 +236,13 @@ if __name__ == '__main__':
     assert os.path.isfile(
         json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
-    if params.loss_fns == 0:
-        params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
-            # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
-            params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
+    # params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
+    #         # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
+    #         params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
 
+    params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)
-    # print(len(params.loss_fns))
+    print(params.mask)
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
@@ -274,6 +255,8 @@ if __name__ == '__main__':
 
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
+
+    writer = SummaryWriter(os.path.join(args.model_dir, 'tensorboardLog', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
@@ -290,15 +273,16 @@ if __name__ == '__main__':
     logging.info("- done.")
 
     # Define the model and optimizer
-    # model = net.FCN(params).cuda() if params.cuda else net.FCN(params)
-    # model = net.NeuralNet(input_size, params.hidden_size, 1)
-    # embedding_model = net.EmbeddingNet(
-    #     net.ConvolutionBlock, input_size, out_channels_list=[32, 32, 32, 32], embedding_size=params.embedding_size, kernel_sizes=[5, 11, 11, 5], strides=[2, 5, 5, 2])
-    embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
+    convolution_encoder = params.convolution_encoder
+    if convolution_encoder:
+        embedding_model = net.EmbeddingNet(
+            net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
+    else:
+        embedding_model = net.EmbeddingNet_FC(
+            net.FullConnectedBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
 
-    outputs = net.outputLayer(params.embedding_size, linear_output_size=params.linear_output_size,
-                              binary_output_size=params.binary_output_size)
+    outputs = net.outputLayer(params.embedding_size, linear_output_size=linear_output_size,
+                              binary_output_size=binary_output_size)
 
     if params.cuda:
         # model = model.cuda()
@@ -318,3 +302,5 @@ if __name__ == '__main__':
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
     train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir,
                        args.restore_file)
+    writer.export_scalars_to_json("./all_scalars.json")
+    writer.close()

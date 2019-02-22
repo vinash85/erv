@@ -54,7 +54,6 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
 
     for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
         survival = all_labels[:, 0:2]
-        # print(survival.shape)
         labels_san_survival = all_labels[:, params.mask]
         # labels_san_survival = all_labels[:, 42:]
 
@@ -66,19 +65,14 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         # data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
 
         # compute model output
-        # print(data_batch.shape)
         embedding_batch = embedding_model(data_batch)
         output_batch = outputs(embedding_batch)
-        # print(all_labels[:10, :])
-        # print(all_labels[:10, :])
         loss = net.update_loss_parameters(
             labels_batch, output_batch, embedding_model, outputs, None, None, params, is_train=False)
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
 
         if validation_file:
-            # print(labels_san_survival.shape)
-            # print(output_batch.shape)
             output_and_predictions = np.concatenate([labels_san_survival, output_batch], 1)
             if i == 0:
                 predictions = output_and_predictions
@@ -89,14 +83,11 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         # compute all metrics on this batch
         summary_batch = {metric: metrics[metric](output_batch[:, 0], survival) if metric == 'c_index' else metrics[metric](output_batch[:, -1], labels_san_survival[:, -1])
                          for metric in metrics}  # TODO ugly solution, when more metrics change it!!
-        # print("line 134")
-        # summary_batch['loss'] = loss.data[0]
         summary_batch['loss'] = loss.item()
         summ.append(summary_batch)
 
     # compute mean of all metrics in summary
-    # print(len(summ))
-    print(summ)
+    # print(summ)
     metrics_mean = {metric: np.mean([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
@@ -164,7 +155,7 @@ if __name__ == '__main__':
     logging.info("Starting evaluation")
 
     # Reload weights from the saved file
-    print(os.path.join(args.model_dir, args.restore_file + '.pth.tar'))
+    # print(os.path.join(args.model_dir, args.restore_file + '.pth.tar'))
     utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), embedding_model, outputs)
 
     metrics = net.metrics

@@ -59,14 +59,21 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype_sel.mod[, Response:=as.double(Response)]
             phenotype_sel.mod[is.na(Response) & (vital_status == 1) & (survive < 3)]$Response = 0
             phenotype_sel.mod[is.na(Response) & (survive > 7)]$Response = 1
+            dataset_ssgsea_sel = dataset_ssgsea_sel[genetech.patients,]
             phenotype_mat =  as.matrix(phenotype_sel.mod[,2:4,with=F])
             phenotype.ext.mat = phenotype_mat 
-            dataset_ssgsea_sel = dataset_ssgsea_sel[genetech.patients,]
+            
+
+            phenotype_sel.mat = as.matrix(phenotype_sel.mod)
+            phenotype_mat = phenotype_sel.mat[,match(phenotype_order[seq(length(phenotype_order) -1)], colnames(phenotype_sel.mat)) ]
+            phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, phenotype_sel.mod$Response)),2,as.numeric)
+
+
 
 
             }else{
 
-# create groups
+                # create groups
                 setnames(phenotype_sel, "survive", "survive_ICB")
                 setnames(phenotype_sel, "vital_status", "vital_status_ICB")
                 prefix = c("^H_VB", "^SRR", "^ERR", "^CA", "^PD", "^SAM")
@@ -87,6 +94,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
                 phenotype_mat =  as.matrix(phenotype_sel[,-1,with=F])
                 phenotype_mat = phenotype_mat[,match(phenotype_order[seq(length(phenotype_order) -3)], colnames(phenotype_mat)) ]
                 phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, response.df)),2,as.numeric)
+
             }
         }
         
@@ -110,7 +118,25 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 
 
 
+        rand_inx = sample(nrow(dataset_ssgsea_sel))
+        dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
+        phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
+        train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel))
+        val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel)): ceiling(.9 * nrow(dataset_ssgsea_sel))
+        test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
+        
+        train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))
+        val.inx = ceiling(.5 * nrow(dataset_ssgsea_sel)): ceiling(nrow(dataset_ssgsea_sel))
 
+        write.table(file=paste0(output.dir, "/ssgsea_train.txt"),x = dataset_ssgsea_sel_shuffle[train.inx,],
+            row.names = F, col.names =T,  sep="\t", quote=F )
+        write.table(file=paste0(output.dir, "/phenotype_train.txt"),x = phenotype.ext.mat_shuffle[train.inx,],
+            row.names = F, col.names =T,  sep="\t", quote=F )
+
+        write.table(file=paste0(output.dir, "/ssgsea_val.txt"),x = dataset_ssgsea_sel_shuffle[val.inx,],
+            row.names = F, col.names =T,  sep="\t", quote=F )
+        write.table(file=paste0(output.dir, "/phenotype_val.txt"),x = phenotype.ext.mat_shuffle[val.inx,],
+            row.names = F, col.names =T,  sep="\t", quote=F )
 
         write.table(file=paste0(output.dir, "/sgsea_test.txt"),x = dataset_ssgsea_sel_shuffle[test.inx,],
             row.names = F, col.names =T,  sep="\t", quote=F )

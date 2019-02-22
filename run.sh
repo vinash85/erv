@@ -2,6 +2,14 @@
 #######
 #processing of datasets
 ######
+
+## TCGA dataset 
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ssgsva.txt"
+pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt"
+phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
+output.dir = "~/project/deeplearning/icb/data/tcga.oxphos/"
+
 # ICB dataset 
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/ICB_GSVA.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
@@ -10,6 +18,7 @@ phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.R
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival"
 
 
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.pca/"
@@ -59,3 +68,5 @@ python train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --mode
 
 
 python train.py --prefix tcga --data_dir experiments/tcga_feb9/datasets_list.txt  --model_dir experiments/tcga_feb9
+
+python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/ --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/

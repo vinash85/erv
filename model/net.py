@@ -90,7 +90,7 @@ class tempNet(nn.Module):
 class EmbeddingNet(nn.Module):
 
     def __init__(self, block, input_size, out_channels_list,
-                 embedding_size=32, kernel_sizes=[5], strides=[2],
+                 embedding_size=32, kernel_sizes=[5], strides=[2], FC_size_list=[32],
                  dropout_rate=0.1):
         super(EmbeddingNet, self).__init__()
         self.in_channels = 1
@@ -107,15 +107,30 @@ class EmbeddingNet(nn.Module):
         self.layers_block1 = self.make_layers(
             block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
         # output_size is updated
-        print("final output size")
-        print(self.output_size)
+        print("final convolution layer output size")
+        self.fc_output_size = self.output_size * out_channels_list[-1]
 
-        self.fc_input_size = self.output_size * out_channels_list[-1]
-        # self.fc1 = nn.Linear(input_size, 16)
-        self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
-        print(self.fc_input_size)
-        self.fc3 = nn.Linear(2 * embedding_size, embedding_size)
-        # self.fc1 = nn.Linear(self.fc_input_size, embedding_size)
+        # self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
+        # self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
+        # print(self.fc_input_size)
+        # self.fc3 = nn.Linear(2 * embedding_size, embedding_size)
+
+        print("initial fully connected size")
+        print(self.fc_output_size)
+        self.FC_block1 = self.make_layers_FC(
+            FullConnectedBlock, FC_size_list, dropout_rate)
+        print("final output size")
+        self.fc3 = nn.Linear(self.fc_output_size, embedding_size)
+
+    def make_layers_FC(self, block, FC_size_list, dropout_rate):
+        layers = []
+        num_layers = len(FC_size_list)
+        for i in range(0, num_layers):
+            layers.append(block(self.fc_output_size, FC_size_list[
+                          i], dropout_rate))
+            self.fc_output_size = FC_size_list[i]
+            print(self.fc_output_size)
+        return nn.Sequential(*layers)
 
     def make_layers(self, block, out_channels_list, kernel_sizes, strides):
         layers = []
@@ -141,17 +156,8 @@ class EmbeddingNet(nn.Module):
         out = self.layers_block1(out)
         temp = out.size()
         out = out.view(out.size(0), -1)
-        # print(self.output_size)
-        # print(temp)
-        # out_size = out.size(0)
-        # out = self.fc1(x)
-        # out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        # out = self.fc2(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        out = self.fc2(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        out = self.FC_block1(out)
         out = self.fc3(out)
-        # out = self.dropout(out)
         return out
 
 
@@ -224,14 +230,14 @@ class EmbeddingNet_FC(nn.Module):
         self.dropout_rate = dropout_rate
         print("initial output size")
         print(self.output_size)
-        self.layers_block1 = self.make_layers(
+        self.layers_block1 = self.make_layers_FC(
             block, out_channels_list, dropout_rate)
         # output_size is updated
         print("final output size")
         print(self.output_size)
         self.fc3 = nn.Linear(self.in_channels, embedding_size)
 
-    def make_layers(self, block, out_channels_list, dropout_rate):
+    def make_layers_FC(self, block, out_channels_list, dropout_rate):
         layers = []
         num_layers = len(out_channels_list)
         for i in range(0, num_layers):

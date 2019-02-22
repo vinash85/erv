@@ -193,6 +193,9 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         for name, param1 in outputs.named_parameters():
             writer.add_histogram("outputs" + name, param1.clone().cpu().data.numpy(), epoch)
 
+        for name, param1 in embedding_model.named_parameters():
+            writer.add_histogram("embedding_model" + name, param1.clone().cpu().data.numpy(), epoch)
+
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
         # val_metrics = eval(params.aggregate)(val_metrics)
@@ -246,7 +249,7 @@ if __name__ == '__main__':
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()
-    print(params.cuda)
+    # print(params.cuda)
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)

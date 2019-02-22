@@ -165,7 +165,8 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         restore_path = os.path.join(
             args.model_dir, args.restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
-        utils.load_checkpoint(restore_path, model, optimizer)
+        utils.load_checkpoint(restore_path, embedding_model, outputs)  # not updating the optimizers for flexiblity
+        # utils.load_checkpoint(restore_path, embedding_model, outputs, optimizer)
 
     best_val_acc = 0.5  # for cindex
 

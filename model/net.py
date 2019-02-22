@@ -611,7 +611,7 @@ def create_lossfns_mask(params):
     continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
     binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
 
-    survival_output_size = len(survival_indices) / 2
+    survival_output_size = int(len(survival_indices) / 2)
     linear_output_size = survival_output_size + len(continuous_phenotype_indices)
     binary_output_size = len(binary_phentoype_indices)
     loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \

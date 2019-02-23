@@ -89,8 +89,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
 
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-
-            survival = all_labels[:, 0:2]  # throw error if # phenotype < 2
+            survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None
+            # survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
             labels_san_survival = all_labels[:, params.mask]
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()
@@ -243,6 +243,10 @@ if __name__ == '__main__':
     # params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
     #         # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
     #         params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
+    params.survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
+    params.continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
+    params.binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
+    params.loss_excluded_from_training = np.asarray(eval(params.loss_excluded_from_training), dtype=np.int)
 
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)

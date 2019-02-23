@@ -53,7 +53,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     # ipdb.set_trace()
 
     for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-        survival = all_labels[:, 0:2]
+        survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
         labels_san_survival = all_labels[:, params.mask]
         # labels_san_survival = all_labels[:, 42:]
 

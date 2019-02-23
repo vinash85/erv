@@ -508,6 +508,8 @@ def negative_log_partial_likelihood_loss(risk, censor, debug=False):
 
 
 def c_index(predicted_risk, survival):
+    if survival is None:
+        return 0
     # calculate the concordance index
     ci = 0  # just to know that concordance index cannot be estimated
     # print(r2python.cbind(np.reshape(predicted_risk, (-1, 1)), survival))
@@ -526,6 +528,8 @@ def c_index(predicted_risk, survival):
 # maintain all metrics required in this dictionary- these are used in the
 # training and evaluation loops
 def calculate_auc(pred, y):
+    if y is None:
+        return 0
     # print(y)
     # print("pred")
     # print(pred)
@@ -613,22 +617,19 @@ def max_na(xx):
 
 
 def create_lossfns_mask(params):
-    survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
-    continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
-    binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
 
-    survival_output_size = int(len(survival_indices) / 2)
-    linear_output_size = survival_output_size + len(continuous_phenotype_indices)
-    binary_output_size = len(binary_phentoype_indices)
+    survival_output_size = int(len(params.survival_indices) / 2)
+    linear_output_size = survival_output_size + len(params.continuous_phenotype_indices)
+    binary_output_size = len(params.binary_phentoype_indices)
     loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
-        [nn.MSELoss()] * len(continuous_phenotype_indices) + \
-        [nn.BCELoss()] * len(binary_phentoype_indices)
+        [nn.MSELoss()] * len(params.continuous_phenotype_indices) + \
+        [nn.BCELoss()] * len(params.binary_phentoype_indices)
     # BCEWithLogitsLoss is other option
 
     # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phentoype_indices))
 
-    survival_indices_new, continuous_indices_new, binary_indices_new = survival_indices, continuous_phenotype_indices, binary_phentoype_indices
-    print(survival_indices_new)
+    # survival_indices_new, continuous_indices_new, binary_indices_new = params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices
+    # print(survival_indices_new)
 
     # for sur in survival_indices:
     #     print(sur)
@@ -636,7 +637,7 @@ def create_lossfns_mask(params):
     #     survival_indices_new[survival_indices_new > sur] = survival_indices_new[survival_indices_new > sur] - 1
     #     continuous_indices_new[continuous_indices_new > sur] = continuous_indices_new[continuous_indices_new > sur] - 1
     #     binary_indices_new[binary_indices_new > sur] = binary_indices_new[binary_indices_new > sur] - 1
-    mask = np.concatenate([survival_indices_new, continuous_indices_new, binary_indices_new])
+    mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices])
     # print(survival_indices_new)
     print(mask)
 
@@ -679,7 +680,8 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
     len_fns = len(loss_fns)
 
     label_inx = 0
-    for i in range(len_fns):
+    loss_for_training = list(set(range(len(loss_fns))) - set(params.loss_excluded_from_training))
+    for i in loss_for_training:
         net_output, loss_fn = net_outputs[:, i], loss_fns[i]
         if hasattr(loss_fn, '__name__'):
             if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':

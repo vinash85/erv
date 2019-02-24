@@ -680,8 +680,10 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
     len_fns = len(loss_fns)
 
     label_inx = 0
-    loss_for_training = list(set(range(len(loss_fns))) - set(params.loss_excluded_from_training))
-    for i in loss_for_training:
+    # loss_for_training = list(set(range(len(loss_fns))) - set(params.loss_excluded_from_training))
+    # import ipdb
+    # ipdb.set_trace()
+    for i in range(len(loss_fns)):
         net_output, loss_fn = net_outputs[:, i], loss_fns[i]
         if hasattr(loss_fn, '__name__'):
             if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
@@ -696,7 +698,7 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             na_inx = ~isnan(label)
             label, net_output = label[na_inx], net_output[na_inx]
 
-        if(len(label) > 1):
+        if(len(label) > 1) and not any(params.loss_excluded_from_training == i):
             # in case of survival label is censor; censored data assumed to
             # sorted based on patient event time.
             loss_curr = loss_fn(net_output, label)

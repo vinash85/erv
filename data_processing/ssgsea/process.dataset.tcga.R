@@ -123,7 +123,8 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             }
             phenotype_mat =  as.matrix(phenotype_sel[,-(1:2),with=F])
 
-            phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
+            # phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
+            phenotype.ext.mat = apply(phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ],2,as.numeric)
         }
 
 

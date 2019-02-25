@@ -68,7 +68,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         embedding_batch = embedding_model(data_batch)
         output_batch = outputs(embedding_batch)
         loss = net.update_loss_parameters(
-            labels_batch, output_batch, embedding_model, outputs, None, None, params, is_train=False)
+            labels_batch, output_batch, embedding_model, outputs, None, None, params, [0, 0])
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
 

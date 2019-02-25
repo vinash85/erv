@@ -207,7 +207,7 @@ def add2stringlist(prefix, List):
     return [prefix + elem for elem in List]
 
 
-def fetch_dataloader(prefix, types, data_dir, params, dataset_type='non_icb', shuffle=True):
+def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, dataset_type='non_icb', shuffle=True):
     """
     Fetches the DataLoader object for each type in types from data_dir.
 
@@ -219,7 +219,10 @@ def fetch_dataloader(prefix, types, data_dir, params, dataset_type='non_icb', sh
     Returns:
         data: (dict) contains the DataLoader object for each type in types
     """
+    train_optimizer_mask = eval(train_optimizer_mask)
     dataloaders = {}
+    name = prefix
+    prefix = None  # assume there is no prefix in file names
     if isinstance(prefix, str):
         prefix = prefix + "_"
     else:
@@ -240,7 +243,7 @@ def fetch_dataloader(prefix, types, data_dir, params, dataset_type='non_icb', sh
 
             dataloaders[split] = dl
 
-    return dataloaders
+    return dataloaders, train_optimizer_mask, name
 
 
 def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
@@ -259,6 +262,6 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
 
-    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['dataset_type'], shuffle=shuffle) for index, row in data_dirs.iterrows()]
+    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['train_optimizer_mask'], row['dataset_type'], shuffle=shuffle) for index, row in data_dirs.iterrows()]
 
     return datasets

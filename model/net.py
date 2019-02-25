@@ -837,25 +837,32 @@ def regularized_loss(model, params, index="all"):
     return loss_curr
 
 
-def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, is_train):
+def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1]):
     '''
     define loss function and update parameters
     '''
 
-    def update_parameters(loss):
+    def update_parameters(loss, train_optimizer_mask):
         # clear previous gradients, compute gradients of all variables wrt loss
         embedding_optimizer.zero_grad()
         outputs_optimizer.zero_grad()
         loss.backward(retain_graph=True)
         # performs updates using calculated gradients
-        embedding_optimizer.step()
-        outputs_optimizer.step()
+        if train_optimizer_mask[0]:
+            embedding_optimizer.step()
+        if train_optimizer_mask[1]:
+            outputs_optimizer.step()
 
     total_loss = 0.
     loss_fns = params.loss_fns
     len_fns = len(loss_fns)
 
     label_inx = 0
+    if sum(train_optimizer_mask):
+        is_train = True
+    else:
+        is_train = False
+
     # loss_for_training = list(set(range(len(loss_fns))) - set(params.loss_excluded_from_training))
     # import ipdb
     # ipdb.set_trace()
@@ -886,11 +893,11 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             loss_curr = 0.
 
         if is_train and params.pipeline_optimization:
-            update_parameters(loss_curr)
+            update_parameters(loss_curr, train_optimizer_mask)
 
         total_loss = total_loss + loss_curr
 
     if is_train and not params.pipeline_optimization:
-        update_parameters(total_loss)
+        update_parameters(total_loss, train_optimizer_mask)
 
     return total_loss

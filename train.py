@@ -63,7 +63,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # train_batch_size = 256
 
 
-def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, dataloader, metrics, params):
+def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, dataloader, metrics, params, train_optimizer_mask):
     """Train the model on `num_steps` batches
     Args:
         model: (torch.nn.Module) the neural network
@@ -75,8 +75,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     """
 
     # set model to training mode
-    embedding_model.train()
-    outputs.train()
+    embedding_model.train() if train_optimizer_mask[0] else embedding_model.eval()
+    outputs.train() if train_optimizer_mask[1] else outputs.eval()
     num_batches_per_epoch, _, dataloader = dataloader
 
     # summary for current training loop and a running average object for loss
@@ -103,7 +103,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             embedding_batch = embedding_model(train_batch)
             output_batch = outputs(embedding_batch)
 
-            loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, is_train=True)
+            loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask)
 
             # output_batch1 = model(train_batch)
             # if(torch.any(torch.isnan(output_batch1))):
@@ -115,8 +115,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
                 output_batch = output_batch.data.cpu().numpy()
                 labels_batch = labels_batch.data.cpu().numpy()
-                print("output shape")
-                print(output_batch.shape)
+                # print("output shape")
+                # print(output_batch.shape)
 
                 # c_index = metrics.concordance_metric(output_batch, survival)
 
@@ -178,10 +178,11 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
         train_metrics_all = []
         val_metrics_all = []
-        for index, dataloader in enumerate(datasets):
+        for index, dataset in enumerate(datasets):
             # compute number of batches in one epoch (one full pass over the training set)
+            dataloader, train_optimizer_mask, dataset_name = dataset
             train_metrics = train(embedding_model, outputs, embedding_optimizer,
-                                  outputs_optimizer, dataloader['train'], metrics, params)
+                                  outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
             train_metrics_all.append(train_metrics)
 
             # Evaluate for one epoch on validation set
@@ -194,10 +195,12 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
             writer.add_scalars('val_' + str(index), val_metrics, epoch)
 
         for name, param1 in outputs.named_parameters():
-            writer.add_histogram("outputs" + name, param1.clone().cpu().data.numpy(), epoch)
+            writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
+            writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
 
         for name, param1 in embedding_model.named_parameters():
-            writer.add_histogram("embedding_model" + name, param1.clone().cpu().data.numpy(), epoch)
+            writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
+            writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
@@ -274,7 +277,7 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     ['train', 'val'], args.data_dir, params)
-    _, train_input_size, _ = datasets[0]['train']
+    _, train_input_size, _ = datasets[0][0]['train']
     # _, _, val_dl = dataloaders['val']
     # train_dl = dataloaders['train']
     # val_dl = dataloaders['val']

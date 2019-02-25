@@ -314,5 +314,5 @@ if __name__ == '__main__':
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
     train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir,
                        args.restore_file)
-    writer.export_scalars_to_json("./all_scalars.json")
+    # writer.export_scalars_to_json("./all_scalars.json")
     writer.close()

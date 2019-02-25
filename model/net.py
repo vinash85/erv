@@ -161,7 +161,7 @@ class EmbeddingNet(nn.Module):
         return out
 
 
-class outputLayer(nn.Module):
+class outputLayer_old(nn.Module):
 
     def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
         super(outputLayer, self).__init__()
@@ -195,6 +195,182 @@ class outputLayer(nn.Module):
         else:
             out = torch.cat((survival_out, linear1_out[:, 1:], binary_output), 1)
         # print(out.shape)
+        return out
+
+
+class outputLayer(nn.Module):
+
+    def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
+        super(outputLayer, self).__init__()
+        self.linear_output_size = linear_output_size
+        self.binary_output_size = binary_output_size
+        self.linear1 = nn.Linear(embedding_size, 1)
+        self.linear2 = nn.Linear(1, self.linear_output_size + self.binary_output_size)
+
+        self.dense1_bn = nn.BatchNorm1d(1)
+
+        self.sigmoid = nn.Sigmoid()
+        # self.softmax = nn.LogSoftmax()
+
+    def forward(self, x):
+        linear1_out = self.linear1(x)
+        linear2_out = self.linear2(linear1_out)
+        survival_out = self.dense1_bn(linear2_out[:, 0:1])
+        binary_output = self.sigmoid(linear2_out[:, self.linear_output_size:])
+        out = torch.cat((survival_out, linear2_out[:, 1:self.linear_output_size], binary_output), 1)
+
+        return out
+
+
+class outputLayer_incomplete(nn.Module):
+
+    def __init__(self, params):
+        super(outputLayer, self).__init__()
+        self.params = params
+        self.survival_size = int(len(params.survival_indices) / 2)
+        self.joint_size = len(params.joint_indices)
+        self.linear_output_size = len(params.continuous_phenotype_indices) + self.survival_size
+        self.binary_output_size = len(params.binary_phenotype_indices)
+        self.total_output_size = self.linear_output_size + self.total_output_size
+        self.joint_order_inx = get_joint_order()
+        self.survival_order_inx = get_survival_order()
+        if self.joint_size > 0:
+            self.truncated_output_size = self.total_output_size - self.joint_size + 1
+        else:
+            self.truncated_output_size = self.total_output_size
+
+        # if total_output_size > 0:
+        self.linear1 = nn.Linear(params.embedding_size, total_output_size)
+        self.dense1_bn = nn.BatchNorm1d(1)
+        # if binary_output_size > 0:
+        # self.linear2 = nn.Linear(params.embedding_size, binary_output_size)
+
+        if joint_size > 0:
+            self.linear_fork = nn.Linear(1, self.joint_size)
+        self.sigmoid = nn.Sigmoid()
+        # self.softmax = nn.LogSoftmax()
+
+    def get_joint_order():
+        order_inx = np.array(range(total_output_size))
+        if self.joint_size > 0:
+            start_inx = 1
+            for ii in range(total_output_size):
+                if any(self.params.joint_indices == ii):
+                    order_inx[ii] = 0
+                else:
+                    order_inx[ii] = start_inx
+                    start_inx = start_inx + 1
+        return order_inx
+
+    def get_survival_order():
+        order_inx = np.array(range(total_output_size))
+        if self.joint_size > 0:
+            start_inx = 1
+            for ii in range(total_output_size):
+                if any(self.params.joint_indices == ii):
+                    order_inx[ii] = 0
+                else:
+                    order_inx[ii] = start_inx
+                    start_inx = start_inx + 1
+        return order_inx
+
+    def forward(self, x):
+        # the first output is joint if present
+        out1 = self.linear1(x)
+        if self.joint_size > 0:
+            joint_output = out1[:, 0]
+            joint_output = linear_fork(joint_output)
+            out2 = torch.cat([joint_output, out1], 1)
+            out2 = out2[:, self.joint_order_inx]
+        else:
+            out2 = out1
+
+        if self.survival_size > 0:
+            survival_out = self.dense1_bn(out2[:, 0:self.survival_size])
+            out2 = torch.cat(survival_out, out2[:, self.survival_size:])
+
+        if self.binary_size > 0:
+            binary_out = self.sigmoid(out2[:, self.total_output_size - self.binary_size:])
+            out2 = torch.cat(out2[:, :self.total_output_size - self.binary_size], binary_out)
+
+        out = out2[:, self.order_inx]
+
+        return out
+
+
+class outputLayer_incomplete(nn.Module):
+
+    def __init__(self, params):
+        super(outputLayer, self).__init__()
+        self.params = params
+        self.survival_size = int(len(params.survival_indices) / 2)
+        self.joint_size = len(params.joint_indices)
+        self.linear_output_size = len(params.continuous_phenotype_indices) + self.survival_size
+        self.binary_output_size = len(params.binary_phenotype_indices)
+        self.total_output_size = self.linear_output_size + self.total_output_size
+        self.joint_order_inx = get_joint_order()
+        self.survival_order_inx = get_survival_order()
+        if self.joint_size > 0:
+            self.truncated_output_size = self.total_output_size - self.joint_size + 1
+        else:
+            self.truncated_output_size = self.total_output_size
+
+        # if total_output_size > 0:
+        self.linear1 = nn.Linear(params.embedding_size, total_output_size)
+        self.dense1_bn = nn.BatchNorm1d(1)
+        # if binary_output_size > 0:
+        # self.linear2 = nn.Linear(params.embedding_size, binary_output_size)
+
+        if joint_size > 0:
+            self.linear_fork = nn.Linear(1, self.joint_size)
+        self.sigmoid = nn.Sigmoid()
+        # self.softmax = nn.LogSoftmax()
+
+    def get_joint_order():
+        order_inx = np.array(range(total_output_size))
+        if self.joint_size > 0:
+            start_inx = 1
+            for ii in range(total_output_size):
+                if any(self.params.joint_indices == ii):
+                    order_inx[ii] = 0
+                else:
+                    order_inx[ii] = start_inx
+                    start_inx = start_inx + 1
+        return order_inx
+
+    def get_survival_order():
+        order_inx = np.array(range(total_output_size))
+        if self.joint_size > 0:
+            start_inx = 1
+            for ii in range(total_output_size):
+                if any(self.params.joint_indices == ii):
+                    order_inx[ii] = 0
+                else:
+                    order_inx[ii] = start_inx
+                    start_inx = start_inx + 1
+        return order_inx
+
+    def forward(self, x):
+        # the first output is joint if present
+        out1 = self.linear1(x)
+        if self.joint_size > 0:
+            joint_output = out1[:, 0]
+            joint_output = linear_fork(joint_output)
+            out2 = torch.cat([joint_output, out1], 1)
+            out2 = out2[:, self.joint_order_inx]
+        else:
+            out2 = out1
+
+        if self.survival_size > 0:
+            survival_out = self.dense1_bn(out2[:, 0:self.survival_size])
+            out2 = torch.cat(survival_out, out2[:, self.survival_size:])
+
+        if self.binary_size > 0:
+            binary_out = self.sigmoid(out2[:, self.total_output_size - self.binary_size:])
+            out2 = torch.cat(out2[:, :self.total_output_size - self.binary_size], binary_out)
+
+        out = out2[:, self.order_inx]
+
         return out
 
 # FC block

@@ -115,6 +115,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
                 output_batch = output_batch.data.cpu().numpy()
                 labels_batch = labels_batch.data.cpu().numpy()
+                print("output shape")
+                print(output_batch.shape)
 
                 # c_index = metrics.concordance_metric(output_batch, survival)
 

@@ -108,7 +108,10 @@ class EmbeddingNet(nn.Module):
             block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
         # output_size is updated
         print("final convolution layer output size")
-        self.fc_output_size = self.output_size * out_channels_list[-1]
+        if(len(out_channels_list) > 0):
+            self.fc_output_size = self.output_size * out_channels_list[-1]
+        else:
+            self.fc_output_size = input_size
 
         # self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
         # self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)

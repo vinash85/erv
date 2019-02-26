@@ -286,12 +286,12 @@ if __name__ == '__main__':
     logging.info("- done.")
 
     # Define the model and optimizer
-    if len(params.out_channels_list) > 0:
-        embedding_model = net.EmbeddingNet(
-            net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-    else:
-        embedding_model = net.EmbeddingNet_FC(
-            net.FullConnectedBlock, input_size, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
+    # if len(params.out_channels_list) > 0:
+    embedding_model = net.EmbeddingNet(
+        net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
+    # else:
+    #     embedding_model = net.EmbeddingNet_FC(
+    #         net.FullConnectedBlock, input_size, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
 
     outputs = net.outputLayer(params.embedding_size, linear_output_size=linear_output_size,
                               binary_output_size=binary_output_size)

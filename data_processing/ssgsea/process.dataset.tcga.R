@@ -40,6 +40,10 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 # phenotype data
     setnames(dataset_phenotype, 2, "patient.name")
     dataset_phenotype$patient.name = gsub(dataset_phenotype$patient.name, pattern="-", replacement=".")
+    as.mynumeric = function(xx) as.numeric(ifelse(xx == '[Not Available]', NA, xx))
+    # dataset_phenotype1 =dataset_phenotype
+    cols = colnames(dataset_phenotype)[-(1:2)]
+    dataset_phenotype[ , (cols) := lapply(.SD, as.mynumeric), .SDcols = cols ]
     only_in_phenotype = setdiff(dataset_phenotype$patient.name, patient.name)
     only_in_ssgsea = setdiff( patient.name, dataset_phenotype$patient.name)
     common.patients = intersect(patient.name, dataset_phenotype$patient.name)
@@ -140,9 +144,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         rand_inx = sample(nrow(dataset_ssgsea_sel))
         dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
         phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-        train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel))
-        val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel)): ceiling(.9 * nrow(dataset_ssgsea_sel))
-        test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
+        train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel_shuffle))
+        val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel_shuffle)): ceiling(.9 * nrow(dataset_ssgsea_sel_shuffle))
+        test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel_shuffle)):nrow(dataset_ssgsea_sel_shuffle)
         
         # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))
         # val.inx = ceiling(.5 * nrow(dataset_ssgsea_sel)): ceiling(nrow(dataset_ssgsea_sel))

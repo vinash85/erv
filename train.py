@@ -253,6 +253,7 @@ if __name__ == '__main__':
     params.survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
     params.continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
     params.binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
+
     params.loss_excluded_from_training = np.asarray(eval(params.loss_excluded_from_training), dtype=np.int)
 
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)

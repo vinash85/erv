@@ -77,78 +77,54 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     data_generator() -- the generator function to yield the features and labels
     """
 
-    # features, labels, cancertype = processDataLabels(
-    #     input_file, batch_by_type=batch_by_type, normalize=normalize)
-    # print(shuffle)
-    # print("survival")
-    # print(len(features))
     # np.random.seed(230)
+    def create_batches(feat, lab, batch_size, shuffle=True):
+        data_size = len(feat)
+        num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
+        if shuffle:
+            shuffle_indices = np.random.permutation(np.arange(data_size))
+            feat, lab = feat[shuffle_indices], lab[shuffle_indices]
+        batches_curr = []
+        for batch_num in range(num_batches_per_epoch):
+            start_index = batch_num * batch_size
+            end_index = (batch_num + 1) * batch_size
+            if batch_num == num_batches_per_epoch - 1:
+                end_index = data_size
 
-    # print(labels[0:3, 0:3])
+            temp = (feat[start_index:end_index], lab[start_index:end_index])
+            batches_curr.append(temp)
+
+        return batches_curr
+
+    def get_batches():
+        if batch_by_type:
+            batches = [Xy for type_curr in types for Xy in create_batches(features[cancertype == type_curr], labels[cancertype == type_curr], batch_size, shuffle)]
+        else:
+            batches = create_batches(features, labels, batch_size, shuffle)
+        return batches
+
     if (batch_by_type):
         if cancertype is None:
             raise NameError("cancertype not found")
-        types = cancertype.dtype.categories
+        # types = cancertype.dtype.categories
+        types = set(cancertype)
 
-    num_batches_per_epoch = int((len(features) - 1) / batch_size)
+    batches = get_batches()
+    data_size = len(features)
+    num_batches_per_epoch = len(batches)
     input_size = features.shape[1]
 
     # Sorts the batches by survival time
     def data_generator():
         while True:
-            data_size = len(features)
-            if shuffle:
-                shuffle_indices = np.random.permutation(np.arange(data_size))
-                shuffled_features = features[shuffle_indices]
-                shuffled_labels = labels[shuffle_indices]
-                if batch_by_type:
-                    shuffled_type = cancertype[shuffle_indices]
-            else:
-                shuffled_features = features
-                shuffled_labels = labels
-                if batch_by_type:
-                    shuffled_type = cancertype
-
-            num_batches_per_epoch = int(
-                (len(shuffled_labels) - 1) / batch_size)
-
-            # Sample from the dataset for each epoch
-            if batch_by_type:
-                random_type = np.random.choice(types, 1)[0]
-                shuffled_features = features[shuffled_type == random_type]
-                shuffled_labels = labels[shuffled_type == random_type]
-                data_size = len(shuffled_features)
-                num_batches_per_epoch = int(
-                    (len(shuffled_labels) - 1) / batch_size)
-
-                if DEBUG:
-                    print(random_type)
-                    print(len(shuffled_features))
-                    print(num_batches_per_epoch)
-
-            # print(shuffled_labels[0:3, 0:3])
-
-            for batch_num in range(num_batches_per_epoch):
-                if DEBUG:
-                    print("batch num {}".format(batch_num))
-
-                start_index = batch_num * batch_size
-                end_index = (batch_num + 1) * batch_size
-                if batch_num == num_batches_per_epoch - 1:
-                    end_index = data_size
-
-                end_index = min(end_index, data_size)
-                X, y = shuffled_features[start_index:
-                                         end_index], shuffled_labels[start_index: end_index]
-
+            batches = get_batches()
+            for X, y in batches:
+                # X, y = batch[0]
                 # import ipdb
                 # ipdb.set_trace()
-
-                # Sort X and y by survival time in each batch
-                # This is required for the negative binomial log likelihood to work as a loss function
-
                 if sort_survival:
                     sort_index = (input_size - 3) if dataset_type is 'icb' else 0
+                    # this was assuming in icb dataset survival is done through
                     idx = np.argsort(abs(y[:, sort_index]))[::-1]
                     X = X[idx, :]
                     # sort by survival time and take censored data
@@ -237,9 +213,12 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
             # ipdb.set_trace()
             features = readFile(path + "ssgsea_" + split + ".txt")
             # remember survival is no longer survival.
-            survival = readFile(path + "phenotype_" + split + ".txt")
+            phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
+            phenotypes = phenotypes_type[:, 1:]
+            phenotypes = phenotypes.astype(float)
+
             dl = generator_survival(
-                features, survival, batch_size=params.batch_size, normalize=False, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
+                features, phenotypes, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize=False, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
 
             dataloaders[split] = dl
 

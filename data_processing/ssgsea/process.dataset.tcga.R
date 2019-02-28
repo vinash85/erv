@@ -33,7 +33,6 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     patient.name = rownames(dataset_ssgsea_mat)
     patient.name = gsub(patient.name, pattern="-", replacement=".")
     # patient.name = substring(patient.name, 1, 12)
-
     rownames(dataset_ssgsea_mat) = patient.name
 
     ## there are duplicates in patient names because same patient have multiple expression. 
@@ -121,10 +120,13 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 
                 }
             }
-            phenotype_mat =  as.matrix(phenotype_sel[,-(1:2),with=F])
-
+            phenotype_mat =  phenotype_sel[,-(1:2),with=F]
+            temp = setdiff(phenotype_order, colnames(phenotype_mat))
+            temp.mat = matrix(NA, ncol=length(temp), nrow=nrow(phenotype_mat))
+            colnames(temp.mat) =temp
+            phenotype.ext.mat = cbind(phenotype_mat, temp.mat)
             # phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
-            phenotype.ext.mat = apply(phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ],2,as.numeric)
+            phenotype.ext.mat = phenotype.ext.mat[,match(phenotype_order, colnames(phenotype.ext.mat)),with=F ]
         }
 
 
@@ -162,3 +164,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 
     }
 
+if(FALSE){
+    phenotype_new_order = c("cancertype", phenotype_order[1:33], "oxphos_score",phenotype_order[34:41] )
+    phenotype_order = phenotype_new_order
+    save(file="/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData", phenotype_order)
+
+}

@@ -91,6 +91,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
             survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None
             # survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
+            # import ipdb
+            # ipdb.set_trace()
             labels_san_survival = all_labels[:, params.mask]
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()

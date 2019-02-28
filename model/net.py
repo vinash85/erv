@@ -690,12 +690,12 @@ def c_index(predicted_risk, survival):
     if survival is None:
         return 0
     # calculate the concordance index
-    ci = 0  # just to know that concordance index cannot be estimated
+    ci = 0.5  # just to know that concordance index cannot be estimated
     # print(r2python.cbind(np.reshape(predicted_risk, (-1, 1)), survival))
 
     na_inx = ~(np.isnan(survival[:, 0]) | np.isnan(survival[:, 1]) | np.isnan(predicted_risk))
     predicted_risk, survival = predicted_risk[na_inx], survival[na_inx]
-    if len(predicted_risk) > 0:
+    if len(predicted_risk) > 0 and sum(survival[:, 1] == 1) > 2:
         survival_time, censor = survival[:, 0], survival[:, 1]
         epsilon = 0.001
         partial_hazard = np.exp(-(predicted_risk + epsilon))

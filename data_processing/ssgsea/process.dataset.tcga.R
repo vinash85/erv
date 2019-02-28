@@ -42,7 +42,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     dataset_phenotype$patient.name = gsub(dataset_phenotype$patient.name, pattern="-", replacement=".")
     as.mynumeric = function(xx) as.numeric(ifelse(xx == '[Not Available]', NA, xx))
     # dataset_phenotype1 =dataset_phenotype
-    cols = colnames(dataset_phenotype)[-(1:2)]
+    cols = setdiff(colnames(dataset_phenotype)[-(1:2)], "cancertype")
     dataset_phenotype[ , (cols) := lapply(.SD, as.mynumeric), .SDcols = cols ]
     only_in_phenotype = setdiff(dataset_phenotype$patient.name, patient.name)
     only_in_ssgsea = setdiff( patient.name, dataset_phenotype$patient.name)
@@ -113,7 +113,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     # setnames(phenotype_sel, "OS", "survive")
     # setnames(phenotype_sel, "OS.Event", "vital_status")
 
-            normalize.survival = T
+            normalize.survival = FALSE
             prefix = unique(phenotype_sel$cancertype) 
             if(normalize.survival){
                 for (pre in seq(length(prefix))) {

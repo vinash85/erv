@@ -719,6 +719,8 @@ def calculate_auc(pred, y):
         auc = smetrics.auc(fpr, tpr)
     except:
         auc = 0.5
+    if isnan(auc):
+        auc = 0.5
     return auc
 
 metrics = {
@@ -730,6 +732,55 @@ metrics = {
 
 def isnan(x):
     return x != x
+
+
+def max_na(xx):
+    return (0 if len(xx) == 0 else max(xx))
+
+
+def create_lossfns_mask(params):
+
+    survival_output_size = int(len(params.survival_indices) / 2)
+    linear_output_size = survival_output_size + len(params.continuous_phenotype_indices)
+    binary_output_size = len(params.binary_phentoype_indices)
+    loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
+        [nn.MSELoss()] * len(params.continuous_phenotype_indices) + \
+        [nn.BCELoss()] * len(params.binary_phentoype_indices)
+    # BCEWithLogitsLoss is other option
+
+    # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phentoype_indices))
+
+    # survival_indices_new, continuous_indices_new, binary_indices_new = params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices
+    # print(survival_indices_new)
+
+    # for sur in survival_indices:
+    #     print(sur)
+    #     print(survival_indices_new > sur)
+    #     survival_indices_new[survival_indices_new > sur] = survival_indices_new[survival_indices_new > sur] - 1
+    #     continuous_indices_new[continuous_indices_new > sur] = continuous_indices_new[continuous_indices_new > sur] - 1
+    #     binary_indices_new[binary_indices_new > sur] = binary_indices_new[binary_indices_new > sur] - 1
+    mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices])
+    # print(survival_indices_new)
+    print(mask)
+
+    return loss_fns, mask, linear_output_size, binary_output_size
+
+
+def regularized_loss(model, params, index="all"):
+
+    loss_curr = 0.
+
+    for name, parameters in model.named_parameters():
+        if name.endswith('weight') and name.endswith('linear'):
+            if index is "all":
+                loss_curr = loss_curr + \
+                    torch.norm(parameters.view(-1), 1) * params.l1_regularizer \
+                    + torch.norm(parameters.view(-1), 2) * params.l2_regularizer
+            else:
+                loss_curr = loss_curr + \
+                    torch.norm(parameters[index].view(-1), 1) * params.l1_regularizer \
+                    + torch.norm(parameters[index].view(-1), 2) * params.l2_regularizer
+    return loss_curr
 
 
 def calculate_loss(labels, net_outputs, loss_fns):
@@ -791,55 +842,6 @@ def calculate_loss(labels, net_outputs, loss_fns):
     return total_loss
 
 
-def max_na(xx):
-    return (0 if len(xx) == 0 else max(xx))
-
-
-def create_lossfns_mask(params):
-
-    survival_output_size = int(len(params.survival_indices) / 2)
-    linear_output_size = survival_output_size + len(params.continuous_phenotype_indices)
-    binary_output_size = len(params.binary_phentoype_indices)
-    loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
-        [nn.MSELoss()] * len(params.continuous_phenotype_indices) + \
-        [nn.BCELoss()] * len(params.binary_phentoype_indices)
-    # BCEWithLogitsLoss is other option
-
-    # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phentoype_indices))
-
-    # survival_indices_new, continuous_indices_new, binary_indices_new = params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices
-    # print(survival_indices_new)
-
-    # for sur in survival_indices:
-    #     print(sur)
-    #     print(survival_indices_new > sur)
-    #     survival_indices_new[survival_indices_new > sur] = survival_indices_new[survival_indices_new > sur] - 1
-    #     continuous_indices_new[continuous_indices_new > sur] = continuous_indices_new[continuous_indices_new > sur] - 1
-    #     binary_indices_new[binary_indices_new > sur] = binary_indices_new[binary_indices_new > sur] - 1
-    mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices])
-    # print(survival_indices_new)
-    print(mask)
-
-    return loss_fns, mask, linear_output_size, binary_output_size
-
-
-def regularized_loss(model, params, index="all"):
-
-    loss_curr = 0.
-
-    for name, parameters in model.named_parameters():
-        if name.endswith('weight') and name.endswith('linear'):
-            if index is "all":
-                loss_curr = loss_curr + \
-                    torch.norm(parameters.view(-1), 1) * params.l1_regularizer \
-                    + torch.norm(parameters.view(-1), 2) * params.l2_regularizer
-            else:
-                loss_curr = loss_curr + \
-                    torch.norm(parameters[index].view(-1), 1) * params.l1_regularizer \
-                    + torch.norm(parameters[index].view(-1), 2) * params.l2_regularizer
-    return loss_curr
-
-
 def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1]):
     '''
     define loss function and update parameters
@@ -893,6 +895,9 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             loss_curr = loss_curr + regularized_loss(outputs, params, i)
         else:
             # loss_curr = torch.zeros(1)
+            loss_curr = 0.
+
+        if isnan(loss_curr):
             loss_curr = 0.
 
         if is_train and params.pipeline_optimization:

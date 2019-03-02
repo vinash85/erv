@@ -133,6 +133,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 # print("line 134")
 
                 summary_batch['loss'] = loss.item()
+                summary_batch['negative_loss'] = loss.item()
                 summ.append(summary_batch)
 
             # update the average loss

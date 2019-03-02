@@ -84,6 +84,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         summary_batch = {metric: metrics[metric](output_batch[:, 0], survival) if metric == 'c_index' else metrics[metric](output_batch[:, -1], labels_san_survival[:, -1])
                          for metric in metrics}  # TODO ugly solution, when more metrics change it!!
         summary_batch['loss'] = loss.item()
+        summary_batch['negative_loss'] = -loss.item()
         summ.append(summary_batch)
 
     # compute mean of all metrics in summary

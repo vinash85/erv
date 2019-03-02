@@ -132,12 +132,12 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                                  for metric in metrics}  # TODO ugly solution, when more metrics change it!!
                 # print("line 134")
 
-                summary_batch['loss'] = loss.item()
-                summary_batch['negative_loss'] = loss.item()
+                summary_batch['loss'] = loss
+                summary_batch['negative_loss'] = loss
                 summ.append(summary_batch)
 
             # update the average loss
-            loss_avg.update(loss.item())
+            loss_avg.update(loss)
 
             t.set_postfix(loss='{:05.3f}'.format(loss_avg()))
             t.update()

@@ -908,5 +908,9 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
 
     if is_train and not params.pipeline_optimization:
         update_parameters(total_loss, train_optimizer_mask)
+    if total_loss != 0:
+        loss_val = total_loss.item()
+    else:
+        loss_val = 0.
 
-    return total_loss
+    return loss_val

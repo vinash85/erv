@@ -690,7 +690,7 @@ def c_index(predicted_risk, survival):
     if survival is None:
         return 0
     # calculate the concordance index
-    ci = 0.5  # just to know that concordance index cannot be estimated
+    ci = np.nan  # just to know that concordance index cannot be estimated
     # print(r2python.cbind(np.reshape(predicted_risk, (-1, 1)), survival))
 
     na_inx = ~(np.isnan(survival[:, 0]) | np.isnan(survival[:, 1]) | np.isnan(predicted_risk))
@@ -722,6 +722,7 @@ def calculate_auc(pred, y):
     if isnan(auc):
         auc = 0.5
     return auc
+
 
 metrics = {
     'auc': calculate_auc,

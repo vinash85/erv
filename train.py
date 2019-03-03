@@ -41,7 +41,10 @@ parser.add_argument('--prefix', default='',
                     tcga_ssgsea_[train,test,val].txt, \n \
                     tcga_phenotype_[train,test,val].txt )")
 parser.add_argument('--restore_file', default=None,
-                    help="Optional, name of the file in --model_dir containing weights to reload before \
+                    help="Optional, \
+                    full path  of file  oR  \
+                    name of the file in --model_dir (withouth ext .pth.tar) \
+                    containing weights to reload before \
                     training")  # 'best' or 'train'
 
 # Device configuration
@@ -163,12 +166,16 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         metrics: (dict) a dictionary of functions that compute a metric using the output and labels of each batch
         params: (Params) hyperparameters
         model_dir: (string) directory containing config, weights and log
-        restore_file: (string) optional- name of file to restore from (without its extension .pth.tar)
+        restore_file: (string) optional- name of file to restore from
     """
     # reload weights from restore_file if specified
+    print(restore_file)
     if restore_file is not None:
-        restore_path = os.path.join(
-            args.model_dir, args.restore_file + '.pth.tar')
+        if os.path.isfile(restore_file):
+            restore_path = restore_file
+        else:
+            restore_path = os.path.join(
+                model_dir, restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
         utils.load_checkpoint(restore_path, embedding_model, outputs)  # not updating the optimizers for flexiblity
         # utils.load_checkpoint(restore_path, embedding_model, outputs, optimizer)

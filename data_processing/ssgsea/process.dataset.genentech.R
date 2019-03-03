@@ -60,14 +60,18 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype_sel.mod[is.na(Response) & (vital_status == 1) & (survive < 3)]$Response = 0
             phenotype_sel.mod[is.na(Response) & (survive > 7)]$Response = 1
             dataset_ssgsea_sel = dataset_ssgsea_sel[genetech.patients,]
-            phenotype_mat =  as.matrix(phenotype_sel.mod[,2:4,with=F])
-            phenotype.ext.mat = phenotype_mat 
+            # phenotype_mat =  as.matrix(phenotype_sel.mod[,2:4,with=F])
+            # phenotype.ext.mat = phenotype_mat 
             
 
-            phenotype_sel.mat = as.matrix(phenotype_sel.mod)
-            phenotype_mat = phenotype_sel.mat[,match(phenotype_order[seq(length(phenotype_order) -1)], colnames(phenotype_sel.mat)) ]
-            phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, phenotype_sel.mod$Response)),2,as.numeric)
-
+            # phenotype_sel.mat = as.matrix(phenotype_sel.mod)
+            phenotype_order[length(phenotype_order)] = "Response" # last is response
+            phenotype_mat =  phenotype_sel.mod
+            temp = setdiff(phenotype_order, colnames(phenotype_mat))
+            temp.mat = matrix(NA, ncol=length(temp), nrow=nrow(phenotype_mat))
+            colnames(temp.mat) =temp
+            phenotype_mat = cbind(phenotype_mat, temp.mat)
+            phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
 
 
 

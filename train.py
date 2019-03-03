@@ -133,7 +133,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 # print("line 134")
 
                 summary_batch['loss'] = loss
-                summary_batch['negative_loss'] = loss
+                summary_batch['negative_loss'] = -loss
                 summ.append(summary_batch)
 
             # update the average loss
@@ -143,8 +143,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             t.update()
 
     # compute mean of all metrics in summary
-    metrics_mean = {metric: np.mean([x[metric]
-                                     for x in summ]) for metric in summ[0]}
+    metrics_mean = {metric: net.mean_na([x[metric]
+                                         for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v)
                                 for k, v in metrics_mean.items())
     logging.info("- Train metrics: " + metrics_string)

@@ -739,6 +739,11 @@ def max_na(xx):
     return (0 if len(xx) == 0 else max(xx))
 
 
+def mean_na(xx):
+    xx = np.array(xx)
+    return np.mean(xx[~np.isnan(xx)])
+
+
 def create_lossfns_mask(params):
 
     survival_output_size = int(len(params.survival_indices) / 2)

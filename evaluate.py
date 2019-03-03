@@ -89,7 +89,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
 
     # compute mean of all metrics in summary
     # print(summ)
-    metrics_mean = {metric: np.mean([x[metric] for x in summ]) for metric in summ[0]}
+    metrics_mean = {metric: net.mean_na([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
     if validation_file:

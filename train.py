@@ -173,7 +173,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         utils.load_checkpoint(restore_path, embedding_model, outputs)  # not updating the optimizers for flexiblity
         # utils.load_checkpoint(restore_path, embedding_model, outputs, optimizer)
 
-    best_val_acc = 0.5  # for cindex
+    best_val_acc = None  # for cindex
 
     for epoch in range(params.num_epochs):
         # Run one epoch
@@ -211,7 +211,10 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         # val_acc = val_metrics[params.best_model_metric]  # use differnt functions
         # val_acc = min(val_metrics['c_index'], val_metrics['auc'])  # use differnt functions
         val_acc = val_metrics[params.best_model_metric]
-        is_best = val_acc > best_val_acc
+        if best_val_acc is None:
+            is_best = True
+        else:
+            is_best = val_acc > best_val_acc
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch + 1,

@@ -24,8 +24,9 @@ def conv1d(in_channels, out_channels, kernel_size=5, stride=2):
 
 class ConvolutionBlock(nn.Module):
 
-    def __init__(self, in_channels, out_channels, kernel_size=5, stride=2):
+    def __init__(self, in_channels, out_channels, kernel_size=5, stride=2, dropout_rate=0):
         super(ConvolutionBlock, self).__init__()
+        self.dropout_rate = dropout_rate
         # print(in_channels)
         # print(out_channels)
         self.conv1 = conv1d(in_channels, out_channels, kernel_size, stride=1)
@@ -39,6 +40,7 @@ class ConvolutionBlock(nn.Module):
         out = self.conv1(residual)
         out = self.bn1(out)
         out = self.relu(out)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.maxpool(out)
         return out
 
@@ -104,8 +106,7 @@ class EmbeddingNet(nn.Module):
         self.output_size = input_size
         print("initial output size")
         print(self.output_size)
-        self.layers_block1 = self.make_layers(
-            block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides)
+        self.layers_block1 = self.make_layers(block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides, dropout_rate=self.dropout_rate)
         # output_size is updated
         print("final convolution layer output size")
         if(len(out_channels_list) > 0):
@@ -135,12 +136,12 @@ class EmbeddingNet(nn.Module):
             print(self.fc_output_size)
         return nn.Sequential(*layers)
 
-    def make_layers(self, block, out_channels_list, kernel_sizes, strides):
+    def make_layers(self, block, out_channels_list, kernel_sizes, strides, dropout_rate):
         layers = []
         num_layers = len(out_channels_list)
         for i in range(0, num_layers):
             layers.append(block(self.in_channels, out_channels_list[
-                          i], kernel_sizes[i], stride=strides[i]))
+                          i], kernel_sizes[i], stride=strides[i], dropout_rate=dropout_rate))
             self.in_channels = out_channels_list[i]
             padding_size = (self.kernel_sizes[i] - 1) / 2
             convolution_stride = 1

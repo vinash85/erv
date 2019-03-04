@@ -37,6 +37,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     rownames(dataset_ssgsea_mat) = patient.name
     dataset_phenotype = dataset_phenotype[!is.na(survive)]
 
+
     ## there are duplicates in patient names because same patient have multiple expression. 
 
 # phenotype data
@@ -111,7 +112,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     # setnames(phenotype_sel, "OS", "survive")
     # setnames(phenotype_sel, "OS.Event", "vital_status")
 
-            normalize.survival = T
+            normalize.survival = FALSE
             prefix = unique(phenotype_sel$cancertype) 
             if(normalize.survival){
                 for (pre in seq(length(prefix))) {

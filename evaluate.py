@@ -128,20 +128,21 @@ if __name__ == '__main__':
 
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
-                                                    [type_file], args.data_dir, params)
-    _, input_size, _ = datasets[0][type_file]
+                                                    [type_file], args.data_dir, params, shuffle=False)
+    _, input_size, _ = datasets[0][0][type_file]
 
     logging.info("- done.")
+    params.survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
+    params.continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
+    params.binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
+
+    params.loss_excluded_from_training = np.asarray(eval(params.loss_excluded_from_training), dtype=np.int)
+
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
 
     # Define the model
-    convolution_encoder = params.convolution_encoder
-    if convolution_encoder:
-        embedding_model = net.EmbeddingNet(
-            net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-    else:
-        embedding_model = net.EmbeddingNet_FC(
-            net.FullConnectedBlock, input_size, out_channels_list=params.out_channels_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
+    embedding_model = net.EmbeddingNet(
+        net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
 
     outputs = net.outputLayer(params.embedding_size, linear_output_size=linear_output_size,
                               binary_output_size=binary_output_size)
@@ -165,7 +166,7 @@ if __name__ == '__main__':
 
     data_dirs = pd.read_csv(args.data_dir, sep="\t")
     data_dirs = [row['data_dir'] for index, row in data_dirs.iterrows()]
-    val_metrics_all = [evaluate(embedding_model, outputs, dataloader[type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataloader in zip(data_dirs, datasets)]
+    val_metrics_all = [evaluate(embedding_model, outputs, dataloader[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataloader in zip(data_dirs, datasets)]
     val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
     save_path = os.path.join(args.model_dir, "metrics_test_{}.json".format(args.restore_file))
     utils.save_dict_to_json(val_metrics, save_path)

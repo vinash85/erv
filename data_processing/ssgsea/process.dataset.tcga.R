@@ -11,9 +11,9 @@
 # TODO : Write file such sample name is first row and add support to the code
 
 # In[ ]:
-normalize.std = function(tt){
-    (tt - min(tt, na.rm=T))/(max(tt,na.rm=T) - min(tt, na.rm=T))
-}
+
+#Checking output of pca. prcomp function returns standard deviation (sdev), rotation and loadings.
+source("./source.R")
 
 process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phenotype_order, output.dir, fix_patient_name =F, ICB_dataset =F) {
 
@@ -35,6 +35,10 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     # patient.name = substring(patient.name, 1, 12)
     rownames(dataset_ssgsea_mat) = patient.name
 
+    ##BRCA
+    if(F){
+        dataset_phenotype = dataset_phenotype[cancertype=="BRCA"]
+    }
     ## there are duplicates in patient names because same patient have multiple expression. 
 
 # phenotype data
@@ -133,6 +137,18 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype.ext.mat = phenotype.ext.mat[,match(phenotype_order, colnames(phenotype.ext.mat)),with=F ]
         }
 
+        if(pca){
+            temp_out = get_pca(dataset_ssgsea_sel) 
+            std_cs = cumsum(temp_out$pca_obj$sdev^2/sum(temp_out$pca_obj$sdev^2))
+            sum(std_cs < 0.95)
+            sum(std_cs < 0.9)
+            sum(std_cs < 0.93)
+            pca_obj = temp_out$pca_obj
+            pca_obj$len_selected = 27
+            save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
+            pca_out_sel = temp_out$pca_out[,seq(pca_obj$len_selected)]
+            dataset_ssgsea_sel = pca_out_sel 
+        }
 
         write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
             row.names = F, col.names =T,  sep="\t", quote=F )
@@ -144,8 +160,8 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         rand_inx = sample(nrow(dataset_ssgsea_sel))
         dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
         phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-        train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel_shuffle))
-        val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel_shuffle)): ceiling(.9 * nrow(dataset_ssgsea_sel_shuffle))
+        train.inx = 1:ceiling(.8 * nrow(dataset_ssgsea_sel_shuffle))
+        val.inx = ceiling(.8 * nrow(dataset_ssgsea_sel_shuffle)): ceiling(.9 * nrow(dataset_ssgsea_sel_shuffle))
         test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel_shuffle)):nrow(dataset_ssgsea_sel_shuffle)
         
         # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))

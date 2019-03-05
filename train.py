@@ -10,7 +10,6 @@ import torch.nn as nn
 # import datetime
 # import time
 
-
 import argparse
 import logging
 import os
@@ -27,6 +26,7 @@ import model.net as net
 import model.data_generator as data_generator
 from evaluate import evaluate
 from tensorboardX import SummaryWriter
+from shutil import copy
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--data_dir', default='data/64x64_SIGNS',
@@ -154,7 +154,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     return metrics_mean
 
 
-def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, model_dir,
+def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, model_dir, tensorboard_dir,
                        restore_file=None):
     """Train the model and evaluate every epoch.
     Args:
@@ -231,7 +231,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                                'outputs_optim_dict': outputs_optimizer.state_dict()
                                },
                               is_best=is_best,
-                              checkpoint=model_dir)
+                              checkpoint=tensorboard_dir)
 
         # If best_eval, best_save_path
         if is_best:
@@ -240,12 +240,12 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
             # Save best val metrics in a json file in the model directory
             best_json_path = os.path.join(
-                model_dir, "metrics_val_best_weights.json")
+                tensorboard_dir, "metrics_val_best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
 
         # Save latest val metrics in a json file in the model directory
         last_json_path = os.path.join(
-            model_dir, "metrics_val_last_weights.json")
+            tensorboard_dir, "metrics_val_last_weights.json")
         utils.save_dict_to_json(val_metrics, last_json_path)
         # return the trained model
 
@@ -282,8 +282,11 @@ if __name__ == '__main__':
 
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
-
-    writer = SummaryWriter(os.path.join(args.model_dir, 'tensorboardLog', datetime.datetime.now().strftime("%Y%m%d-%H%M%S")))
+    tensorboard_dir = os.path.join(args.model_dir, 'tensorboardLog', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    writer = SummaryWriter(tensorboard_dir)
+    copy(json_path, tensorboard_dir)
+    copy(args.data_dir, tensorboard_dir)
+    logging.info("Tensorboard logging directory {}".format(tensorboard_dir))
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
@@ -326,7 +329,7 @@ if __name__ == '__main__':
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir,
+    train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir, tensorboard_dir,
                        args.restore_file)
     # writer.export_scalars_to_json("./all_scalars.json")
     writer.close()

@@ -310,8 +310,8 @@ if __name__ == '__main__':
     #     embedding_model = net.EmbeddingNet_FC(
     #         net.FullConnectedBlock, input_size, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
 
-    outputs = net.outputLayer(params.embedding_size, linear_output_size=linear_output_size,
-                              binary_output_size=binary_output_size)
+    outputs = net.outputLayer_simple(params.embedding_size, linear_output_size=linear_output_size,
+                                     binary_output_size=binary_output_size)
 
     if params.cuda:
         # model = model.cuda()

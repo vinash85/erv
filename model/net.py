@@ -202,6 +202,26 @@ class outputLayer_old(nn.Module):
         return out
 
 
+class outputLayer_simple(nn.Module):
+
+    def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
+        super(outputLayer_simple, self).__init__()
+        self.linear_output_size = linear_output_size
+        self.binary_output_size = binary_output_size
+        self.linear1 = nn.Linear(embedding_size, self.linear_output_size + self.binary_output_size)
+        self.dense1_bn = nn.BatchNorm1d(1)
+        self.sigmoid = nn.Sigmoid()
+        # self.softmax = nn.LogSoftmax()
+
+    def forward(self, x):
+        linear1_out = self.linear1(x)
+        survival_out = self.dense1_bn(linear1_out[:, 0:1])
+        binary_output = self.sigmoid(linear1_out[:, self.linear_output_size:])
+        out = torch.cat((survival_out, linear1_out[:, 1:self.linear_output_size], binary_output), 1)
+
+        return out
+
+
 class outputLayer(nn.Module):
 
     def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):

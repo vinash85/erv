@@ -35,6 +35,8 @@ parser.add_argument('--data_dir', default='data/64x64_SIGNS',
 # help="File contating list of dataset directories data_dirs")
 parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
+parser.add_argument('--tensorboard_prefix', default='',
+                    help="prefix for tensorboard logging")
 parser.add_argument('--prefix', default='',
                     help="Prefix of dataset files  \n \
                     (e.g. prefix=\"tcga\" implies input files are \n \
@@ -92,11 +94,8 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
 
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-            survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None
-            # survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
-            # import ipdb
-            # ipdb.set_trace()
-            labels_san_survival = all_labels[:, params.mask]
+            survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
+            labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1)
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()
             # move to GPU if available
@@ -261,11 +260,11 @@ if __name__ == '__main__':
     # params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
     #         # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
     #         params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
-    params.survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
-    params.continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
-    params.binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
+    params.survival_indices = eval(params.survival_indices)
+    params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
+    params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
 
-    params.loss_excluded_from_training = np.asarray(eval(params.loss_excluded_from_training), dtype=np.int)
+    params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
 
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)
@@ -282,7 +281,7 @@ if __name__ == '__main__':
 
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))
-    tensorboard_dir = os.path.join(args.model_dir, 'tensorboardLog', datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
+    tensorboard_dir = os.path.join(args.model_dir, 'tensorboardLog', args.tensorboard_prefix + datetime.datetime.now().strftime("%Y%m%d-%H%M%S"))
     writer = SummaryWriter(tensorboard_dir)
     copy(json_path, tensorboard_dir)
     copy(args.data_dir, tensorboard_dir)

@@ -13,8 +13,8 @@ import r2python
 dataset_dir = "../results/simulation15Feb/"
 os.system("mkdir " + dataset_dir)
 numfeat = 100
-numSample = 20000
-noise_level = 2.0  # amount of noise
+numSample = 10000
+noise_level = 0  # amount of noise
 
 feature = np.random.normal(0, 1, numfeat * numSample)
 featureMat = np.mat(feature)
@@ -41,7 +41,7 @@ aa = np.asarray([survival_censored, censor])
 aa = aa.transpose([1, 0])
 survival_final = pd.DataFrame(data=aa, columns=["times", "status"])
 
-survival_final.to_csv(dataset_dir + "survival.train.txt", sep='\t', index=False)
+# survival_final.to_csv(dataset_dir + "survival.train.txt", sep='\t', index=False)
 # numpy.savetxt("../results/simulation/survival.txt", a, delimiter=",")
 feature_df = pd.DataFrame(featureMat)
 
@@ -66,13 +66,14 @@ def create_outputs(featureMat, linear=True, add_nan=False):
         out[sel] = np.nan
     return out
 
-linear_output_size = 2
+linear_output_size = 1
 binary_output_size = 1
 
 # outputs = np.zeros( numSample , linear_output_size + binary_output_size + 1)
-
 outputs = survival_final
-
+outputs['cancertype'] = "BRCA"
+cols = outputs.columns.tolist()
+outputs = outputs[cols[-1:] + cols[:-1]]
 for i in range(linear_output_size - 1):
     tag = "linear" + str(i)
     outputs[tag] = create_outputs(featureMat, add_nan=True)
@@ -82,8 +83,8 @@ for i in range(binary_output_size):
     outputs[tag] = create_outputs(featureMat, linear=False)
 
 
-outputs.to_csv(dataset_dir + "outputs.train.txt", sep='\t', index=False, na_rep='NaN')
-feature_df.to_csv(dataset_dir + "features.txt", sep='\t', index=False)
+# outputs.to_csv(dataset_dir + "outputs.train.txt", sep='\t', index=False, na_rep='NaN')
+# feature_df.to_csv(dataset_dir + "features.txt", sep='\t', index=False)
 
 
 # split 7 2 1

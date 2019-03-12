@@ -35,9 +35,12 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     # patient.name = substring(patient.name, 1, 12)
 
     rownames(dataset_ssgsea_mat) = patient.name
-    dataset_phenotype = dataset_phenotype[!is.na(survive)]
+    # dataset_phenotype = dataset_phenotype[!is.na(survive)]
 
-
+    ##BRCA
+    if(F){
+        dataset_phenotype = dataset_phenotype[cancertype=="BLCA"]
+    }
     ## there are duplicates in patient names because same patient have multiple expression. 
 
 # phenotype data
@@ -124,10 +127,28 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
                 }
             }
             phenotype_mat =  as.matrix(phenotype_sel[,-(1),with=F])
-
+            temp = setdiff(phenotype_order, colnames(phenotype_mat))
+            temp.mat = matrix(NA, ncol=length(temp), nrow=nrow(phenotype_mat))
+            colnames(temp.mat) =temp
+            phenotype.ext.mat = cbind(phenotype_mat, temp.mat)
             # phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
-            phenotype.ext.mat = apply(phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ],2,as.numeric)
+            phenotype.ext.mat = phenotype.ext.mat[,match(phenotype_order, colnames(phenotype.ext.mat)),with=F ]
         }
+
+        if(pca){
+            load(pca_obj.RData)
+            temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj) 
+            # std_cs = cumsum(temp_out$pca_obj$sdev^2/sum(temp_out$pca_obj$sdev^2))
+            # sum(std_cs < 0.95)
+            # sum(std_cs < 0.9)
+            # sum(std_cs < 0.93)
+            pca_obj = temp_out$pca_obj
+            pca_obj$len_selected = 50
+            save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
+            pca_out_sel = temp_out$pca_out[,seq(pca_obj$len_selected)]
+            dataset_ssgsea_sel = pca_out_sel 
+        }
+
 
 
         write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
@@ -136,13 +157,12 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             row.names = F, col.names =T,  sep="\t", quote=F )
 
 
-
         rand_inx = sample(nrow(dataset_ssgsea_sel))
         dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
         phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-        train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel))
-        val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel)): ceiling(.9 * nrow(dataset_ssgsea_sel))
-        test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
+        train.inx = 1:ceiling(.85 * nrow(dataset_ssgsea_sel_shuffle))
+        # val.inx = ceiling(.8 * nrow(dataset_ssgsea_sel_shuffle)): ceiling(.9 * nrow(dataset_ssgsea_sel_shuffle))
+        val.inx = ceiling(.85 * nrow(dataset_ssgsea_sel_shuffle)):nrow(dataset_ssgsea_sel_shuffle)
         
         # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))
         # val.inx = ceiling(.5 * nrow(dataset_ssgsea_sel)): ceiling(nrow(dataset_ssgsea_sel))

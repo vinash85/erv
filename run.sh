@@ -8,10 +8,13 @@ dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ssgsva.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
-output.dir = "~/project/deeplearning/icb/data/tcga.oxphos/"
-output.dir = "~/project/deeplearning/icb/data/tcga.brca/pca/"
+output.dir = "~/project/deeplearning/icb/data/tcga.brca/PCA/"
 
-# ICB dataset 
+output.dir = "~/project/deeplearning/icb/data/tcga.blca/pca"
+
+# ICB dataset
+
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt"
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/ICB_GSVA.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB.txt"
@@ -20,8 +23,11 @@ output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pca/"
+output.dir = "~/project/deeplearning/icb/data/genentech.tpm/genentech.pca.tpm.phenotypes/"
 
+output.dir = "~/project/deeplearning/icb/data/genentech.tpm/"
 
+pca_obj.RData = "~/project/deeplearning/icb/data/tcga.blca/pca/pca_obj.RData"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.pca/"
 fix_patient_name =F; ICB_dataset =T
 
@@ -32,6 +38,7 @@ dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_Precog_oxph
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm"
 
+output.dir = "~/project/deeplearning/icb/data/tcga.blca/tcga.blca.pca/"
 
 #######
 ######
@@ -63,7 +70,6 @@ python train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --mode
 
 ipython -pdb train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --model_dir /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_43
 
-/homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_43/*.tar
 
 python train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --model_dir /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_embedding8
 
@@ -92,11 +98,18 @@ python  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancan
 python  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/
 python  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/combined/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/combined/
 
-python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.brca/pca/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.brca/pca 
+python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.blca/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.blca 
+
+python train.py --data_dir ../data/tcga.blca/genentech.pca/datasets_list.txt --model_dir ../data/tcga.blca/genentech.pca --restore_file ../data/tcga.blca/pca/tensorboardLog/20190307-140948/best.pth.tar
+
+
+
+python evaluate.py  --data_dir /Users/avi/Dropbox/project/code/deeplearning/icb/data/tcga.blca/genentech.pca/eval/datasets_list.txt  --model_dir /Users/avi/Dropbox/project/code/deeplearning/icb/data/tcga.blca/pca/tensorboardLog/20190307-140948/ --restore_file /Users/avi/Dropbox/project/code/deeplearning/icb/data/tcga.blca/pca/tensorboardLog/20190307-140948/best.pth.tar
+
 
 python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/ --restore_file ~/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/last.best.pthr.tar
 
-python evaluate.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/ --restore_file best
+
 
 python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pretrain_tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pretrain_tcga/ 
 --restore_file ~/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/my.best.pth.tar
@@ -106,3 +119,8 @@ python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancanc
 python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/
 
 python evaluate.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/ --restore_file best
+
+
+python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/. --tensorboard_prefix ""
+
+ python  evaluate.py  --data_dir  ../data/genentech.tpm/genentech.pca.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.phenotypes/. --restore_file ../data/genentech.tpm/genentech.pca.phenotypes/tensorboardLog/surv_20190310-214230/best.pth.tar

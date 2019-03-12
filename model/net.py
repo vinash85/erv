@@ -913,7 +913,7 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             na_inx = ~isnan(label)
             label, net_output = label[na_inx], net_output[na_inx]
 
-        if(len(label) > 1) and not any(params.loss_excluded_from_training == i):
+        if(len(label) > 1) and not any(np.array(params.loss_excluded_from_training) == i):
             # in case of survival label is censor; censored data assumed to
             # sorted based on patient event time.
             loss_curr = loss_fn(net_output, label)

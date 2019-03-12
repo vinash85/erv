@@ -24,13 +24,20 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     pathway_order = fread(pathway_order)
     dataset_phenotype = fread(dataset_phenotype)
     xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
+    genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
     # phenotype_order = fread(phenotype_order)
     dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
     colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
-    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
-    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
-    patient.name = rownames(dataset_ssgsea_mat)
+    if(!tpm){
+        dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
+        dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
+        }else{
+            pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
+
+           dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
+        }
+        patient.name = rownames(dataset_ssgsea_mat)
     patient.name = gsub(patient.name, pattern="-", replacement=".")
     rownames(dataset_ssgsea_mat) = patient.name
 
@@ -126,6 +133,40 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         }
 
 
+        if(pca){
+            # load(pca_obj.RData)
+            pca_obj = NULL
+
+            temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj) 
+            # std_cs = cumsum(temp_out$pca_obj$sdev^2/sum(temp_out$pca_obj$sdev^2))
+            # sum(std_cs < 0.95)
+            # sum(std_cs < 0.9)
+            # sum(std_cs < 0.93)
+            pca_obj = temp_out$pca_obj
+            pca_obj$len_selected = 50
+            save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
+            pca_out_sel = temp_out$pca_out[,seq(pca_obj$len_selected)]
+            dataset_ssgsea_sel = pca_out_sel 
+        }
+
+        if(combine_phenotype_feature){
+            reorder = match(rownames(dataset_ssgsea_sel), rownames(genentech.env$phenotype.feature.mat))
+            f1 = genentech.env$phenotype.feature.mat[reorder,]
+            extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1")
+            f2 = t(genentech.env$cc[ genentech.env$bb$Symbol%in% extra.genes.inx, ])[reorder,]
+            pheno1 = genentech.env$response.mat[reorder,]
+
+
+
+            pheno.feat = phenotype.ext.mat[1,5:34,drop=F]
+            new.feature = cbind(dataset_ssgsea_sel, f1, f2, pheno.feat)
+            new.pheno = cbind(phenotype.ext.mat, pheno1)
+            dataset_ssgsea_sel = new.feature
+            phenotype.ext.mat = new.pheno
+
+        }
+
+
         write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
             row.names = F, col.names =T,  sep="\t", quote=F )
         write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = phenotype.ext.mat,
@@ -136,9 +177,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         rand_inx = sample(nrow(dataset_ssgsea_sel))
         dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
         phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-        train.inx = 1:ceiling(.7 * nrow(dataset_ssgsea_sel))
-        val.inx = ceiling(.7 * nrow(dataset_ssgsea_sel)): ceiling(.9 * nrow(dataset_ssgsea_sel))
-        test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
+        train.inx = 1:ceiling(.85 * nrow(dataset_ssgsea_sel))
+        val.inx = ceiling(.85 * nrow(dataset_ssgsea_sel)): ceiling( nrow(dataset_ssgsea_sel))
+        # test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
         
         # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))
         # val.inx = ceiling(.5 * nrow(dataset_ssgsea_sel)): ceiling(nrow(dataset_ssgsea_sel))
@@ -153,10 +194,21 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         write.table(file=paste0(output.dir, "/phenotype_val.txt"),x = phenotype.ext.mat_shuffle[val.inx,],
             row.names = F, col.names =T,  sep="\t", quote=F )
 
-        write.table(file=paste0(output.dir, "/sgsea_test.txt"),x = dataset_ssgsea_sel_shuffle[test.inx,],
-            row.names = F, col.names =T,  sep="\t", quote=F )
-        write.table(file=paste0(output.dir, "/phenotype_test.txt"),x = phenotype.ext.mat_shuffle[test.inx,],
-            row.names = F, col.names =T,  sep="\t", quote=F )
+        # write.table(file=paste0(output.dir, "/sgsea_test.txt"),x = dataset_ssgsea_sel_shuffle[test.inx,],
+        #     row.names = F, col.names =T,  sep="\t", quote=F )
+        # write.table(file=paste0(output.dir, "/phenotype_test.txt"),x = phenotype.ext.mat_shuffle[test.inx,],
+        #     row.names = F, col.names =T,  sep="\t", quote=F )
 
     }
 
+if(pcg){
+    pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/pcg.txt")
+    dataset_ssgsea1 = dataset_ssgsea
+    length(intersect(toupper(dataset_ssgsea$V1), toupper(pcgs$Gene)))
+    dataset_ssgsea = dataset_ssgsea1[V1 %in% pcgs$Gene,]
+  
+
+# setdiff(pcgs$Gene, dataset_ssgsea$V1)
+# grep("AC243837.*", dataset_ssgsea$V1, value=T)
+
+}

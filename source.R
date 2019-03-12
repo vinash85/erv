@@ -25,7 +25,7 @@ big.prcomp = function(data, center=TRUE, scale=FALSE){
 get_pca = function(data, pca_obj=NULL, center = T, scale = F){
 	require(gmodels)
 	if(is.null(pca_obj)){
-		pca_obj <- big.prcomp(data,center = center, scale=scale)
+			pca_obj <- big.prcomp(data,center = center, scale=scale)
 		pca_out = pca_obj$x
 		pca_obj$x = NULL ## to save space
 	}else{

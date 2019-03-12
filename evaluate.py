@@ -53,10 +53,10 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     # ipdb.set_trace()
 
     for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-        survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
-        labels_san_survival = all_labels[:, params.mask]
-        # labels_san_survival = all_labels[:, 42:]
-
+        survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
+        labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1)
+        # survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
+        # labels_san_survival = all_labels[:, params.mask]
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
         # move to GPU if available
         if params.cuda:
@@ -144,8 +144,8 @@ if __name__ == '__main__':
     embedding_model = net.EmbeddingNet(
         net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
 
-    outputs = net.outputLayer(params.embedding_size, linear_output_size=linear_output_size,
-                              binary_output_size=binary_output_size)
+    outputs = net.outputLayer_simple(params.embedding_size, linear_output_size=linear_output_size,
+                                     binary_output_size=binary_output_size)
 
     if params.cuda:
         # model = model.cuda()
@@ -158,7 +158,13 @@ if __name__ == '__main__':
 
     # Reload weights from the saved file
     # print(os.path.join(args.model_dir, args.restore_file + '.pth.tar'))
-    utils.load_checkpoint(os.path.join(args.model_dir, args.restore_file + '.pth.tar'), embedding_model, outputs)
+    if os.path.isfile(args.restore_file):
+        restore_path = args.restore_file
+    else:
+        restore_path = os.path.join(
+            args.model_dir, args.restore_file + '.pth.tar')
+    logging.info("Restoring parameters from {}".format(restore_path))
+    utils.load_checkpoint(restore_path, embedding_model, outputs)
 
     metrics = net.metrics
 
@@ -168,5 +174,5 @@ if __name__ == '__main__':
     data_dirs = [row['data_dir'] for index, row in data_dirs.iterrows()]
     val_metrics_all = [evaluate(embedding_model, outputs, dataloader[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataloader in zip(data_dirs, datasets)]
     val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
-    save_path = os.path.join(args.model_dir, "metrics_test_{}.json".format(args.restore_file))
+    save_path = os.path.join("{}.json".format(restore_path))
     utils.save_dict_to_json(val_metrics, save_path)

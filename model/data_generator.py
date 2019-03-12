@@ -5,7 +5,21 @@ import logging
 import numpy as np
 import pandas as pd
 import os
+from scipy.stats import norm, rankdata
 # from keras import backend as K
+
+
+def qnorm_array(xx):
+    """
+    Perform quantile normalization on a np.array similar to qnorm_col
+    """
+    xx_back = xx
+    xx = xx_back[~np.isnan(xx)]
+    xx = rankdata(xx, method="average")
+    xx = xx / (max(xx) + 1)  # E(max(x)) < sqrt(2log(n))
+    xx = norm.ppf(xx, loc=0, scale=1)
+    xx_back[~np.isnan(xx)] = xx
+    return xx
 
 
 DEBUG = False
@@ -28,6 +42,19 @@ def normalize(data):
         data.rank(method='first').stack(dropna=False).astype(int)).mean()
     data = data.rank(method='min').stack(dropna=False).astype(
         int).map(rank_mean).unstack()
+    return data
+
+
+def quantile_normalize(data):
+    """
+    Perform quantile normalization on a np.array similar to qnorm_col
+    """
+
+    # force data into floats for np calculations
+    data = data.astype('float')
+
+    # add a epsilon to the data to adjust for 0 values
+    data = np.apply_along_axis(qnorm_array, 0, data)
     return data
 
 
@@ -80,6 +107,8 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     # np.random.seed(230)
     def create_batches(feat, lab, batch_size, shuffle=True):
         data_size = len(feat)
+        if normalize:
+            feat = quantile_normalize(feat)
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -218,7 +247,7 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
             phenotypes = phenotypes.astype(float)
 
             dl = generator_survival(
-                features, phenotypes, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize=False, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
+                features, phenotypes, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize=True, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
 
             dataloaders[split] = dl
 

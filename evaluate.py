@@ -53,16 +53,12 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     # ipdb.set_trace()
 
     for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-        survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
         labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1)
-        # survival = all_labels[:, params.survival_indices] if len(params.survival_indices) else None   # throw error if # phenotype < 2
-        # labels_san_survival = all_labels[:, params.mask]
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
         # move to GPU if available
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
         # fetch the next evaluation batch
-        # data_batch, labels_batch = Variable(data_batch), Variable(labels_batch)
 
         # compute model output
         embedding_batch = embedding_model(data_batch)
@@ -81,8 +77,11 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         # labels_batch = labels_batch.data.cpu().numpy()
 
         # compute all metrics on this batch
-        summary_batch = {metric: metrics[metric](output_batch[:, 0], survival) if metric == 'c_index' else metrics[metric](output_batch[:, -1], labels_san_survival[:, -1])
-                         for metric in metrics}  # TODO ugly solution, when more metrics change it!!
+        summary_batch = {dd[0]: metrics[dd[0]](output_batch[:, dd[1]], labels_san_survival[:, dd[2]: (dd[2] + 2)])
+                         if dd[0] == 'c_index' else
+                         metrics[dd[0]](output_batch[:, dd[1]], labels_san_survival[:, dd[2]])
+                         for dd in params.metrics}
+
         summary_batch['loss'] = loss
         summary_batch['negative_loss'] = -loss
         summ.append(summary_batch)

@@ -94,7 +94,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
 
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
-            survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
+            # survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
             labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1)
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()
@@ -119,19 +119,14 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
                 output_batch = output_batch.data.cpu().numpy()
                 labels_batch = labels_batch.data.cpu().numpy()
-                # print("output shape")
-                # print(output_batch.shape)
-
-                # c_index = metrics.concordance_metric(output_batch, survival)
 
                 # compute all metrics on this batch
-                # summary_batch = {'c_index': c_index}
-                # print(output_batch.shape)
-                # print(survival.shape)
-                # print("line 133")
-                # print(survival[0, :])
-                summary_batch = {metric: metrics[metric](output_batch[:, 0], survival) if metric == 'c_index' else metrics[metric](output_batch[:, -1], labels_san_survival[:, -1])
-                                 for metric in metrics}  # TODO ugly solution, when more metrics change it!!
+                # import ipdb
+                # ipdb.set_trace()
+                summary_batch = {dd[0]: metrics[dd[0]](output_batch[:, dd[1]], labels_san_survival[:, dd[2]: (dd[2] + 2)])
+                                 if dd[0] == 'c_index' else
+                                 metrics[dd[0]](output_batch[:, dd[1]], labels_san_survival[:, dd[2]])
+                                 for dd in params.metrics}  # TODO ugly solution, when more metrics change it!!
                 # print("line 134")
 
                 summary_batch['loss'] = loss
@@ -265,6 +260,7 @@ if __name__ == '__main__':
     params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
 
     params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
+    params.metrics = eval(params.metrics)
 
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)

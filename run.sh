@@ -121,6 +121,8 @@ python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.ox
 python evaluate.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/ --restore_file best
 
 
-python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/. --tensorboard_prefix ""
+python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/. 
+
+--tensorboard_prefix ""
 
  python  evaluate.py  --data_dir  ../data/genentech.tpm/genentech.pca.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.phenotypes/. --restore_file ../data/genentech.tpm/genentech.pca.phenotypes/tensorboardLog/surv_20190310-214230/best.pth.tar

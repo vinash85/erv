@@ -22,14 +22,29 @@ big.prcomp = function(data, center=TRUE, scale=FALSE){
 	# out$x = pca$loadings
 	out
 }
-get_pca = function(data, pca_obj=NULL, center = T, scale = F){
+get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 	require(gmodels)
+	sds =  apply(data, 2,  sd)
+	sds = ifelse(sds==0, 1E-3, sds)
+	pca_out = NULL
+	# calculate pca 
 	if(is.null(pca_obj)){
-			pca_obj <- big.prcomp(data,center = center, scale=scale)
-		pca_out = pca_obj$x
+
+		if(subsample < 1){
+			data.sub = data[sample(nrow(data),size = subsample*nrow(data)),]
+			pca_obj <- big.prcomp(data.sub,center = center, scale=scale)
+
+			}else{
+				pca_obj <- big.prcomp(data,center = center, scale=scale)
+				pca_out = pca_obj$x
+			}
 		pca_obj$x = NULL ## to save space
-	}else{
+		pca_obj$sds = sds
+	}
+	if(is.null(pca_out)) {
 		aa = t(apply(data, 1, function(tt) {
+			## matching sds 
+			tt = tt * pca_obj$sds/sds ## matching the distribution
 			if(pca_obj$center[1]) 
 				tt = tt-pca_obj$center
 			if(pca_obj$scale[1]) 

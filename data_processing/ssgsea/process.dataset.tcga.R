@@ -26,19 +26,31 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
     # phenotype_order = fread(phenotype_order)
     dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
-    colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
-    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
-    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
-    patient.name = rownames(dataset_ssgsea_mat)
-    patient.name = gsub(patient.name, pattern="-", replacement=".")
-    # patient.name = substring(patient.name, 1, 12)
-    rownames(dataset_ssgsea_mat) = patient.name
+    tpm = T
+    if(!tpm){
+    colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
+        dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
+        dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
+        }else{
+    colnames(dataset_ssgsea_mat) = dataset_ssgsea$gene_name
+            pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
+           # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
+            load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
+           dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
+           stopifnot(any(!is.na(dataset_ssgsea_mat)))
+
+        }
+
 
     ##BRCA
     if(F){
         dataset_phenotype = dataset_phenotype[cancertype=="BLCA"]
     }
+    patient.name = rownames(dataset_ssgsea_mat)
+    patient.name = gsub(patient.name, pattern="-", replacement=".")
+    # patient.name = substring(patient.name, 1, 12)
+    rownames(dataset_ssgsea_mat) = patient.name
     ## there are duplicates in patient names because same patient have multiple expression. 
 
 # phenotype data
@@ -59,60 +71,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
 
-    if(ICB_dataset){
-        impute_reponse  = FALSE
-        if(impute_reponse){
-            ######
-            # imputing  response
-            #########
-            genetech.patients = intersect(grep(phenotype_sel$patient.name, pattern="^SAM", value=T), rownames(dataset_ssgsea_sel))
-            phenotype_sel.mod = phenotype_sel[match(genetech.patients, patient.name)]
-            phenotype_sel.mod[, Response:=as.double(Response)]
-            phenotype_sel.mod[is.na(Response) & (vital_status == 1) & (survive < 3)]$Response = 0
-            phenotype_sel.mod[is.na(Response) & (survive > 7)]$Response = 1
-            dataset_ssgsea_sel = dataset_ssgsea_sel[genetech.patients,]
-            phenotype_mat =  as.matrix(phenotype_sel.mod[,2:4,with=F])
-            phenotype.ext.mat = phenotype_mat 
-            
-
-            phenotype_sel.mat = as.matrix(phenotype_sel.mod)
-            phenotype_mat = phenotype_sel.mat[,match(phenotype_order[seq(length(phenotype_order) -1)], colnames(phenotype_sel.mat)) ]
-            phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, phenotype_sel.mod$Response)),2,as.numeric)
+    
 
 
-
-
-            }else{
-
-                # create groups
-                setnames(phenotype_sel, "survive", "survive_ICB")
-                setnames(phenotype_sel, "vital_status", "vital_status_ICB")
-                prefix = c("^H_VB", "^SRR", "^ERR", "^CA", "^PD", "^SAM")
-                phenotype_sel$dataset= rep(NA, nrow(phenotype_sel))
-                for (pre in seq(length(prefix))) {
-                    pre.curr = prefix[pre]
-                    inx.curr = grep(pre.curr, phenotype_sel$patient.name)
-                    phenotype_sel$survive_ICB[inx.curr] = normalize.std(phenotype_sel$survive_ICB[inx.curr])
-                    phenotype_sel$dataset[inx.curr] = pre
-
-
-                }
-# O is non-responder and 1 is responder 
-                phenotype_sel[,response:= ifelse(Response %in% c("1", "CR", "PR"), 1, ifelse(Response %in% c("0", "SD", "PD"),0, NA))]
-
-                response.df = phenotype_sel[,list(survive_ICB, vital_status_ICB,  response)] 
-
-                phenotype_mat =  as.matrix(phenotype_sel[,-1,with=F])
-                phenotype_mat = phenotype_mat[,match(phenotype_order[seq(length(phenotype_order) -3)], colnames(phenotype_mat)) ]
-                phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, response.df)),2,as.numeric)
-
-            }
-        }
-        
-
-
-
-        }else{
 
     # setnames(phenotype_sel, "OS", "survive")
     # setnames(phenotype_sel, "OS.Event", "vital_status")
@@ -135,10 +96,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype.ext.mat = cbind(phenotype_mat, temp.mat)
             # phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
             phenotype.ext.mat = phenotype.ext.mat[,match(phenotype_order, colnames(phenotype.ext.mat)),with=F ]
-        }
 
         if(pca){
-            temp_out = get_pca(dataset_ssgsea_sel) 
+            temp_out = get_pca(dataset_ssgsea_sel, subsample=.2) 
             # std_cs = cumsum(temp_out$pca_obj$sdev^2/sum(temp_out$pca_obj$sdev^2))
             # sum(std_cs < 0.95)
             # sum(std_cs < 0.9)
@@ -148,6 +108,25 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
             pca_out_sel = temp_out$pca_out[,seq(pca_obj$len_selected)]
             dataset_ssgsea_sel = pca_out_sel 
+        }
+        if(combine_phenotype_feature){
+            barcode = substring(rownames(dataset_ssgsea_sel), 1,12)
+            # library(readxl)
+            # phenotype = excel_read("liulab/asahu/data/ssgsea/xiaoman/mmc2.xlsx")
+            phenotype = fread("/liulab/asahu/data/ssgsea/xiaoman/mmc2.txt")
+            cols = colnames(phenotype)
+            cols[duplicated(cols)] = paste0(cols[duplicated(cols)], ".1")
+            cols = gsub(cols, pattern=" ", replacement=".")
+            colnames(phenotype) = cols
+
+            phenotype$TCGA.Participant.Barcode = gsub(phenotype$TCGA.Participant.Barcode, pattern="-", replacement=".")
+            sum(barcode %in% phenotype$TCGA.Participant.Barcode )
+            reorder = match(barcode, phenotype$TCGA.Participant.Barcode)
+            feature.sel = c(3:36)
+            f1 = phenotype[reorder, feature.sel, with=F]
+            new.pheno = cbind(phenotype.ext.mat, f1)
+            phenotype.ext.mat = new.pheno
+
         }
 
         write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
@@ -177,10 +156,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         write.table(file=paste0(output.dir, "/phenotype_val.txt"),x = phenotype.ext.mat_shuffle[val.inx,],
             row.names = F, col.names =T,  sep="\t", quote=F )
 
-        write.table(file=paste0(output.dir, "/sgsea_test.txt"),x = dataset_ssgsea_sel_shuffle[test.inx,],
-            row.names = F, col.names =T,  sep="\t", quote=F )
-        write.table(file=paste0(output.dir, "/phenotype_test.txt"),x = phenotype.ext.mat_shuffle[test.inx,],
-            row.names = F, col.names =T,  sep="\t", quote=F )
+        # write.table(file=paste0(output.dir, "/sgsea_test.txt"),x = dataset_ssgsea_sel_shuffle[test.inx,],
+        #     row.names = F, col.names =T,  sep="\t", quote=F )
+        # write.table(file=paste0(output.dir, "/phenotype_test.txt"),x = phenotype.ext.mat_shuffle[test.inx,],row.names = F, col.names =T,  sep="\t", quote=F )
 
     }
 

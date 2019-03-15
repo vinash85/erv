@@ -5,17 +5,18 @@
 
 ## TCGA dataset 
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ssgsva.txt"
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 output.dir = "~/project/deeplearning/icb/data/tcga.brca/PCA/"
 
-output.dir = "~/project/deeplearning/icb/data/tcga.blca/pca"
+output.dir = "~/project/deeplearning/icb/data/tcga.blca/neoantigen/"
 
 # ICB dataset
 
-dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt"
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Avin/ICB_GSVA.txt"
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
@@ -25,10 +26,9 @@ output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.impu
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pca/"
 output.dir = "~/project/deeplearning/icb/data/genentech.tpm/genentech.pca.tpm.phenotypes/"
 
-output.dir = "~/project/deeplearning/icb/data/genentech.tpm/"
 
 pca_obj.RData = "~/project/deeplearning/icb/data/tcga.blca/pca/pca_obj.RData"
-output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.pca/"
+
 fix_patient_name =F; ICB_dataset =T
 
 # precog dataset 
@@ -125,4 +125,11 @@ python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/
 
 --tensorboard_prefix ""
 
- python  evaluate.py  --data_dir  ../data/genentech.tpm/genentech.pca.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.phenotypes/. --restore_file ../data/genentech.tpm/genentech.pca.phenotypes/tensorboardLog/surv_20190310-214230/best.pth.tar
+ python  train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes.32/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/ --tensorboard_prefix "32_"
+
+
+  --restore_file ../data/genentech.tpm/genentech.pca.phenotypes/tensorboardLog/surv_20190310-214230/best.pth.tar
+
+
+  ## Neoantigen
+  python -d train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. 

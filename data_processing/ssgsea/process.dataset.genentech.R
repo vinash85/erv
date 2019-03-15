@@ -29,15 +29,20 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
     colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
+    tpm = T
     if(!tpm){
         dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
         dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
         }else{
             pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
+           # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
+            load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
+           dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
+           stopifnot(any(!is.na(dataset_ssgsea_mat)))
 
-           dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
         }
-        patient.name = rownames(dataset_ssgsea_mat)
+
+    patient.name = rownames(dataset_ssgsea_mat)
     patient.name = gsub(patient.name, pattern="-", replacement=".")
     rownames(dataset_ssgsea_mat) = patient.name
 
@@ -137,7 +142,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             # load(pca_obj.RData)
             pca_obj = NULL
 
-            temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj) 
+            temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj, scale=F) 
             # std_cs = cumsum(temp_out$pca_obj$sdev^2/sum(temp_out$pca_obj$sdev^2))
             # sum(std_cs < 0.95)
             # sum(std_cs < 0.9)
@@ -177,8 +182,12 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         rand_inx = sample(nrow(dataset_ssgsea_sel))
         dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
         phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-        train.inx = 1:ceiling(.85 * nrow(dataset_ssgsea_sel))
-        val.inx = ceiling(.85 * nrow(dataset_ssgsea_sel)): ceiling( nrow(dataset_ssgsea_sel))
+        train.inx = 1:ceiling(.9 * nrow(dataset_ssgsea_sel))
+        val.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)): ceiling( nrow(dataset_ssgsea_sel))
+
+        aa = dataset_ssgsea_sel_shuffle[val.inx,]
+        bb= phenotype.ext.mat_shuffle[val.inx,]
+        auc(bb$Response, aa$Neoantigen.burden.per.MB)
         # test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
         
         # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))

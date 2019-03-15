@@ -95,7 +95,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
             # survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
-            labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1)
+            # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1).astype(float)
+            labels_san_survival = all_labels
+            # net.tracer()
             train_batch, labels_batch = torch.from_numpy(
                 features).float(), torch.from_numpy(labels_san_survival).float()
             # move to GPU if available
@@ -121,12 +123,11 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 labels_batch = labels_batch.data.cpu().numpy()
 
                 # compute all metrics on this batch
-                # import ipdb
-                # ipdb.set_trace()
-                summary_batch = {dd[0]: metrics[dd[0]](output_batch[:, dd[1]], labels_san_survival[:, dd[2]: (dd[2] + 2)])
-                                 if dd[0] == 'c_index' else
-                                 metrics[dd[0]](output_batch[:, dd[1]], labels_san_survival[:, dd[2]])
-                                 for dd in params.metrics}  # TODO ugly solution, when more metrics change it!!
+                # net.tracer()
+                summary_batch = {dd[0] + "_" + dd[1]: metrics[dd[1]](output_batch[:, dd[2]], labels_san_survival[:, dd[3]: (dd[3] + 2)])
+                                 if dd[1] == 'c_index' else
+                                 metrics[dd[1]](output_batch[:, dd[2]], labels_san_survival[:, dd[3]])
+                                 for inx, dd in enumerate(params.metrics)}  # TODO ugly solution, when more metrics change it!!
                 # print("line 134")
 
                 summary_batch['loss'] = loss
@@ -197,6 +198,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
             writer.add_scalars('train_' + str(index), train_metrics, epoch)
             writer.add_scalars('val_' + str(index), val_metrics, epoch)
+        # net.tracer()
 
         for name, param1 in outputs.named_parameters():
             writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)

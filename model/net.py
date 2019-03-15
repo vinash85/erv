@@ -8,6 +8,7 @@ from lifelines.utils import concordance_index
 import math
 from sklearn import metrics as smetrics
 import r2python
+from scipy.stats.stats import spearmanr
 
 # 3x3 convolution
 
@@ -745,9 +746,22 @@ def calculate_auc(pred, y):
     return auc
 
 
+def spearman_corr(pred, y):
+    # import ipdb
+    # ipdb.set_trace()
+    try:
+        out = spearmanr(pred, y, nan_policy='omit')
+        out = out.correlation
+    except:
+        out = 0.
+
+    return out
+
+
 metrics = {
     'auc': calculate_auc,
-    'c_index': c_index
+    'c_index': c_index,
+    'correlation': spearman_corr
     # could add more metrics such as accuracy for each token type
 }
 
@@ -940,3 +954,8 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         loss_val = 0.
 
     return loss_val
+
+
+def tracer():
+    import ipdb
+    ipdb.set_trace()

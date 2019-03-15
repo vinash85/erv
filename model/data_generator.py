@@ -1,11 +1,11 @@
 # MIT License
-
 """Creates a generator that can feed a stream of data from a file inpt"""
 import logging
 import numpy as np
 import pandas as pd
 import os
 from scipy.stats import norm, rankdata
+from net import tracer
 # from keras import backend as K
 
 
@@ -18,7 +18,18 @@ def qnorm_array(xx):
     xx = rankdata(xx, method="average")
     xx = xx / (max(xx) + 1)  # E(max(x)) < sqrt(2log(n))
     xx = norm.ppf(xx, loc=0, scale=1)
-    xx_back[~np.isnan(xx)] = xx
+    xx_back[~np.isnan(xx_back)] = xx
+    return xx_back
+
+
+DEBUG = False
+
+
+def znorm(xx):
+    """
+    Perform z-norm normalization on a np.array similar to qnorm_col
+    """
+    xx = (xx - np.nanmean(xx)) / np.nanstd(xx)
     return xx
 
 
@@ -29,13 +40,10 @@ def normalize(data):
     """
     Perform quantile normalization on a dataframe
     """
-
     # force data into floats for np calculations
     data = data.astype('float')
-
     # add a epsilon to the data to adjust for 0 values
     data += 0.001
-
     # https://stackoverflow.com/questions/37935920/quantile-normalization-on-pandas-dataframe
     data /= np.max(np.abs(data), axis=0)  # scale between [0,1]
     rank_mean = data.stack().groupby(
@@ -45,16 +53,16 @@ def normalize(data):
     return data
 
 
-def quantile_normalize(data):
+def quantile_normalize(data, method="qnorm_array"):
     """
     Perform quantile normalization on a np.array similar to qnorm_col
     """
 
     # force data into floats for np calculations
+    # tracer()
     data = data.astype('float')
-
-    # add a epsilon to the data to adjust for 0 values
-    data = np.apply_along_axis(qnorm_array, 0, data)
+    method = eval(method)
+    data = np.apply_along_axis(method, 0, data)
     return data
 
 
@@ -93,7 +101,7 @@ def processDataLabels(input_file, normalize=True, batch_by_type=False):
         return features, labels, None
 
 
-def generator_survival(features, labels, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize=False, dataset_type='non_icb', sort_survival=False):
+def generator_survival(features, labels, params, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize_input=False, dataset_type='non_icb', sort_survival=False):
     """
     Parses the input file and creates a generator for the input file
 
@@ -107,7 +115,15 @@ def generator_survival(features, labels, cancertype=None, shuffle=True, batch_si
     # np.random.seed(230)
     def create_batches(feat, lab, batch_size, shuffle=True):
         data_size = len(feat)
-        if normalize:
+        # tracer()
+        lab_survival, lab_continuous, lab_binary = \
+            np.take(lab, params.survival_indices, axis=1), \
+            np.take(lab, params.continuous_phenotype_indices, axis=1),\
+            np.take(lab, params.binary_phentoype_indices, axis=1)
+        lab_continuous = quantile_normalize(lab_continuous)
+        # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
+        lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
+        if normalize_input:
             feat = quantile_normalize(feat)
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
@@ -244,10 +260,10 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
             # remember survival is no longer survival.
             phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
             phenotypes = phenotypes_type[:, 1:]
-            phenotypes = phenotypes.astype(float)
+            # phenotypes = phenotypes.astype(float)
 
             dl = generator_survival(
-                features, phenotypes, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize=True, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
+                features, phenotypes, params, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize_input=True, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
 
             dataloaders[split] = dl
 

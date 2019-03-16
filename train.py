@@ -316,9 +316,9 @@ if __name__ == '__main__':
         outputs = outputs.cuda()
 
     embedding_optimizer = optim.Adam(
-        embedding_model.parameters(), lr=params.learning_rate, weight_decay=1e-3)
+        embedding_model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
     outputs_optimizer = optim.Adam(
-        outputs.parameters(), lr=params.learning_rate, weight_decay=1e-3)
+        outputs.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
 
     # fetch loss function and metrics
     # loss_fn = net.negative_log_partial_likelihood

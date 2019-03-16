@@ -888,11 +888,12 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
     define loss function and update parameters
     '''
 
-    def update_parameters(loss, train_optimizer_mask):
+    def update_parameters(loss, train_optimizer_mask, embedding_model, outputs):
         # clear previous gradients, compute gradients of all variables wrt loss
+        # tracer()
         embedding_optimizer.zero_grad()
         outputs_optimizer.zero_grad()
-        loss.backward(retain_graph=True)
+        loss.backward()
         # performs updates using calculated gradients
         if train_optimizer_mask[0]:
             embedding_optimizer.step()
@@ -931,8 +932,6 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             # in case of survival label is censor; censored data assumed to
             # sorted based on patient event time.
             loss_curr = loss_fn(net_output, label)
-            # import ipdb
-            # ipdb.set_trace()
             loss_curr = loss_curr + regularized_loss(outputs, params, i)
         else:
             # loss_curr = torch.zeros(1)
@@ -941,13 +940,16 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         if isnan(loss_curr):
             loss_curr = 0.
 
+        # tracer()
+        # print(loss_curr)
         if is_train and params.pipeline_optimization and loss_curr != 0.:
-            update_parameters(loss_curr, train_optimizer_mask)
+            update_parameters(loss_curr, train_optimizer_mask, embedding_model, outputs)
 
         total_loss = total_loss + loss_curr
 
+    # tracer()
     if is_train and not params.pipeline_optimization and total_loss != 0.:
-        update_parameters(total_loss, train_optimizer_mask)
+        update_parameters(total_loss, train_optimizer_mask, embedding_model, outputs)
     if total_loss != 0:
         loss_val = total_loss.item()
     else:

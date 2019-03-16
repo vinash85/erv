@@ -15,10 +15,11 @@ def qnorm_array(xx):
     """
     xx_back = xx
     xx = xx_back[~np.isnan(xx)]
-    xx = rankdata(xx, method="average")
-    xx = xx / (max(xx) + 1)  # E(max(x)) < sqrt(2log(n))
-    xx = norm.ppf(xx, loc=0, scale=1)
-    xx_back[~np.isnan(xx_back)] = xx
+    if len(xx) > 0:
+        xx = rankdata(xx, method="average")
+        xx = xx / (max(xx) + 1)  # E(max(x)) < sqrt(2log(n))
+        xx = norm.ppf(xx, loc=0, scale=1)
+        xx_back[~np.isnan(xx_back)] = xx
     return xx_back
 
 

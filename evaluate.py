@@ -121,6 +121,13 @@ if __name__ == '__main__':
     utils.set_logger(os.path.join(args.model_dir, 'evaluate.log'))
 
     # Create the input data pipeline
+    params.survival_indices = eval(params.survival_indices)
+    params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
+    params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
+
+    params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
+    params.metrics = eval(params.metrics)
+
     logging.info("Creating the dataset...")
 
     # fetch dataloaders
@@ -132,12 +139,6 @@ if __name__ == '__main__':
     _, input_size, _ = datasets[0][0][type_file]
 
     logging.info("- done.")
-    params.survival_indices = np.asarray(eval(params.survival_indices), dtype=np.int)
-    params.continuous_phenotype_indices = np.asarray(eval(params.continuous_phenotype_indices), dtype=np.int)
-    params.binary_phentoype_indices = np.asarray(eval(params.binary_phentoype_indices), dtype=np.int)
-
-    params.loss_excluded_from_training = np.asarray(eval(params.loss_excluded_from_training), dtype=np.int)
-
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
 
     # Define the model

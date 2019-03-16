@@ -24,10 +24,10 @@ output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed"
 output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pca/"
-output.dir = "~/project/deeplearning/icb/data/genentech.tpm/genentech.pca.tpm.phenotypes/"
+output.dir = "~/project/deeplearning/icb/data/genentech.tpm/Neoantigen/"
 
 
-pca_obj.RData = "~/project/deeplearning/icb/data/tcga.blca/pca/pca_obj.RData"
+pca_obj.RData = "/homes6/asahu/project/deeplearning/icb/data/tcga.blca/neoantigen/pca_obj.RData"
 
 fix_patient_name =F; ICB_dataset =T
 
@@ -130,6 +130,15 @@ python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/
 
   --restore_file ../data/genentech.tpm/genentech.pca.phenotypes/tensorboardLog/surv_20190310-214230/best.pth.tar
 
+## Neoantigen
+ 
+python train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/.
+python evaluate.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
 
-  ## Neoantigen
-  python -d train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. 
+
+python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
+
+
+python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/.
+
+

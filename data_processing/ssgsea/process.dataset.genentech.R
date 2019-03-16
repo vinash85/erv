@@ -117,36 +117,14 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 
 
 
-        }else{
-
-    # setnames(phenotype_sel, "OS", "survive")
-    # setnames(phenotype_sel, "OS.Event", "vital_status")
-            normalize.survival = T
-            prefix = unique(phenotype_sel$cancertype) 
-            if(normalize.survival){
-                for (pre in seq(length(prefix))) {
-                    pre.curr = prefix[pre]
-                    inx.curr = which(phenotype_sel$cancertype == pre.curr)
-                    phenotype_sel$survive[inx.curr] = normalize.std(phenotype_sel$survive[inx.curr])
-
-
-                }
-            }
-            phenotype_mat =  as.matrix(phenotype_sel[,-1,with=F])
-
-            phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)) ]
         }
 
 
         if(pca){
-            # load(pca_obj.RData)
-            pca_obj = NULL
+            load(pca_obj.RData)
+            # pca_obj = NULL
 
             temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj, scale=F) 
-            # std_cs = cumsum(temp_out$pca_obj$sdev^2/sum(temp_out$pca_obj$sdev^2))
-            # sum(std_cs < 0.95)
-            # sum(std_cs < 0.9)
-            # sum(std_cs < 0.93)
             pca_obj = temp_out$pca_obj
             pca_obj$len_selected = 50
             save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
@@ -170,6 +148,13 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype.ext.mat = new.pheno
 
         }
+        if(neoantigen){
+            pheno_inx = c("Neoantigen.burden.per.MB", "FMOne.mutation.burden.per.MB")
+            reorder = match(rownames(dataset_ssgsea_sel), rownames(genentech.env$genentech.pheno))
+            pheno1 = -genentech.env$phenotype.feature.mat[reorder,pheno_inx]
+            new.pheno = cbind(phenotype.ext.mat, pheno1)
+            phenotype.ext.mat = new.pheno
+        }
 
 
         write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
@@ -185,9 +170,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         train.inx = 1:ceiling(.9 * nrow(dataset_ssgsea_sel))
         val.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)): ceiling( nrow(dataset_ssgsea_sel))
 
-        aa = dataset_ssgsea_sel_shuffle[val.inx,]
-        bb= phenotype.ext.mat_shuffle[val.inx,]
-        auc(bb$Response, aa$Neoantigen.burden.per.MB)
+        # aa = dataset_ssgsea_sel_shuffle[val.inx,]
+        # bb= phenotype.ext.mat_shuffle[val.inx,]
+        # auc(bb$Response, aa$Neoantigen.burden.per.MB)
         # test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
         
         # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))

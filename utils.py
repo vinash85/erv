@@ -20,6 +20,7 @@ class Params():
     def __init__(self, json_path):
         with open(json_path) as f:
             params = jstyleson.load(f)
+            params = self.eval_string(params)
             self.__dict__.update(params)
 
     def save(self, json_path):
@@ -31,6 +32,13 @@ class Params():
         with open(json_path) as f:
             params = jstyleson.load(f)
             self.__dict__.update(params)
+
+    def eval_string(self, params):
+        for key, value in params.iteritems():
+            if isinstance(value, basestring):
+                if value[0] == "e":
+                    params[key] = eval(value[1:])
+        return params
 
     @property
     def dict(self):

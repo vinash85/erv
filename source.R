@@ -57,3 +57,13 @@ get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 }
 
 
+
+qnorm.array <- function(mat)
+{
+	mat.back = mat
+	mat = mat.back[!is.na(mat.back)]
+    mat = rank(mat,  rank, ties.method = "average");
+    mat = qnorm(mat / (length(mat)+1));
+    mat.back[!is.na(mat.back)] = mat
+    mat.back
+}

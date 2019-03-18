@@ -11,9 +11,6 @@
 # TODO : Write file such sample name is first row and add support to the code
 
 # In[ ]:
-normalize.std = function(tt){
-    (tt - min(tt, na.rm=T))/(max(tt,na.rm=T) - min(tt, na.rm=T))
-}
 
 process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phenotype_order, output.dir, fix_patient_name =F, ICB_dataset =F) {
 
@@ -151,10 +148,11 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         if(neoantigen){
             pheno_inx = c("Neoantigen.burden.per.MB", "FMOne.mutation.burden.per.MB")
             reorder = match(rownames(dataset_ssgsea_sel), rownames(genentech.env$genentech.pheno))
-            pheno1 = -genentech.env$phenotype.feature.mat[reorder,pheno_inx]
+            pheno1 = -genentech.env$genentech.pheno[reorder,pheno_inx]
             new.pheno = cbind(phenotype.ext.mat, pheno1)
             phenotype.ext.mat = new.pheno
         }
+        if(imputed) source("data_processing/ssgsea/impute.genentech.neoantigen_plus.R")
 
 
         write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
@@ -167,16 +165,18 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         rand_inx = sample(nrow(dataset_ssgsea_sel))
         dataset_ssgsea_sel_shuffle = dataset_ssgsea_sel[rand_inx,]
         phenotype.ext.mat_shuffle = phenotype.ext.mat[rand_inx,]
-        train.inx = 1:ceiling(.9 * nrow(dataset_ssgsea_sel))
-        val.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)): ceiling( nrow(dataset_ssgsea_sel))
+        train.inx = 1:ceiling(.8 * nrow(dataset_ssgsea_sel))
+        val.inx = ceiling(.8 * nrow(dataset_ssgsea_sel)): ceiling( nrow(dataset_ssgsea_sel))
 
-        # aa = dataset_ssgsea_sel_shuffle[val.inx,]
-        # bb= phenotype.ext.mat_shuffle[val.inx,]
-        # auc(bb$Response, aa$Neoantigen.burden.per.MB)
+        library(pROC)
+
+        aa = dataset_ssgsea_sel_shuffle
+        bb= phenotype.ext.mat_shuffle
+        auc(bb$Response, aa$Neoantigen.burden.per.MB)
+        auc(bb$Response, aa$SNV.Neoantigens)
+        
         # test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)
         
-        # train.inx = 1:ceiling(.5 * nrow(dataset_ssgsea_sel))
-        # val.inx = ceiling(.5 * nrow(dataset_ssgsea_sel)): ceiling(nrow(dataset_ssgsea_sel))
 
         write.table(file=paste0(output.dir, "/ssgsea_train.txt"),x = dataset_ssgsea_sel_shuffle[train.inx,],
             row.names = F, col.names =T,  sep="\t", quote=F )

@@ -149,6 +149,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
             batches = create_batches(features, labels, batch_size, shuffle)
         return batches
 
+    if params.input_indices != "None":  # use == because param.input_indices is unicode
+        features = np.take(features, params.input_indices, axis=1)
+
     if (batch_by_type):
         if cancertype is None:
             raise NameError("cancertype not found")

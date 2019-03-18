@@ -111,11 +111,6 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
 
             loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask)
 
-            # output_batch1 = model(train_batch)
-            # if(torch.any(torch.isnan(output_batch1))):
-            #     import ipdb
-            #     ipdb.set_trace()
-
             # Evaluate summaries only once in a while
             if i % params.save_summary_steps == 0:
                 # extract data from torch Variable, move to cpu, convert to numpy arrays
@@ -128,7 +123,6 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                                  if dd[1] == 'c_index' else
                                  metrics[dd[1]](output_batch[:, dd[2]], labels_san_survival[:, dd[3]])
                                  for inx, dd in enumerate(params.metrics)}  # TODO ugly solution, when more metrics change it!!
-                # print("line 134")
 
                 summary_batch['loss'] = loss
                 summary_batch['negative_loss'] = -loss
@@ -257,12 +251,12 @@ if __name__ == '__main__':
     # params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
     #         # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
     #         params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
-    params.survival_indices = eval(params.survival_indices)
-    params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
-    params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
+    # params.survival_indices = eval(params.survival_indices)
+    # params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
+    # params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
 
-    params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
-    params.metrics = eval(params.metrics)
+    # params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
+    # params.metrics = eval(params.metrics)
 
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)

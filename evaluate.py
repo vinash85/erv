@@ -121,12 +121,12 @@ if __name__ == '__main__':
     utils.set_logger(os.path.join(args.model_dir, 'evaluate.log'))
 
     # Create the input data pipeline
-    params.survival_indices = eval(params.survival_indices)
-    params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
-    params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
+    # params.survival_indices = eval(params.survival_indices)
+    # params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
+    # params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
 
-    params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
-    params.metrics = eval(params.metrics)
+    # params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
+    # params.metrics = eval(params.metrics)
 
     logging.info("Creating the dataset...")
 

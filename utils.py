@@ -34,7 +34,7 @@ class Params():
             self.__dict__.update(params)
 
     def eval_string(self, params):
-        for key, value in params.iteritems():
+        for key, value in params.items():
             if isinstance(value, basestring):
                 if value[0] == "e":
                     params[key] = eval(value[1:])

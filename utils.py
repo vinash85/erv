@@ -4,7 +4,7 @@ import os
 import shutil
 import torch
 import jstyleson
-
+from past.builtins import basestring    
 
 class Params():
     """Class that loads hyperparameters from a json file.

@@ -5,7 +5,7 @@ import numpy as np
 import pandas as pd
 import os
 from scipy.stats import norm, rankdata
-from net import tracer
+import net
 # from keras import backend as K
 
 

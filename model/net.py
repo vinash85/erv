@@ -46,86 +46,58 @@ class ConvolutionBlock(nn.Module):
         return out
 
 
-# tempNet
-class tempNet(nn.Module):
+# FC block
 
-    def __init__(self, block, input_size, out_channels_list=[32, 32, 32],
-                 embedding_size=32, blocks=1, kernel_sizes=[5], strides=[2]):
-        super(tempNet, self).__init__()
-        self.in_channels = 1
-        self.block = block
-        if len(kernel_sizes) == 1:
-            self.kernel_sizes = [kernel_sizes] * len(out_channels_list)
-        if len(strides) == 1:
-            self.strides = [strides] * len(out_channels_list)
 
-        self.lay1 = self.make_layer(block, out_channels_list[
-                                    0], kernel_sizes=self.kernel_sizes, strides=self.strides[0])
-        # self.embedding_size = embedding_size
-        # self.blocks = blocks
-        # self.kernel_size = kernel_size
-        # self.strides = strides
-       # (1, 64, 5, stride=2
+class FullConnectedBlock(nn.Module):
 
-    def make_layer(self, block, out_channels, kernel_sizes, strides):
-        layers = []
-        layers.append(block(self.in_channels, out_channels,
-                            kernel_sizes[0], stride))
-        self.in_channels = out_channels
-        for i in range(1, blocks):
-            layers.append(
-                block(out_channels, out_channels, kernel_size, stride=1))
-        return nn.Sequential(*layers)
+    def __init__(self, in_channels, out_channels, dropout_rate):
+        super(FullConnectedBlock, self).__init__()
+        self.fc = nn.Linear(in_channels, out_channels)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.dropout_rate = dropout_rate
+        self.relu = nn.ReLU(inplace=True)
 
     def forward(self, x):
-        out = x
-        # out = self.make_layer(self.block,  self.out_channels_list[0], kernel_size = self.kernel_size, stride = self.strides[0], blocks=self.blocks)(out)
-        out = self.lay1(out)
-        print("here")
-        print(out)
+        residual = x
+        out = self.fc(residual)
+        out = self.bn1(out)
+        out = self.relu(out)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
         return out
 
 
 # EmbeddingNet
-
-
-# EmbeddingNet
 class EmbeddingNet(nn.Module):
+    '''
+    encoder
+    '''
 
-    def __init__(self, block, input_size, out_channels_list,
-                 embedding_size=32, kernel_sizes=[5], strides=[2], FC_size_list=[32],
-                 dropout_rate=0.1):
+    def __init__(self, params, block=ConvolutionBlock):
         super(EmbeddingNet, self).__init__()
+        self.params = params
         self.in_channels = 1
-        self.kernel_sizes = kernel_sizes
-        self.strides = strides
-        self.dropout_rate = dropout_rate
-        if len(kernel_sizes) == 1:
-            self.kernel_sizes = [kernel_sizes[0]] * len(out_channels_list)
-        if len(strides) == 1:
-            self.strides = [strides[0]] * len(out_channels_list)
-        self.output_size = input_size
+        if len(self.params.kernel_sizes) == 1:
+            self.params.kernel_sizes = [self.params.kernel_sizes[0]] * len(self.params.out_channels_list)
+        if len(self.params.strides) == 1:
+            self.strides = [self.params.strides[0]] * len(self.params.out_channels_list)
+        self.output_size = self.params.input_size
         print("initial output size")
         print(self.output_size)
-        self.layers_block1 = self.make_layers(block, out_channels_list, kernel_sizes=self.kernel_sizes, strides=self.strides, dropout_rate=self.dropout_rate)
+        self.layers_block1 = self.make_layers(block, self.params.out_channels_list, kernel_sizes=self.params.kernel_sizes, strides=self.params.strides, dropout_rate=self.params.dropout_rate)
         # output_size is updated
         print("final convolution layer output size")
-        if(len(out_channels_list) > 0):
-            self.fc_output_size = self.output_size * out_channels_list[-1]
+        if(len(self.params.out_channels_list) > 0):
+            self.fc_output_size = self.output_size * self.params.out_channels_list[-1]
         else:
-            self.fc_output_size = input_size
-
-        # self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
-        # self.fc2 = nn.Linear(self.fc_input_size, 2 * embedding_size)
-        # print(self.fc_input_size)
-        # self.fc3 = nn.Linear(2 * embedding_size, embedding_size)
+            self.fc_output_size = self.params.input_size
 
         print("initial fully connected size")
         print(self.fc_output_size)
         self.FC_block1 = self.make_layers_FC(
-            FullConnectedBlock, FC_size_list, dropout_rate)
+            FullConnectedBlock, self.params.FC_size_list, self.params.dropout_rate)
         print("final output size")
-        self.fc3 = nn.Linear(self.fc_output_size, embedding_size)
+        self.fc3 = nn.Linear(self.fc_output_size, self.params.embedding_size)
 
     def make_layers_FC(self, block, FC_size_list, dropout_rate):
         layers = []
@@ -144,7 +116,7 @@ class EmbeddingNet(nn.Module):
             layers.append(block(self.in_channels, out_channels_list[
                           i], kernel_sizes[i], stride=strides[i], dropout_rate=dropout_rate))
             self.in_channels = out_channels_list[i]
-            padding_size = (self.kernel_sizes[i] - 1) / 2
+            padding_size = (kernel_sizes[i] - 1) / 2
             convolution_stride = 1
 
             self.output_size = int(((self.output_size + 2 * padding_size - kernel_sizes[
@@ -163,6 +135,56 @@ class EmbeddingNet(nn.Module):
         out = out.view(out.size(0), -1)
         out = self.FC_block1(out)
         out = self.fc3(out)
+        return out
+
+
+class outputLayer(nn.Module):
+    '''
+    decoder
+    '''
+
+    def __init__(self, params):
+        super(outputLayer, self).__init__()
+        self.params = params
+        # change internal params to adapt encoder for internal_layers of decoder
+        self.params.input_size = params.embedding_size
+        self.survival_len, self.cont_len, self.bin_len = int(len(params.survival_indices) / 2), len(params.continuous_phenotype_indices), len(params.binary_phenotype_indices)
+
+        self.params.embedding_size = self.survival_len + self.cont_len + self.bin_len
+        self.params.out_channels_list = []  # no convolution layer
+        self.params.FC_size_list = params.decoder_FC_size_list
+        self.internal_layers = EmbeddingNet(self.params)
+        self.dense1_bn = nn.BatchNorm1d(self.survival_len)
+        self.sigmoid = nn.Sigmoid()
+
+    def forward(self, x):
+        out = self.internal_layers(x)
+        out = torch.cat((
+            # self.dense1_bn(out[:, :self.survival_len]),
+            out[:, :self.survival_len],
+            out[:, self.survival_len:(self.survival_len + self.cont_len)],
+            self.sigmoid(out[:, (self.survival_len + self.cont_len):])
+        ), 1)
+        return out
+
+
+class outputLayer_simple(nn.Module):
+
+    def __init__(self, params):
+        super(outputLayer_simple, self).__init__()
+        self.linear_output_size = linear_output_size
+        self.binary_output_size = binary_output_size
+        self.linear1 = nn.Linear(embedding_size, self.linear_output_size + self.binary_output_size)
+        self.dense1_bn = nn.BatchNorm1d(1)
+        self.sigmoid = nn.Sigmoid()
+        # self.softmax = nn.LogSoftmax()
+
+    def forward(self, x):
+        linear1_out = self.linear1(x)
+        survival_out = self.dense1_bn(linear1_out[:, 0:1])
+        binary_output = self.sigmoid(linear1_out[:, self.linear_output_size:])
+        out = torch.cat((survival_out, linear1_out[:, 1:self.linear_output_size], binary_output), 1)
+
         return out
 
 
@@ -203,27 +225,7 @@ class outputLayer_old(nn.Module):
         return out
 
 
-class outputLayer_simple(nn.Module):
-
-    def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
-        super(outputLayer_simple, self).__init__()
-        self.linear_output_size = linear_output_size
-        self.binary_output_size = binary_output_size
-        self.linear1 = nn.Linear(embedding_size, self.linear_output_size + self.binary_output_size)
-        self.dense1_bn = nn.BatchNorm1d(1)
-        self.sigmoid = nn.Sigmoid()
-        # self.softmax = nn.LogSoftmax()
-
-    def forward(self, x):
-        linear1_out = self.linear1(x)
-        survival_out = self.dense1_bn(linear1_out[:, 0:1])
-        binary_output = self.sigmoid(linear1_out[:, self.linear_output_size:])
-        out = torch.cat((survival_out, linear1_out[:, 1:self.linear_output_size], binary_output), 1)
-
-        return out
-
-
-class outputLayer(nn.Module):
+class outputLayer_old(nn.Module):
 
     def __init__(self, embedding_size, linear_output_size=32, binary_output_size=32):
         super(outputLayer, self).__init__()
@@ -398,24 +400,44 @@ class outputLayer_incomplete(nn.Module):
 
         return out
 
-# FC block
 
+# tempNet
+class tempNet(nn.Module):
 
-class FullConnectedBlock(nn.Module):
+    def __init__(self, block, input_size, out_channels_list=[32, 32, 32],
+                 embedding_size=32, blocks=1, kernel_sizes=[5], strides=[2]):
+        super(tempNet, self).__init__()
+        self.in_channels = 1
+        self.block = block
+        if len(kernel_sizes) == 1:
+            self.kernel_sizes = [kernel_sizes] * len(out_channels_list)
+        if len(strides) == 1:
+            self.strides = [strides] * len(out_channels_list)
 
-    def __init__(self, in_channels, out_channels, dropout_rate):
-        super(FullConnectedBlock, self).__init__()
-        self.fc = nn.Linear(in_channels, out_channels)
-        self.bn1 = nn.BatchNorm1d(out_channels)
-        self.dropout_rate = dropout_rate
-        self.relu = nn.ReLU(inplace=True)
+        self.lay1 = self.make_layer(block, out_channels_list[
+                                    0], kernel_sizes=self.kernel_sizes, strides=self.strides[0])
+        # self.embedding_size = embedding_size
+        # self.blocks = blocks
+        # self.kernel_size = kernel_size
+        # self.strides = strides
+       # (1, 64, 5, stride=2
+
+    def make_layer(self, block, out_channels, kernel_sizes, strides):
+        layers = []
+        layers.append(block(self.in_channels, out_channels,
+                            kernel_sizes[0], stride))
+        self.in_channels = out_channels
+        for i in range(1, blocks):
+            layers.append(
+                block(out_channels, out_channels, kernel_size, stride=1))
+        return nn.Sequential(*layers)
 
     def forward(self, x):
-        residual = x
-        out = self.fc(residual)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        out = x
+        # out = self.make_layer(self.block,  self.out_channels_list[0], kernel_size = self.kernel_size, stride = self.strides[0], blocks=self.blocks)(out)
+        out = self.lay1(out)
+        print("here")
+        print(out)
         return out
 
 
@@ -783,15 +805,15 @@ def create_lossfns_mask(params):
 
     survival_output_size = int(len(params.survival_indices) / 2)
     linear_output_size = survival_output_size + len(params.continuous_phenotype_indices)
-    binary_output_size = len(params.binary_phentoype_indices)
+    binary_output_size = len(params.binary_phenotype_indices)
     loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
         [nn.MSELoss()] * len(params.continuous_phenotype_indices) + \
-        [nn.BCELoss()] * len(params.binary_phentoype_indices)
+        [nn.BCELoss()] * len(params.binary_phenotype_indices)
     # BCEWithLogitsLoss is other option
 
-    # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phentoype_indices))
+    # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phenotype_indices))
 
-    # survival_indices_new, continuous_indices_new, binary_indices_new = params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices
+    # survival_indices_new, continuous_indices_new, binary_indices_new = params.survival_indices, params.continuous_phenotype_indices, params.binary_phenotype_indices
     # print(survival_indices_new)
 
     # for sur in survival_indices:
@@ -800,7 +822,7 @@ def create_lossfns_mask(params):
     #     survival_indices_new[survival_indices_new > sur] = survival_indices_new[survival_indices_new > sur] - 1
     #     continuous_indices_new[continuous_indices_new > sur] = continuous_indices_new[continuous_indices_new > sur] - 1
     #     binary_indices_new[binary_indices_new > sur] = binary_indices_new[binary_indices_new > sur] - 1
-    mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phentoype_indices])
+    mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phenotype_indices])
     # print(survival_indices_new)
     print(mask)
 

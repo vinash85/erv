@@ -142,5 +142,5 @@ python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt
 python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar --tensorboard_prefix pretrain_tcga_
 
 
-
+python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix auc_
 

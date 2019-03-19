@@ -37,6 +37,8 @@ parser.add_argument('--model_dir', default='experiments/base_model',
                     help="Directory containing params.json")
 parser.add_argument('--tensorboard_prefix', default='',
                     help="prefix for tensorboard logging")
+parser.add_argument('--hyper_param', default='',
+                    help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
 parser.add_argument('--prefix', default='',
                     help="Prefix of dataset files  \n \
                     (e.g. prefix=\"tcga\" implies input files are \n \
@@ -87,6 +89,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     # summary for current training loop and a running average object for loss
     summ = []
     loss_avg = utils.RunningAverage()
+    # net.tracer()
 
     # Use tqdm for progress bar
     # with tqdm(total=len(dataloader)) as t:
@@ -95,7 +98,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
             # survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
-            # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1).astype(float)
+            # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phenotype_indices, axis=1).astype(float)
             labels_san_survival = all_labels
             # net.tracer()
             train_batch, labels_batch = torch.from_numpy(
@@ -185,7 +188,8 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
             train_metrics_all.append(train_metrics)
 
             # Evaluate for one epoch on validation set
-            val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params)
+            validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
+            val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file)
             val_metrics_all.append(val_metrics)
 
             # tensorboard logging
@@ -195,12 +199,14 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         # net.tracer()
 
         for name, param1 in outputs.named_parameters():
-            writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
-            writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+            if len(param1) > 0:
+                writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
+                writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
 
         for name, param1 in embedding_model.named_parameters():
-            writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
-            writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+            if len(param1) > 0:
+                writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
+                writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
@@ -232,11 +238,16 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
             best_json_path = os.path.join(
                 tensorboard_dir, "metrics_val_best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
-
+            # save best model
+            best_val_meterics_all = [evaluate(embedding_model, outputs, dataloader['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
+            best_json_path_dataset = os.path.join(
+                tensorboard_dir, "metrics_val_best_weights_datasets.json")
+            utils.save_dict_to_json(best_val_meterics_all, best_json_path_dataset)
         # Save latest val metrics in a json file in the model directory
         last_json_path = os.path.join(
             tensorboard_dir, "metrics_val_last_weights.json")
         utils.save_dict_to_json(val_metrics, last_json_path)
+
         # return the trained model
 
 
@@ -253,7 +264,7 @@ if __name__ == '__main__':
     #         params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
     # params.survival_indices = eval(params.survival_indices)
     # params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
-    # params.binary_phentoype_indices = eval(params.binary_phentoype_indices)
+    # params.binary_phenotype_indices = eval(params.binary_phenotype_indices)
 
     # params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
     # params.metrics = eval(params.metrics)
@@ -278,6 +289,9 @@ if __name__ == '__main__':
     copy(json_path, tensorboard_dir)
     copy(args.data_dir, tensorboard_dir)
     logging.info("Tensorboard logging directory {}".format(tensorboard_dir))
+    exec(args.hyper_param)
+    utils.save_dict_to_json(args.hyper_param, os.path.join(
+        tensorboard_dir, "hyper_param.txt"))
 
     # Create the input data pipeline
     logging.info("Loading the datasets...")
@@ -285,24 +299,19 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     ['train', 'val'], args.data_dir, params)
-    _, train_input_size, _ = datasets[0][0]['train']
+    _, params.input_size, _ = datasets[0][0]['train']
     # _, _, val_dl = dataloaders['val']
     # train_dl = dataloaders['train']
     # val_dl = dataloaders['val']
-    input_size = train_input_size
     # params.dict['num_batches_per_epoch'] = train_steps_gen
     logging.info("- done.")
 
     # Define the model and optimizer
     # if len(params.out_channels_list) > 0:
-    embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-    # else:
-    #     embedding_model = net.EmbeddingNet_FC(
-    #         net.FullConnectedBlock, input_size, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, dropout_rate=params.dropout_rate)
-
-    outputs = net.outputLayer_simple(params.embedding_size, linear_output_size=linear_output_size,
-                                     binary_output_size=binary_output_size)
+    # embedding_model = net.EmbeddingNet(
+    #     net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
+    embedding_model = net.EmbeddingNet(params)
+    outputs = net.outputLayer(params)
 
     if params.cuda:
         # model = model.cuda()

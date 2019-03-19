@@ -62,8 +62,9 @@ def quantile_normalize(data, method="qnorm_array"):
     # force data into floats for np calculations
     # tracer()
     data = data.astype('float')
-    method = eval(method)
-    data = np.apply_along_axis(method, 0, data)
+    if data.size > 0:  # at-least one column
+        method = eval(method)
+        data = np.apply_along_axis(method, 0, data)
     return data
 
 
@@ -120,7 +121,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         lab_survival, lab_continuous, lab_binary = \
             np.take(lab, params.survival_indices, axis=1), \
             np.take(lab, params.continuous_phenotype_indices, axis=1),\
-            np.take(lab, params.binary_phentoype_indices, axis=1)
+            np.take(lab, params.binary_phenotype_indices, axis=1)
         lab_continuous = quantile_normalize(lab_continuous)
         # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)

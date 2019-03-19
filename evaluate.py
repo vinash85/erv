@@ -136,17 +136,14 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
-    _, input_size, _ = datasets[0][0][type_file]
+    _, params.input_size, _ = datasets[0][0][type_file]
 
     logging.info("- done.")
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
 
     # Define the model
-    embedding_model = net.EmbeddingNet(
-        net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-
-    outputs = net.outputLayer_simple(params.embedding_size, linear_output_size=linear_output_size,
-                                     binary_output_size=binary_output_size)
+    embedding_model = net.EmbeddingNet(params)
+    outputs = net.outputLayer(params)
 
     if params.cuda:
         # model = model.cuda()

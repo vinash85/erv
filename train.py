@@ -263,16 +263,7 @@ if __name__ == '__main__':
     assert os.path.isfile(
         json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
-    # params.loss_fns = [net.negative_log_partial_likelihood_loss] * (1 if params.linear_output_size > 0 else 0) + [nn.MSELoss()] * (
-    #         # params.linear_output_size - 1) + [nn.BCEWithLogitsLoss()] * (params.binary_output_size)
-    #         params.linear_output_size - 1) + [nn.BCELoss()] * (params.binary_output_size)
-    # params.survival_indices = eval(params.survival_indices)
-    # params.continuous_phenotype_indices = eval(params.continuous_phenotype_indices)
-    # params.binary_phenotype_indices = eval(params.binary_phenotype_indices)
-
-    # params.loss_excluded_from_training = eval(params.loss_excluded_from_training)
-    # params.metrics = eval(params.metrics)
-
+    exec(args.hyper_param)
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)
     print(params.mask)
@@ -293,7 +284,7 @@ if __name__ == '__main__':
     copy(json_path, tensorboard_dir)
     copy(args.data_dir, tensorboard_dir)
     logging.info("Tensorboard logging directory {}".format(tensorboard_dir))
-    exec(args.hyper_param)
+
     utils.save_dict_to_json(args.hyper_param, os.path.join(
         tensorboard_dir, "hyper_param.txt"))
 

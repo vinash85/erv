@@ -199,14 +199,18 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         # net.tracer()
 
         for name, param1 in outputs.named_parameters():
-            if len(param1) > 0:
+            try:
                 writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
                 writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+            except:
+                pass
 
         for name, param1 in embedding_model.named_parameters():
-            if len(param1) > 0:
+            try:
                 writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
                 writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+            except:
+                pass
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 

@@ -1,18 +1,19 @@
 {
     // Note all the string value starting with "e" shall be considered as python expressin and will be evaluated using eval in python e.g. var = "e[1,2]" will be converted to var = [1,2]
-    "learning_rate": 1e-2,
+    "learning_rate": 1e-3,
     "weight_decay": 0,
     //weight decay aka. l2-regulatrizer on parameters
     "batch_size": 50,
-    "num_epochs": 50,
+    "num_epochs": 100,
     "dropout_rate": 0.3,
     "embedding_size": 16,
     "batch_by_type" : false,
     "save_summary_steps": 2,
     "aggregate": "min",
     "best_model_metric" : "Response_auc",
-    "metrics": "e[['Response', 'auc', 0, 0]]",
-     // Format if metrices ['name of. variable', 'metrics', 'index of real data', 'index of predicted data'. Support multiple metrics.
+    "metrics": "e[['OS', 'c_index', 0, 0],['OS', 'correlation', 1, 2],['Response', 'auc', 2, 3]]",
+    // "metrics": "e[['OS', 'c_index', 0, 0],['OS', 'correlation', 1, 2],['SNV.Neoantigens', 'correlation', 2, 3],['Nonsilent.Mutation.Rate', 'correlation', 3, 4], ['Response', 'auc', 4, 5]]",
+     // Format if metrices ['name of. variable', 'metrics', 'index of predicted data', 'index of real data'. Support multiple metrics.
     "l1_regularizer" : 0,
     "l2_regularizer" : 0,
     "pipeline_optimization" : 0,
@@ -22,10 +23,10 @@
     "FC_size_list": [32, 16],
     "decoder_FC_size_list": [],
     // decoder assumed no colovution layer and configurable internal layers
-    "input_indices": "e range(50) + [57,58] +  [83, 85]",
+    "input_indices": "e range(125)",
     //input indces:  None (implies all of the input indices) or  any python expression 
-    "survival_indices": "e[]",
-    "continuous_phenotype_indices" : "e[]",
+    "survival_indices": "e[0,1]",
+    "continuous_phenotype_indices" : "e[0]",
     "binary_phenotype_indices": "e[41]",
     "loss_excluded_from_training" : "e[]",
     "num_workers": 4

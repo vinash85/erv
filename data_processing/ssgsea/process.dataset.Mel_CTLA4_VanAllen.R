@@ -12,16 +12,20 @@
 
 # In[ ]:
 
+dataset.prefix = "Mel_CTLA4_VanAllen"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB_oxphos.txt"
+phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
+dataset_ssgsea = sprintf("/liulab/asahu/data/ssgsea/xiaoman/expression/annot/%s.annot",dataset.prefix)
+output.dir = sprintf("~/project/deeplearning/icb/data/%s", dataset.prefix)
+# pca_obj.RData = "/homes6/asahu/project/deeplearning/icb/data/tcga.blca/neoantigen/pca_obj.RData"
 
 
 library(data.table)
 dir.create(output.dir, showWarnings = FALSE)
 
 dataset_ssgsea = fread(dataset_ssgsea)
-pathway_order = fread(pathway_order)
 dataset_phenotype = fread(dataset_phenotype)
-xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
-genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
+# genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
     # phenotype_order = fread(phenotype_order)
 dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
 setnames(dataset_ssgsea, 1, "gene_name")
@@ -80,14 +84,13 @@ if(!tpm){
 
     response = phenotype_sel$Response
     phenotype.mat = data.table(
-        Best_CR = ifelse(response =="CR", 1, 0),
-        Best_PR = ifelse(response =="PR", 1, 0),
-        Best_PD = ifelse(response =="PD", 1, 0),
-        Best_SD = ifelse(response =="SD", 1, 0), 
-        Response = ifelse(response =="CR"|response =="PR" , 1, 0), 
-        "Response_CR/PR" = ifelse(response =="CR"|response =="PR" , 1, 0), 
-        "Response_SD/PD" = ifelse(response =="SD"|response =="PD" , 1, 0)
-
+        Best_CR = ifelse(response =="1", 1, 0),
+        Best_PR = ifelse(response =="0.5", 1, 0),
+        Best_PD = ifelse(response =="10", 1, 0),
+        Best_SD = ifelse(response =="0", 1, 0), 
+        Response = ifelse(response =="1"|response =="0.5" , 1, 0), 
+        "Response_CR/PR" = ifelse(response =="1"|response =="0.5" , 1, 0), 
+        "Response_SD/PD" = ifelse(response =="0", 1, 0)
         )
 
     extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1") 
@@ -122,54 +125,8 @@ if(!tpm){
         row.names = F, col.names =T,  sep="\t", quote=F )
     write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = pheno.matched,
         row.names = F, col.names =T,  sep="\t", quote=F )
-
-
-
-
-# imputation 
-
-    fread()
-
-    feat.imputed = feat.matched
-    feat.imputed$FMOne.mutation.burden.per.MB = Nonsilent.Mutation.Rate
-    feat.imputed$Neoantigen.burden.per.MB = SNV.Neoantigens
-
-
-
-
-    feat.matched = fread("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/dataset_ssgsea.txt")
-    pheno.matched = fread("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/dataset_phenotype.txt")
-    predicted= fread("/homes6/asahu/project/deeplearning/icb//data/mGC_PD1_Kim/Neoantigen/val_prediction.csv",  skip=1)
-    predicted.all = predicted[,-seq(ncol(predicted)/2), with=F]
-
-
-    cols = c('SNV.Neoantigens',
-        'Indel.Neoantigens',
-        'Silent.Mutation.Rate',
-        'Nonsilent.Mutation.Rate',
-        'Number.of.Segments',
-        'Fraction.Altered',
-        'Aneuploidy.Scor',
-        'HR')
-
-    setnames(predicted.all, 1:8, cols)
-    feat.removed = feat.matched[,setdiff(colnames(feat.matched),cols),with=F]
-    pheno.removed = pheno.matched[,setdiff(colnames(pheno.matched),cols),with=F]
-    Neoantigen.burden.per.MB = qnorm.array(feat.removed$Neoantigen.burden.per.MB)
-    predicted.all$SNV.Neoantigens=ifelse(is.na(Neoantigen.burden.per.MB),predicted.all$SNV.Neoantigens,Neoantigen.burden.per.MB)
-    FMOne.mutation.burden.per.MB = qnorm.array(feat.removed$FMOne.mutation.burden.per.MB)
-    predicted.all$Indel.Neoantigens=ifelse(is.na(FMOne.mutation.burden.per.MB),predicted.all$Indel.Neoantigens,FMOne.mutation.burden.per.MB)
-
-    feat.removed$Neoantigen.burden.per.MB = predicted.all$SNV.Neoantigens
-    feat.removed$FMOne.mutation.burden.per.MB = predicted.all$Indel.Neoantigens
-
-
-    feat.imputed = cbind(feat.removed, predicted.all)
-    feat.imputed = feat.imputed[,colnames(feat.matched),with=F]
-    pheno.imputed = cbind(pheno.removed, predicted.all)
-    pheno.imputed = pheno.imputed[,colnames(pheno.matched),with=F]
-
-    write.table(file=paste0( "/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/imputed/ssgsea_val.txt"),x = feat.imputed,
+    write.table(file=paste0(output.dir, "/ssgsea_val.txt"),x = feat.matched,
         row.names = F, col.names =T,  sep="\t", quote=F )
-    write.table(file=paste0("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/imputed/phenotype_val.txt"),x = pheno.imputed,
+    write.table(file=paste0(output.dir, "/phenotype_val.txt"),x = pheno.matched,
         row.names = F, col.names =T,  sep="\t", quote=F )
+

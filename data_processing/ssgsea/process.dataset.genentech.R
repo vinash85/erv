@@ -24,7 +24,10 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
     # phenotype_order = fread(phenotype_order)
     dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
-    colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
+    setnames(dataset_ssgsea, 1, "gene_name")
+    colnames(dataset_ssgsea_mat) = dataset_ssgsea$gene_name
+
+
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
     tpm = T
     if(!tpm){
@@ -56,6 +59,8 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
+    dataset_ssgsea_sel.back = dataset_ssgsea_sel
+
 
     if(ICB_dataset){
         impute_reponse  = FALSE
@@ -82,6 +87,12 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype_mat = cbind(phenotype_mat, temp.mat)
             phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
 
+
+
+            }else if (not_genetech){
+                dataset_ssgsea_sel = dataset_ssge
+                   phenotype_mat = cbind(phenotype_mat, temp.mat)
+                   phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
 
 
             }else{
@@ -129,23 +140,26 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             dataset_ssgsea_sel = pca_out_sel 
         }
 
-        if(combine_phenotype_feature){
+        if(genetech & combine_phenotype_feature){
             reorder = match(rownames(dataset_ssgsea_sel), rownames(genentech.env$phenotype.feature.mat))
-            f1 = genentech.env$phenotype.feature.mat[reorder,]
+             sels = c(1:8, 11:12)
+            f1 = genentech.env$phenotype.feature.mat[reorder,sels]
             extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1")
-            f2 = t(genentech.env$cc[ genentech.env$bb$Symbol%in% extra.genes.inx, ])[reorder,]
+            f2 = t(genentech.env$cc[match(extra.genes.inx, genentech.env$bb$Symbol) ,])[reorder,]
+            colnames(f2)  = extra.genes.inx
             pheno1 = genentech.env$response.mat[reorder,]
 
-
-
-            pheno.feat = phenotype.ext.mat[1,5:34,drop=F]
+            pheno.feat = phenotype.ext.mat[,5:34,drop=F]
             new.feature = cbind(dataset_ssgsea_sel, f1, f2, pheno.feat)
-            new.pheno = cbind(phenotype.ext.mat, pheno1)
+            new.pheno = cbind(phenotype.ext.mat, f1, f2, pheno1)
             dataset_ssgsea_sel = new.feature
             phenotype.ext.mat = new.pheno
 
+        }else{
+            
         }
-        if(neoantigen){
+        impute.neoantigen = F
+        if(impute.neoantigen){
             pheno_inx = c("Neoantigen.burden.per.MB", "FMOne.mutation.burden.per.MB")
             reorder = match(rownames(dataset_ssgsea_sel), rownames(genentech.env$genentech.pheno))
             pheno1 = -genentech.env$genentech.pheno[reorder,pheno_inx]
@@ -172,7 +186,7 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
 
         aa = dataset_ssgsea_sel_shuffle
         bb= phenotype.ext.mat_shuffle
-        auc(bb$Response, aa$Neoantigen.burden.per.MB)
+        # auc(bb$Response, aa$Neoantigen.burden.per.MB)
         auc(bb$Response, aa$SNV.Neoantigens)
         
         # test.inx = ceiling(.9 * nrow(dataset_ssgsea_sel)):nrow(dataset_ssgsea_sel)

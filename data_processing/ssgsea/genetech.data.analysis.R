@@ -80,4 +80,15 @@ response.mat = do.call(cbind, temp)
 
 phenotype.feature.mat = cbind(feature.mat, continuous.phenotypes.nan)
 
+
+
+
 save.image("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData")
+
+Response = genentech.env$response.mat[,1]
+
+corrs = apply(genentech.env$phenotype.feature.mat, 2, function(tt) c((cor.test(Response, tt))[c("estimate", "p.value")]))
+corrs.dt = data.table(do.call(rbind,corrs))
+corrs.dt$name = names(corrs)
+corrs.dt = corrs.dt[order(as.numeric(p.value))]
+cor.test(genentech.env$response.mat[,1], genentech.env$phenotype.feature.mat[,"Neoantigen.burden.per.MB"])

@@ -25,6 +25,7 @@ big.prcomp = function(data, center=TRUE, scale=FALSE){
 get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 	require(gmodels)
 	sds =  apply(data, 2,  sd)
+	zeros.sds = which(sds == 0)
 	sds = ifelse(sds==0, 1E-3, sds)
 	pca_out = NULL
 	# calculate pca 

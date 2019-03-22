@@ -9,7 +9,7 @@ dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
-output.dir = "~/project/deeplearning/icb/data/tcga.brca/PCA/"
+output.dir = "~/project/deeplearning/icb/data/tcga/PCA/"
 
 output.dir = "~/project/deeplearning/icb/data/tcga.blca/neoantigen/"
 
@@ -30,6 +30,7 @@ output.dir = "~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/"
 
 dataset.prefix = "Mel_CTLA4_Chiappinelli"
 dataset.prefix = "mGC_PD1_Kim"
+dataset.prefix = "RCC_PD1_Miao"
 # dataset_ssgsea = sprintf("/liulab/asahu/data/ssgsea/xiaoman/expression/%s.expression",dataset.prefix)
 dataset_ssgsea = sprintf("/liulab/asahu/data/ssgsea/xiaoman/expression/annot/%s.annot",dataset.prefix)
 
@@ -140,7 +141,11 @@ python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/
 
 ## Neoantigen
  
-python train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/.
+python train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. 
+
+#Neoantigen in BCB 
+python train.py  --data_dir  ../data/tcga.blca/neoantigen/datasets_list.txt --model_dir ../data/tcga.blca/neoantigen/. 
+
 python evaluate.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
 python  evaluate.py  --data_dir  ../data/genentech.tpm/Neoantigen/evaluate/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
 python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
@@ -149,6 +154,8 @@ python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt
 python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar --tensorboard_prefix pretrain_tcga_
 
 
+
+## Response prediction
 python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix auc_
 
 python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix auc_neo_ml_ --hyper_param "input_indices=range(50)"
@@ -163,9 +170,20 @@ python  evaluate.py \
  --data_dir  ../data/mGC_PD1_Kim/datasets_list.txt \
  --model_dir ../data/mGC_PD1_Kim/. \
  --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
---tensorboard_prefix without_imputation_ --hyper_param "params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]"
+ --hyper_param "params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]"
 
 
-python evaluate.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. \
---restore_file ../data/genentech.tpm/Neoantigen.imputed/tensorboardLog/outputs_10_20190321-205017/best.pth.tar \
---tensorboard_prefix outputs_10_ --hyper_param "params.binary_phenotype_indices=[45,1,44,47,41];params.continuous_phenotype_indices=[0,42,43,50,49,55]"
+# imputing neoantigen etc. from tcga model 
+python  evaluate.py \
+ --data_dir  ../data/mGC_PD1_Kim/Neoantigen/datasets_list.txt \
+ --model_dir ../data/mGC_PD1_Kim/Neoantigen/. \
+ --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar
+
+
+python  evaluate.py \
+ --data_dir  ../data/mGC_PD1_Kim/imputed/datasets_list.txt \
+ --model_dir ../data/mGC_PD1_Kim/imputed/. \
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
+ --hyper_param "params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]"
+
+

@@ -14,33 +14,33 @@
 
 
 
-    library(data.table)
-    dir.create(output.dir, showWarnings = FALSE)
+library(data.table)
+dir.create(output.dir, showWarnings = FALSE)
 
-    dataset_ssgsea = fread(dataset_ssgsea)
-    pathway_order = fread(pathway_order)
-    dataset_phenotype = fread(dataset_phenotype)
-    xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
-    genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
+dataset_ssgsea = fread(dataset_ssgsea)
+pathway_order = fread(pathway_order)
+dataset_phenotype = fread(dataset_phenotype)
+xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
+genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
     # phenotype_order = fread(phenotype_order)
-    dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
-    setnames(dataset_ssgsea, 1, "gene_name")
-    colnames(dataset_ssgsea_mat) = dataset_ssgsea$gene_name
+dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
+setnames(dataset_ssgsea, 1, "gene_name")
+colnames(dataset_ssgsea_mat) = dataset_ssgsea$gene_name
 
 
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
-    tpm = T
-    if(!tpm){
-        dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
-        dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
-        }else{
-            pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
+tpm = T
+if(!tpm){
+    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
+    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
+    }else{
+        pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
            # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
-            load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
-           dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
-           stopifnot(any(!is.na(dataset_ssgsea_mat)))
+        load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
+        dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
+        stopifnot(any(!is.na(dataset_ssgsea_mat)))
 
-        }
+    }
 
 
     patient.name = rownames(dataset_ssgsea_mat)
@@ -64,65 +64,105 @@
 
 
 
-        
 
-        if(pca){
-            load(pca_obj.RData)
+
+    if(pca){
+        load(pca_obj.RData)
             # pca_obj = NULL
 
-            temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj, scale=F) 
-            pca_obj = temp_out$pca_obj
-            pca_obj$len_selected = 50
-            save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
-            pca_out_sel = temp_out$pca_out[,seq(pca_obj$len_selected)]
-            dataset_ssgsea_sel = pca_out_sel 
-        }
+        temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj, scale=F) 
+        pca_obj = temp_out$pca_obj
+        pca_obj$len_selected = 50
+        save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
+        pca_out_sel = temp_out$pca_out[,seq(pca_obj$len_selected)]
+        dataset_ssgsea_sel = pca_out_sel 
+    }
 
-        response = phenotype_sel$Response
-        phenotype.mat = data.table(
-            Best_CR = ifelse(response =="CR", 1, 0),
-            Best_PR = ifelse(response =="PR", 1, 0),
-            Best_PD = ifelse(response =="PD", 1, 0),
-            Best_SD = ifelse(response =="SD", 1, 0), 
-            Response = ifelse(response =="CR"|response =="PR" , 1, 0), 
-            "Response_CR/PR" = ifelse(response =="CR"|response =="PR" , 1, 0), 
-            "Response_SD/PD" = ifelse(response =="SD"|response =="PD" , 1, 0)
+    response = phenotype_sel$Response
+    phenotype.mat = data.table(
+        Best_CR = ifelse(response =="CR", 1, 0),
+        Best_PR = ifelse(response =="PR", 1, 0),
+        Best_PD = ifelse(response =="PD", 1, 0),
+        Best_SD = ifelse(response =="SD", 1, 0), 
+        Response = ifelse(response =="CR"|response =="PR" , 1, 0), 
+        "Response_CR/PR" = ifelse(response =="CR"|response =="PR" , 1, 0), 
+        "Response_SD/PD" = ifelse(response =="SD"|response =="PD" , 1, 0)
 
-            )
+        )
 
-        extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1") 
-        extra.genes.ez = c("7040", "7048", "3821") 
-        extra.genes = dataset_ssgsea_sel.back[, extra.genes.inx]
-        colnames(extra.genes) = extra.genes.ez
-        pheno.feat = phenotype_sel[,setdiff(5:40,39),with=F]
-        feat.merged = cbind(dataset_ssgsea_sel, extra.genes, pheno.feat)
-        pheno.merged = cbind(phenotype_sel,phenotype.mat)
-
-
-        genentech.pheno =  fread("~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/dataset_phenotype.txt")
-
-        genentech.feat =  fread("~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/dataset_ssgsea.txt")
-
-        feat.cols.na = setdiff(colnames(genentech.feat), colnames(feat.merged))
-        setdiff(colnames(genentech.pheno),colnames(pheno.merged))
-
-        feat.matched = as.matrix(feat.merged)
-        feat.matched = feat.matched[,match(colnames(genentech.feat),colnames(feat.matched))]
-        colnames(feat.matched) = colnames(genentech.feat)
-        
-        pheno.matched = as.matrix(pheno.merged)
-        pheno.matched = pheno.matched[,match(colnames(genentech.pheno),colnames(pheno.matched))]
-        colnames(pheno.matched) = colnames(genentech.pheno)
-        pheno.matched = data.table(pheno.matched)
-        cols = setdiff(colnames(pheno.matched), "cancertype")
-        pheno.matched[ , (cols) := lapply(.SD, as.mynumeric), .SDcols = cols ]
+    extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1") 
+    extra.genes.ez = c("7040", "7048", "3821") 
+    extra.genes = dataset_ssgsea_sel.back[, extra.genes.inx]
+    colnames(extra.genes) = extra.genes.ez
+    pheno.feat = phenotype_sel[,setdiff(5:40,39),with=F]
+    feat.merged = cbind(dataset_ssgsea_sel, extra.genes, pheno.feat)
+    pheno.merged = cbind(phenotype_sel[,which(colnames(phenotype_sel)!= "Response"), with=F],phenotype.mat)
 
 
+    genentech.pheno =  fread("~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/dataset_phenotype.txt")
+    genentech.feat =  fread("~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/dataset_ssgsea.txt")
 
-        write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = feat.matched,
-            row.names = F, col.names =T,  sep="\t", quote=F )
-        write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = pheno.matched,
-            row.names = F, col.names =T,  sep="\t", quote=F )
+    feat.cols.na = setdiff(colnames(genentech.feat), colnames(feat.merged))
+    setdiff(colnames(genentech.pheno),colnames(pheno.merged))
+
+    feat.matched = as.matrix(feat.merged)
+    feat.matched = feat.matched[,match(colnames(genentech.feat),colnames(feat.matched))]
+    colnames(feat.matched) = colnames(genentech.feat)
+
+    pheno.matched = as.matrix(pheno.merged)
+    pheno.matched = pheno.matched[,match(colnames(genentech.pheno),colnames(pheno.matched))]
+    colnames(pheno.matched) = colnames(genentech.pheno)
+    pheno.matched = data.table(pheno.matched)
+    cols = setdiff(colnames(pheno.matched), "cancertype")
+    pheno.matched[ , (cols) := lapply(.SD, as.mynumeric), .SDcols = cols ]
 
 
 
+    write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = feat.matched,
+        row.names = F, col.names =T,  sep="\t", quote=F )
+    write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = pheno.matched,
+        row.names = F, col.names =T,  sep="\t", quote=F )
+
+
+
+
+# imputation 
+
+    fread()
+
+    feat.imputed = feat.matched
+    feat.imputed$FMOne.mutation.burden.per.MB = Nonsilent.Mutation.Rate
+    feat.imputed$Neoantigen.burden.per.MB = SNV.Neoantigens
+
+
+
+
+    feat.matched = fread("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/dataset_ssgsea.txt")
+    pheno.matched = fread("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/dataset_phenotype.txt")
+    predicted= fread("/homes6/asahu/project/deeplearning/icb//data/mGC_PD1_Kim/Neoantigen/val_prediction.csv",  skip=1)
+    predicted.all = predicted[,-seq(ncol(predicted)/2), with=F]
+
+
+    cols = c('SNV.Neoantigens',
+        'Indel.Neoantigens',
+        'Silent.Mutation.Rate',
+        'Nonsilent.Mutation.Rate',
+        'Number.of.Segments',
+        'Fraction.Altered',
+        'Aneuploidy.Scor',
+        'HR')
+
+    setnames(predicted.all, 1:8, cols)
+    feat.removed = feat.matched[,setdiff(colnames(feat.matched),cols),with=F]
+    Neoantigen.burden.per.MB = qnorm.array(feat.removed$Neoantigen.burden.per.MB)
+    predicted.all$SNV.Neoantigens=ifelse(is.na(Neoantigen.burden.per.MB),predicted.all$SNV.Neoantigens,Neoantigen.burden.per.MB)
+    FMOne.mutation.burden.per.MB = qnorm.array(feat.removed$FMOne.mutation.burden.per.MB)
+    predicted.all$Indel.Neoantigens=ifelse(is.na(FMOne.mutation.burden.per.MB),predicted.all$Indel.Neoantigens,FMOne.mutation.burden.per.MB)
+
+    feat.removed$Neoantigen.burden.per.MB = predicted.all$SNV.Neoantigens
+    feat.removed$FMOne.mutation.burden.per.MB = predicted.all$Indel.Neoantigens
+
+
+
+    phenotype.ext.mat = cbind(phenotype.ext.mat, predicted.all)
+    dataset_ssgsea_sel = cbind(dataset_ssgsea_sel, predicted.all)

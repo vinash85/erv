@@ -110,10 +110,10 @@ if __name__ == '__main__':
     json_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
-    exec(args.hyper_param)
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()     # use GPU is available
+    exec(args.hyper_param)
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)

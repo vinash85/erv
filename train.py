@@ -263,19 +263,19 @@ if __name__ == '__main__':
     assert os.path.isfile(
         json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
+    params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
     print(params.loss_fns)
     print(params.mask)
 
     # use GPU if available
-    params.cuda = torch.cuda.is_available()
     # print(params.cuda)
 
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
-    # if params.cuda:
-    # torch.cuda.manual_seed(230)
+    if params.cuda:
+        torch.cuda.manual_seed(230)
 
     # Set the logger
     utils.set_logger(os.path.join(args.model_dir, 'train.log'))

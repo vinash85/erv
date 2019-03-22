@@ -16,10 +16,14 @@ def qnorm_array(xx):
     xx_back = xx
     xx = xx_back[~np.isnan(xx)]
     if len(xx) > 0:
-        xx = rankdata(xx, method="average")
-        xx = xx / (max(xx) + 1)  # E(max(x)) < sqrt(2log(n))
-        xx = norm.ppf(xx, loc=0, scale=1)
-        xx_back[~np.isnan(xx_back)] = xx
+        if np.nanstd(xx) > 0:
+            xx = rankdata(xx, method="average")
+            xx = xx / (max(xx) + 1)  # E(max(x)) < sqrt(2log(n))
+            xx = norm.ppf(xx, loc=0, scale=1)
+            xx_back[~np.isnan(xx_back)] = xx
+        else:
+            xx[:] = 0
+
     return xx_back
 
 
@@ -30,7 +34,10 @@ def znorm(xx):
     """
     Perform z-norm normalization on a np.array similar to qnorm_col
     """
-    xx = (xx - np.nanmean(xx)) / np.nanstd(xx)
+    if np.nanstd(xx) > 0:
+        xx = (xx - np.nanmean(xx)) / np.nanstd(xx)
+    else:
+        xx[:] = 0
     return xx
 
 
@@ -127,6 +134,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
         if normalize_input:
             feat = quantile_normalize(feat)
+        feat = np.nan_to_num(feat)  # convert NANs to zeros
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))

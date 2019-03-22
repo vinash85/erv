@@ -26,38 +26,33 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
     # phenotype_order = fread(phenotype_order)
     dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
+    # setnames(dataset_ssgsea, 1, "gene_name")
 # identical(dataset_ssgsea$V1, pathway_order$pathway)
+  
     tpm = T
     if(!tpm){
     colnames(dataset_ssgsea_mat) = dataset_ssgsea$V1
         dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
         dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
         }else{
-    colnames(dataset_ssgsea_mat) = dataset_ssgsea$gene_name
+            colnames(dataset_ssgsea_mat) = dataset_ssgsea$gene_name
             pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
            # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
             load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
-           dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
-           stopifnot(any(!is.na(dataset_ssgsea_mat)))
+            dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
+            stopifnot(any(!is.na(dataset_ssgsea_mat)))
 
         }
 
 
-    ##BRCA
-    if(F){
-        dataset_phenotype = dataset_phenotype[cancertype=="BLCA"]
-    }
+ 
     patient.name = rownames(dataset_ssgsea_mat)
     patient.name = gsub(patient.name, pattern="-", replacement=".")
-    # patient.name = substring(patient.name, 1, 12)
     rownames(dataset_ssgsea_mat) = patient.name
-    ## there are duplicates in patient names because same patient have multiple expression. 
 
-# phenotype data
     setnames(dataset_phenotype, 2, "patient.name")
     dataset_phenotype$patient.name = gsub(dataset_phenotype$patient.name, pattern="-", replacement=".")
     as.mynumeric = function(xx) as.numeric(ifelse(xx == '[Not Available]', NA, xx))
-    # dataset_phenotype1 =dataset_phenotype
     cols = setdiff(colnames(dataset_phenotype)[-(1:2)], "cancertype")
     dataset_phenotype[ , (cols) := lapply(.SD, as.mynumeric), .SDcols = cols ]
     only_in_phenotype = setdiff(dataset_phenotype$patient.name, patient.name)
@@ -66,17 +61,13 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     dataset_ssgsea_sel = dataset_ssgsea_mat[match(common.patients, patient.name), ] 
 
     phenotype_sel = dataset_phenotype[match(common.patients, dataset_phenotype$patient.name)]
-# phenotype_sel[1:2,]
 
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
 
-    
 
 
 
-    # setnames(phenotype_sel, "OS", "survive")
-    # setnames(phenotype_sel, "OS.Event", "vital_status")
 
             normalize.survival = FALSE
             prefix = unique(phenotype_sel$cancertype) 

@@ -23,6 +23,8 @@ parser.add_argument('--prefix', default='',
                     (e.g. prefix=\"tcga\" implies input files are \n \
                     tcga_ssgsea_[train,test,val].txt, \n \
                     tcga_phenotype_[train,test,val].txt )")
+parser.add_argument('--hyper_param', default='',
+                    help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
 
 
 def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None):
@@ -108,6 +110,7 @@ if __name__ == '__main__':
     json_path = os.path.join(args.model_dir, 'params.json')
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
+    exec(args.hyper_param)
 
     # use GPU if available
     params.cuda = torch.cuda.is_available()     # use GPU is available

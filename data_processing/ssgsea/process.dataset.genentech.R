@@ -11,9 +11,18 @@
 # TODO : Write file such sample name is first row and add support to the code
 
 # In[ ]:
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt"
 
-process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phenotype_order, output.dir, fix_patient_name =F, ICB_dataset =F) {
-
+pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB_oxphos.txt"
+phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/all_icb"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed"
+output.dir = "~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pca/"
+output.dir = "~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/"
+pca = T
+tpm = T
     library(data.table)
     dir.create(output.dir, showWarnings = FALSE)
 
@@ -60,11 +69,10 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
     colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
     dataset_ssgsea_sel.back = dataset_ssgsea_sel
+        }
 
 
-    if(ICB_dataset){
-        impute_reponse  = FALSE
-        if(impute_reponse){
+
             ######
             # imputing  response
             #########
@@ -88,44 +96,6 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
 
 
-
-            }else if (not_genetech){
-                dataset_ssgsea_sel = dataset_ssge
-                   phenotype_mat = cbind(phenotype_mat, temp.mat)
-                   phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
-
-
-            }else{
-
-                # create groups
-                setnames(phenotype_sel, "survive", "survive_ICB")
-                setnames(phenotype_sel, "vital_status", "vital_status_ICB")
-                prefix = c("^H_VB", "^SRR", "^ERR", "^CA", "^PD", "^SAM")
-                phenotype_sel$dataset= rep(NA, nrow(phenotype_sel))
-                for (pre in seq(length(prefix))) {
-                    pre.curr = prefix[pre]
-                    inx.curr = grep(pre.curr, phenotype_sel$patient.name)
-                    phenotype_sel$survive_ICB[inx.curr] = normalize.std(phenotype_sel$survive_ICB[inx.curr])
-                    phenotype_sel$dataset[inx.curr] = pre
-
-
-                }
-# O is non-responder and 1 is responder 
-                phenotype_sel[,response:= ifelse(Response %in% c("1", "CR", "PR"), 1, ifelse(Response %in% c("0", "SD", "PD"),0, NA))]
-
-                response.df = phenotype_sel[,list(survive_ICB, vital_status_ICB,  response)] 
-
-                phenotype_mat =  as.matrix(phenotype_sel[,-1,with=F])
-                phenotype_mat = phenotype_mat[,match(phenotype_order[seq(length(phenotype_order) -3)], colnames(phenotype_mat)) ]
-                phenotype.ext.mat = apply(as.matrix(cbind(phenotype_mat, response.df)),2,as.numeric)
-
-            }
-        }
-        
-
-
-
-        }
 
 
         if(pca){
@@ -155,10 +125,9 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
             dataset_ssgsea_sel = new.feature
             phenotype.ext.mat = new.pheno
 
-        }else{
-            
         }
-        impute.neoantigen = F
+
+        impute.neoantigen = T
         if(impute.neoantigen){
             pheno_inx = c("Neoantigen.burden.per.MB", "FMOne.mutation.burden.per.MB")
             reorder = match(rownames(dataset_ssgsea_sel), rownames(genentech.env$genentech.pheno))
@@ -207,7 +176,6 @@ process.dataset = function(dataset_ssgsea, pathway_order, dataset_phenotype, phe
         # write.table(file=paste0(output.dir, "/phenotype_test.txt"),x = phenotype.ext.mat_shuffle[test.inx,],
         #     row.names = F, col.names =T,  sep="\t", quote=F )
 
-    }
 
 if(pcg){
     pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/pcg.txt")

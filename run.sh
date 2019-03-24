@@ -164,7 +164,7 @@ python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_
 python  -m ipdb train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix outputs_10_ --hyper_param "params.binary_phenotype_indices=[45,1,44,47,46,41];params.continuous_phenotype_indices=[0,42,43,49,50]"
 
 python  -m ipdb train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix outputs_10_ --hyper_param "params.continuous_phenotype_indices=[0,42,43,49,50]"
-
+# run run_hyper.R  with ii = 57
 
 ## mGC_PD1_Kim
 python  evaluate.py \
@@ -189,8 +189,77 @@ python  evaluate.py \
 
 
 
+
+
 ## RCC_PD1_Miao
 python  evaluate.py \
  --data_dir  ../data/RCC_PD1_Miao/datasets_list.txt \
  --model_dir ../data/RCC_PD1_Miao/. \
- --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar 
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar
+
+ # Mel_CTLA4_VanAllen 
+
+
+ python  evaluate.py \
+ --data_dir  ../data/Mel_CTLA4_VanAllen/datasets_list.txt \
+ --model_dir ../data/Mel_CTLA4_VanAllen/. \
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
+ --hyper_param "params.cuda=False" 
+
+python  evaluate.py \
+ --data_dir  ../data/Mel_CTLA4_VanAllen/Neoantigen/datasets_list.txt \
+ --model_dir ../data/Mel_CTLA4_VanAllen/Neoantigen/. \
+ --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar
+
+ python  evaluate.py \
+ --data_dir  ../data/Mel_CTLA4_VanAllen/imputed/datasets_list.txt \
+ --model_dir ../data/Mel_CTLA4_VanAllen/imputed/. \
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
+ --hyper_param "params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]"
+
+
+
+
+ # Mel_CTLA4_VanAllen 
+
+
+ python  evaluate.py \
+ --data_dir  ../data/Mel_PD1_Hugo/datasets_list.txt \
+ --model_dir ../data/Mel_PD1_Hugo/. \
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
+ --hyper_param "params.cuda=False" 
+
+
+python  evaluate.py \
+ --data_dir  ../data/Mel_PD1_Hugo/Neoantigen/datasets_list.txt \
+ --model_dir ../data/Mel_PD1_Hugo/Neoantigen/. \
+ --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar
+
+
+
+## cancer type specific prediction 
+## Note TCGA data is being used in the code 
+## 
+
+
+
+# imputing neoantigen etc. from tcga model 
+python  evaluate.py \
+ --data_dir  ../data/tcga/PCA/Neoantigen/datasets_list.txt \
+ --model_dir ../data/tcga/PCA/Neoantigen/. \
+ --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar
+
+
+python  evaluate.py \
+ --data_dir  ../data/tcga/PCA/imputed/datasets_list.txt \
+ --model_dir ../data/tcga/PCA/imputed/. \
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
+ --hyper_param "params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]"
+
+
+## genetech response prediction
+python  evaluate.py \
+ --data_dir  ../data/genentech.tpm/Neoantigen.imputed/evaluate/datasets_list.txt \
+ --model_dir ../data/genentech.tpm/Neoantigen.imputed/evaluate/. \
+ --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \
+ --hyper_param "params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]"

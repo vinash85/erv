@@ -58,7 +58,14 @@ get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 }
 
 
+range01.norm = function(mat){
+	m1 = min(mat,na.rm=T)
+	m2 = max(mat,na.rm=T)
+	if(m1==m2) m2 = m2 +1
+	(mat - m1)/(m2-m1)
+}
 
+	
 qnorm.array <- function(mat)
 {
 	mat.back = mat
@@ -67,4 +74,30 @@ qnorm.array <- function(mat)
     mat = qnorm(mat / (length(mat)+1));
     mat.back[!is.na(mat.back)] = mat
     mat.back
+}
+
+impute.closest.gene = function(common.genes, dataset_ssgsea_mat){
+	  genes.imputed = setdiff(common.genes, colnames(dataset_ssgsea_mat))
+	  if(length(genes.imputed) > 0) {
+	  gene1 = colnames(dataset_ssgsea_mat)
+	  exp2.dt = fread("/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt")
+	  exp2 = t(as.matrix(exp2.dt[,seq(2,ncol(exp2.dt)),with=F]))
+	  setnames(exp2.dt, 1, "gene_name")
+	  colnames(exp2 ) = exp2.dt$gene_name
+	  impute = exp2[,genes.imputed]
+	  only.genes = intersect(gene1, exp2.dt$gene_name)
+	  dataset_ssgsea_mat = dataset_ssgsea_mat[,only.genes]
+	  exp.present = exp2[,only.genes]
+	  cors = cor(impute, exp.present)
+	  genes.inx = apply(cors,1, 
+	  	function(tt) ifelse(sum(!is.na(tt)), which.max(tt), NA)
+	  	)
+
+	  imputed = dataset_ssgsea_mat[,genes.inx]
+	  imputed[is.na(imputed)] = 0
+	  colnames(imputed) = genes.imputed
+	  merged = cbind(dataset_ssgsea_mat, imputed) 
+	  dataset_ssgsea_mat = merged
+	}
+	dataset_ssgsea_mat[,common.genes]
 }

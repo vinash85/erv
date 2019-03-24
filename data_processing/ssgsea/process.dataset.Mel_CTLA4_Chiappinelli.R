@@ -12,7 +12,7 @@
 
 # In[ ]:
 
-dataset.prefix = "Mel_CTLA4_VanAllen"
+dataset.prefix = "Mel_CTLA4_Chiappinelli"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB_oxphos.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 dataset_ssgsea = sprintf("/liulab/asahu/data/ssgsea/xiaoman/expression/annot/%s.annot",dataset.prefix)
@@ -41,7 +41,10 @@ if(!tpm){
     pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
            # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
     load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
-    dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes] 
+    # dataset_ssgsea_mat = dataset_ssgsea_mat[ ,common.genes]
+  
+    dataset_ssgsea_mat = impute.closest.gene(common.genes,dataset_ssgsea_mat)
+
     stopifnot(any(!is.na(dataset_ssgsea_mat)))
 
 }

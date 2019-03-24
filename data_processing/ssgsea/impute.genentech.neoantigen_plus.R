@@ -17,7 +17,7 @@ setnames(predicted.all, 1:8, cols)
 Neoantigen.burden.per.MB = qnorm.array(actual$Neoantigen.burden.per.MB)
 predicted.all$SNV.Neoantigens=ifelse(is.na(Neoantigen.burden.per.MB),predicted.all$SNV.Neoantigens,Neoantigen.burden.per.MB)
 FMOne.mutation.burden.per.MB = qnorm.array(actual$FMOne.mutation.burden.per.MB)
-predicted.all$Indel.Neoantigens=ifelse(is.na(FMOne.mutation.burden.per.MB),predicted.all$Indel.Neoantigens,FMOne.mutation.burden.per.MB)
+predicted.all$Nonsilent.Mutation.Rate=ifelse(is.na(FMOne.mutation.burden.per.MB),predicted.all$Nonsilent.Mutation.Rate,FMOne.mutation.burden.per.MB)
 
 phenotype.ext.mat = cbind(phenotype.ext.mat, predicted.all)
 dataset_ssgsea_sel = cbind(dataset_ssgsea_sel, predicted.all)

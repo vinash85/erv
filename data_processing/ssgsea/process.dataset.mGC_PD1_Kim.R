@@ -11,17 +11,20 @@
 # TODO : Write file such sample name is first row and add support to the code
 
 # In[ ]:
-
-
-
+dataset.prefix = "mGC_PD1_Kim"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB_oxphos.txt"
+dataset_ssgsea = sprintf("/liulab/asahu/data/ssgsea/xiaoman/expression/annot/%s.annot",dataset.prefix)
+output.dir = sprintf("~/project/deeplearning/icb/data/%s", dataset.prefix)
+pca_obj.RData = "/homes6/asahu/project/deeplearning/icb/data/tcga.blca/neoantigen/pca_obj.RData"
+pca =TRUE
+tpm=TRUE
 library(data.table)
 dir.create(output.dir, showWarnings = FALSE)
 
 dataset_ssgsea = fread(dataset_ssgsea)
 pathway_order = fread(pathway_order)
 dataset_phenotype = fread(dataset_phenotype)
-xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
-genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
+# genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
     # phenotype_order = fread(phenotype_order)
 dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
 setnames(dataset_ssgsea, 1, "gene_name")
@@ -128,9 +131,6 @@ if(!tpm){
 
 # imputation 
 
-
-
-
     feat.matched = fread("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/dataset_ssgsea.txt")
     pheno.matched = fread("/homes6/asahu/project/deeplearning/icb/data/mGC_PD1_Kim/dataset_phenotype.txt")
     predicted= fread("/homes6/asahu/project/deeplearning/icb//data/mGC_PD1_Kim/Neoantigen/val_prediction.csv",  skip=1)
@@ -152,10 +152,10 @@ if(!tpm){
     Neoantigen.burden.per.MB = qnorm.array(feat.removed$Neoantigen.burden.per.MB)
     predicted.all$SNV.Neoantigens=ifelse(is.na(Neoantigen.burden.per.MB),predicted.all$SNV.Neoantigens,Neoantigen.burden.per.MB)
     FMOne.mutation.burden.per.MB = qnorm.array(feat.removed$FMOne.mutation.burden.per.MB)
-    predicted.all$Indel.Neoantigens=ifelse(is.na(FMOne.mutation.burden.per.MB),predicted.all$Indel.Neoantigens,FMOne.mutation.burden.per.MB)
+    predicted.all$Silent.Mutation.Rate=ifelse(is.na(FMOne.mutation.burden.per.MB),predicted.all$Silent.Mutation.Rate,FMOne.mutation.burden.per.MB)
 
     feat.removed$Neoantigen.burden.per.MB = predicted.all$SNV.Neoantigens
-    feat.removed$FMOne.mutation.burden.per.MB = predicted.all$Indel.Neoantigens
+    feat.removed$FMOne.mutation.burden.per.MB = predicted.all$Silent.Mutation.Rate
 
 
     feat.imputed = cbind(feat.removed, predicted.all)

@@ -70,9 +70,10 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
             labels_batch, output_batch, embedding_model, outputs, None, None, params, [0, 0])
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
+        embedding_batch = embedding_batch.data.cpu().numpy()
 
         if validation_file:
-            output_and_predictions = np.concatenate([labels_san_survival, output_batch], 1)
+            output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch], 1)
             if i == 0:
                 predictions = output_and_predictions
             else:

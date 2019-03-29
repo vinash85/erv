@@ -101,3 +101,38 @@ impute.closest.gene = function(common.genes, dataset_ssgsea_mat){
 	}
 	dataset_ssgsea_mat[,common.genes]
 }
+
+
+create.km = function( times1, times2,  labels=list(Del="not-rescued", Norm="rescued"), file="temp.pdf",ppt=F){
+    require(data.table)
+    require(survival)
+    require(ggplot2)
+    dt = data.table( rbind(times1, times2)  )
+    dt$label = labels$Del
+    dt$label[1:nrow(times1)] = labels$Norm
+    setnames(dt, 1:2, c("time", "status"))
+    sr.surv <- survfit(Surv(time,status==0)~label, data = dt)
+    dt$marker <- c(rep(0,nrow(times1)), rep(1,nrow(times2)))
+    dt$status1 = ifelse(dt$status==0,1,0)
+    max_x = 3*max(times1[,1])/4 
+    outf3 = logRank(times1, times2)
+    aa <- ggsurv(sr.surv)
+    text = paste0(
+        drug, "\n",
+        "P=", formatC(outf3[1], format="E", digits=2), "\n",
+        "AUC=", formatC(outf3[8] - outf3[7],digits=2)
+        )
+    if(ppt){
+      aa <-aa +
+      annotate( "text", x = max_x, y = .6, label = text) 
+  }else{
+      aa <-aa +
+      annotate( "text", x = max_x, y = .6, label = text) +
+      theme(panel.grid.minor=element_blank(), panel.grid.major=element_blank(), panel.background=element_blank())  
+  }
+  # pdf(file)
+  # print(aa)
+  # dev.off()
+  aa 
+}
+

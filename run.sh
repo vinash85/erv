@@ -130,9 +130,8 @@ python train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.ox
 python evaluate.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/ --restore_file best
 
 
-python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/. 
+python train.py  --data_dir  ../data/genentech.tpm/datasets_list.txt --model_dir ../data/genentech.tpm/. --tensorboard_prefix only_auc_ 
 
---tensorboard_prefix ""
 
  python  train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes.32/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/ --tensorboard_prefix "32_"
 
@@ -143,11 +142,18 @@ python train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes/
  
 python train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. 
 
+python  evaluate.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/.  --restore_file  ../data/tcga/PCA/./tensorboardLog/20190322-014624/best.pth.tar
+
+python  evaluate.py  --data_dir   ../data/tcga/PCA/prediction_genentech/datasets_list.txt --model_dir ../data/tcga/PCA/prediction_genentech/.  --restore_file  ../data/tcga/PCA/./tensorboardLog/20190322-014624/best.pth.tar
+
+
 #Neoantigen in BCB 
 python train.py  --data_dir  ../data/tcga.blca/neoantigen/datasets_list.txt --model_dir ../data/tcga.blca/neoantigen/. 
 
 python evaluate.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
+
 python  evaluate.py  --data_dir  ../data/genentech.tpm/Neoantigen/evaluate/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
+
 python  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar
 
 

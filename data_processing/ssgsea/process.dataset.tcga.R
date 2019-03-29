@@ -51,8 +51,6 @@ if(!tpm){
 
     }
 
-
-
     patient.name = rownames(dataset_ssgsea_mat)
     patient.name = gsub(patient.name, pattern="-", replacement=".")
     rownames(dataset_ssgsea_mat) = patient.name
@@ -122,6 +120,11 @@ if(!tpm){
 
     }
 
+
+
+    write.table(file=paste0(output.dir, "/common.patients.txt"),x = common.patients,
+        row.names = F, col.names =T,  sep="\t", quote=F )
+    
     write.table(file=paste0(output.dir, "/dataset_ssgsea.txt"),x = dataset_ssgsea_sel,
         row.names = F, col.names =T,  sep="\t", quote=F )
     write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = phenotype.ext.mat,

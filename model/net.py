@@ -62,12 +62,12 @@ class FullConnectedBlock(nn.Module):
 
     def forward(self, x, use_residual=True):
         residual = x
-        out = self.fc(residual)
+        out = self.fc(x)
         out = self.bn1(out)
+        if use_residual and self.in_channels == self.out_channels:
+            out += residual
         out = self.relu(out)
         out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        if use_residual and self.in_channels == self.out_channels:
-            out = x + out
         return out
 
 

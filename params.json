@@ -10,8 +10,9 @@
     "batch_by_type" : false,
     "save_summary_steps": 2,
     "aggregate": "min",
-    "best_model_metric" : "Response_auc",
-    "metrics": "e[['OS', 'c_index', 0, 0],['OS', 'correlation', 1, 2],['Response', 'auc', 2, 3]]",
+    "best_model_metric" : "negative_loss",
+    "metrics": "all",
+    // "metrics": "e[['OS', 'c_index', 0, 0],['Response', 'auc', -1, -1]]",
     // "metrics": "e[['OS', 'c_index', 0, 0],['OS', 'correlation', 1, 2],['SNV.Neoantigens', 'correlation', 2, 3],['Nonsilent.Mutation.Rate', 'correlation', 3, 4], ['Response', 'auc', 4, 5]]",
      // Format if metrices ['name of. variable', 'metrics', 'index of predicted data', 'index of real data'. Support multiple metrics.
     "l1_regularizer" : 0,
@@ -23,11 +24,11 @@
     "FC_size_list": [32, 16],
     "decoder_FC_size_list": [],
     // decoder assumed no colovution layer and configurable internal layers
-    "input_indices": "e range(125)",
+    "input_indices": "e list(range(2-1,51-1)) + list(range(55-1, 88-1))",
     //input indces:  None (implies all of the input indices) or  any python expression 
-    "survival_indices": "e[0,1]",
-    "continuous_phenotype_indices" : "e[0]",
-    "binary_phenotype_indices": "e[41]",
+    "survival_indices": "e[]",
+    "continuous_phenotype_indices" : "e list(range(89-1,126-1))",
+    "binary_phenotype_indices": "e[]",
     "loss_excluded_from_training" : "e[]",
     "num_workers": 4
 

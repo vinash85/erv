@@ -75,11 +75,13 @@ def quantile_normalize(data, method="qnorm_array"):
     return data
 
 
-def readFile(input_file):
+def readFile(input_file, header=False):
     data = pd.read_csv(input_file, sep="\t")
-    data = data.values
-
-    return data
+    out = data.values
+    if header:
+        header = list(data.columns)
+        out = (out, header)
+    return out
 
 
 def processDataLabels(input_file, normalize=True, batch_by_type=False):
@@ -110,7 +112,7 @@ def processDataLabels(input_file, normalize=True, batch_by_type=False):
         return features, labels, None
 
 
-def generator_survival(features, labels, params, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize_input=False, dataset_type='non_icb', sort_survival=False):
+def generator_survival(features, labels, params, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize_input=False, dataset_type='non_icb', sort_survival=False, header=None):
     """
     Parses the input file and creates a generator for the input file
 
@@ -132,6 +134,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         lab_continuous = quantile_normalize(lab_continuous)
         # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
+
         if normalize_input:
             feat = quantile_normalize(feat)
         feat = np.nan_to_num(feat)  # convert NANs to zeros
@@ -172,6 +175,13 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     num_batches_per_epoch = len(batches)
     input_size = features.shape[1]
 
+    if header is not None:
+        header1 = np.array(header[1:])
+        header = np.concatenate(
+            [np.take(header1, params.survival_indices),
+             np.take(header1, params.continuous_phenotype_indices),
+             np.take(header1, params.binary_phenotype_indices)])
+
     # Sorts the batches by survival time
     def data_generator():
         while True:
@@ -191,7 +201,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
 
                 yield X, y
 
-    return num_batches_per_epoch, input_size, data_generator()
+    return num_batches_per_epoch, input_size, header, data_generator()
 
 
 def generator_simple(features, labels, shuffle=True, batch_size=64):
@@ -269,14 +279,25 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
             print(path)
             # import ipdb
             # ipdb.set_trace()
-            features = readFile(path + "ssgsea_" + split + ".txt")
-            # remember survival is no longer survival.
-            phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
-            phenotypes = phenotypes_type[:, 1:]
-            # phenotypes = phenotypes.astype(float)
+            version = 0.4
 
-            dl = generator_survival(
-                features, phenotypes, params, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize_input=True, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
+            if(version <= 0.3):
+                features = readFile(path + "ssgsea_" + split + ".txt")
+                # remember survival is no longer survival.
+                phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
+                phenotypes = phenotypes_type[:, 1:]
+                dl = generator_survival(
+                    features, phenotypes, params, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize_input=True, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
+
+            else:
+                features_phenotypes, header = readFile(path + "dataset_" + split + ".txt", header=True)
+                # phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
+                cancertype = features_phenotypes[:, 0]  # first column in cancertype in the file
+                features_phenotypes = features_phenotypes[:, 1:]
+                dl = generator_survival(
+                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=True, dataset_type=dataset_type, shuffle=shuffle, header=header)
+
+            # phenotypes = phenotypes.astype(float)
 
             dataloaders[split] = dl
 

@@ -84,7 +84,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     # set model to training mode
     embedding_model.train() if train_optimizer_mask[0] else embedding_model.eval()
     outputs.train() if train_optimizer_mask[1] else outputs.eval()
-    num_batches_per_epoch, _, dataloader = dataloader
+    num_batches_per_epoch, _, _, dataloader = dataloader
 
     # summary for current training loop and a running average object for loss
     summ = []
@@ -243,7 +243,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                 tensorboard_dir, "metrics_val_best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
             # save best model
-            best_val_meterics_all = [evaluate(embedding_model, outputs, dataloader['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
+            best_val_meterics_all = [evaluate(embedding_model, outputs, dataset[0]['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
             best_json_path_dataset = os.path.join(
                 tensorboard_dir, "metrics_val_best_weights_datasets.json")
             utils.save_dict_to_json(best_val_meterics_all, best_json_path_dataset)
@@ -265,7 +265,7 @@ if __name__ == '__main__':
     params = utils.Params(json_path)
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
-    params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
+    params = net.create_lossfns_mask(params)
     print(params.loss_fns)
     print(params.mask)
 
@@ -294,7 +294,8 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     ['train', 'val'], args.data_dir, params)
-    _, params.input_size, _ = datasets[0][0]['train']
+    _, params.input_size, header, _ = datasets[0][0]['train']
+    params = net.define_metrics(params, header)
     # _, _, val_dl = dataloaders['val']
     # train_dl = dataloaders['train']
     # val_dl = dataloaders['val']

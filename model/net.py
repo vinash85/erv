@@ -53,17 +53,21 @@ class FullConnectedBlock(nn.Module):
 
     def __init__(self, in_channels, out_channels, dropout_rate):
         super(FullConnectedBlock, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
         self.fc = nn.Linear(in_channels, out_channels)
         self.bn1 = nn.BatchNorm1d(out_channels)
         self.dropout_rate = dropout_rate
         self.relu = nn.ReLU(inplace=True)
 
-    def forward(self, x):
+    def forward(self, x, use_residual=True):
         residual = x
         out = self.fc(residual)
         out = self.bn1(out)
         out = self.relu(out)
         out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        if use_residual and self.in_channels == self.out_channels:
+            out = x + out
         return out
 
 

@@ -30,7 +30,6 @@ number.nas = apply(genentech.sel, 2,function(tt) sum(is.na(tt)) )
 number.unique.values = apply(genentech.sel, 2,function(tt) length(unique(tt)) )
 cbind(number.nas,number.unique.values, 1:23 )
 
-
 response.phenotypes.inx = c("OS", "Event", "Response", "Best")
 response.phenotypes = genentech.sel[,response.phenotypes.inx]
 genentech.sel = genentech.sel[,setdiff(colnames(genentech.sel), response.phenotypes.inx)]

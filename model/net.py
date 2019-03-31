@@ -9,7 +9,7 @@ import math
 from sklearn import metrics as smetrics
 import r2python
 from scipy.stats.stats import spearmanr
-
+from past.builtins import basestring
 # 3x3 convolution
 
 
@@ -806,27 +806,13 @@ def create_lossfns_mask(params):
     survival_output_size = int(len(params.survival_indices) / 2)
     linear_output_size = survival_output_size + len(params.continuous_phenotype_indices)
     binary_output_size = len(params.binary_phenotype_indices)
-    loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
+    params.loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
         [nn.MSELoss()] * len(params.continuous_phenotype_indices) + \
         [nn.BCELoss()] * len(params.binary_phenotype_indices)
-    # BCEWithLogitsLoss is other option
 
-    # max_index = max(max_na(survival_indices), max_na(continuous_phenotype_indices), max_na(binary_phenotype_indices))
+    params.mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phenotype_indices])
 
-    # survival_indices_new, continuous_indices_new, binary_indices_new = params.survival_indices, params.continuous_phenotype_indices, params.binary_phenotype_indices
-    # print(survival_indices_new)
-
-    # for sur in survival_indices:
-    #     print(sur)
-    #     print(survival_indices_new > sur)
-    #     survival_indices_new[survival_indices_new > sur] = survival_indices_new[survival_indices_new > sur] - 1
-    #     continuous_indices_new[continuous_indices_new > sur] = continuous_indices_new[continuous_indices_new > sur] - 1
-    #     binary_indices_new[binary_indices_new > sur] = binary_indices_new[binary_indices_new > sur] - 1
-    mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phenotype_indices])
-    # print(survival_indices_new)
-    print(mask)
-
-    return loss_fns, mask, linear_output_size, binary_output_size
+    return params
 
 
 def regularized_loss(model, params, index="all"):
@@ -856,7 +842,7 @@ def calculate_loss(labels, net_outputs, loss_fns):
 
     # ## survival output
     # survival = labels[:,0:2]
-    # na_inx = ~( np.isnan(survival[:,1]) | np.isnan(survival[:,1]))
+    # na_inx = ~( np.isnan(survival[:,1]) | nbasep.isnan(survival[:,1]))
     # survival, net_output = survival[na_inx,:], net_outputs[na_inx,0]
     # if(len(label) > 1 ):
     #     loss_curr = loss_fns[0](net_output, label)
@@ -903,6 +889,31 @@ def calculate_loss(labels, net_outputs, loss_fns):
         total_loss = total_loss + loss_curr
 
     return total_loss
+
+
+def define_metrics(params, header):
+
+    survival_output_size = int(len(params.survival_indices) / 2)
+    if isinstance(params.metrics[0], basestring):
+        params.metrics = range(len(params.loss_fns))
+
+    label_inx = 0
+    if isinstance(params.metrics[0], int):
+        metrics = []
+        metrics_type = ["c_index"] * survival_output_size + \
+            ["correlation"] * len(params.continuous_phenotype_indices) + \
+            ["auc"] * len(params.binary_phenotype_indices)
+        for i in range(len(metrics_type)):
+            loss_fn = params.loss_fns[i]
+            metrics.append([header[i], metrics_type[i], label_inx, i])
+            if hasattr(loss_fn, '__name__'):
+                if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
+                    label_inx = label_inx + 2
+            else:
+                label_inx = label_inx + 1
+        params.metrics = [metrics[tt] for tt in params.metrics]
+
+    return params
 
 
 def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1]):

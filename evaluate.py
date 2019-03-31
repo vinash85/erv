@@ -44,7 +44,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     outputs.eval()
     predictions = np.array([])
 
-    num_batches_per_epoch, _, dataloader = dataloader
+    num_batches_per_epoch, _, _, dataloader = dataloader
 
     # summary for current eval loop
     summ = []
@@ -140,7 +140,8 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
-    _, params.input_size, _ = datasets[0][0][type_file]
+    _, params.input_size, _, header = datasets[0][0][type_file]
+    params = net.define_metrics(params, header)
 
     logging.info("- done.")
     params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
@@ -174,7 +175,7 @@ if __name__ == '__main__':
 
     data_dirs = pd.read_csv(args.data_dir, sep="\t")
     data_dirs = [row['data_dir'] for index, row in data_dirs.iterrows()]
-    val_metrics_all = [evaluate(embedding_model, outputs, dataloader[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataloader in zip(data_dirs, datasets)]
+    val_metrics_all = [evaluate(embedding_model, outputs, dataset[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataset in zip(data_dirs, datasets)]
     val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
     save_path = os.path.join("{}.json".format(restore_path))
     utils.save_dict_to_json(val_metrics, save_path)

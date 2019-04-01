@@ -58,6 +58,13 @@ get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 }
 
 
+get_sel_pca(data, pca_sel_obj=NULL, center = T, scale = F, subsample=1){
+	data = data[,pca_sel_obj$genes]
+	temp_out = get_pca(data, pca_sel_obj, center , scale, subsample)
+	temp_out$genes = pca_sel_obj$genes
+	temp_out
+}
+
 range01.norm = function(mat){
 	m1 = min(mat,na.rm=T)
 	m2 = max(mat,na.rm=T)

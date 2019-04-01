@@ -276,3 +276,5 @@ python  evaluate.py \
  # ../data/tcga/neoantigen.v2
 
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/. --tensorboard_prefix msi_only_ 
+
+python train.py  --data_dir  ../data/ya/datasets_list.txt --model_dir ../data/ya/. 

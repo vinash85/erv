@@ -277,4 +277,12 @@ python  evaluate.py \
 
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/. --tensorboard_prefix msi_only_ 
 
-python train.py  --data_dir  ../data/ya/datasets_list.txt --model_dir ../data/ya/. 
+python train.py  --data_dir  ../data/ya/datasets_list.txt --model_dir ../data/ya/.
+
+# attention model 
+
+
+python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.
+
+
+python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190407-213630/best.pth.tar

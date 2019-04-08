@@ -24,7 +24,7 @@ import datetime
 import model.net as net
 # import model.data_loader as data_loader
 import model.data_generator as data_generator
-from evaluate import evaluate
+from evaluate_attention import evaluate_attention
 from tensorboardX import SummaryWriter
 from shutil import copy
 
@@ -70,7 +70,7 @@ device = torch.device('cuda:0' if torch.cuda.is_available() else 'cpu')
 # train_batch_size = 256
 
 
-def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, dataloader, metrics, params, train_optimizer_mask):
+def train_attention(models, optimizers, dataloader, metrics, params, train_optimizer_mask):
     """Train the model on `num_steps` batches
     Args:
         model: (torch.nn.Module) the neural network
@@ -82,8 +82,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     """
 
     # set model to training mode
-    embedding_model.train() if train_optimizer_mask[0] else embedding_model.eval()
-    outputs.train() if train_optimizer_mask[1] else outputs.eval()
+    for inx in range(len(models)):
+        models[inx].train() if train_optimizer_mask[inx] else models[inx].eval()
+
     num_batches_per_epoch, _, _, dataloader = dataloader
 
     # summary for current training loop and a running average object for loss
@@ -92,8 +93,6 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     # net.tracer()
 
     # Use tqdm for progress bar
-    # with tqdm(total=len(dataloader)) as t:
-    # print(num_batches_per_epoch)
 
     with tqdm(total=num_batches_per_epoch) as t:
         for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
@@ -109,10 +108,15 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                     non_blocking=True), labels_batch.cuda(non_blocking=True)
             # convert to torch Variables
 
-            embedding_batch = embedding_model(train_batch)
-            output_batch = outputs(embedding_batch)
+            embedding_input = train_batch[:, params.embedding_indices]
+            attention_input = train_batch[:, params.attention_indices]
 
-            loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask)
+            embedding_batch = models[0](embedding_input)
+            attention_mat = models[1](attention_input)
+            transformed_batch = net.feature_attention(attention_mat, embedding_batch)
+            output_batch = models[2](transformed_batch)
+
+            loss = net.update_loss_parameters_vectorized(labels_batch, output_batch, models, optimizers, params, train_optimizer_mask)
 
             # Evaluate summaries only once in a while
             if i % params.save_summary_steps == 0:
@@ -146,7 +150,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     return metrics_mean
 
 
-def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, model_dir, tensorboard_dir,
+def train_and_evaluate(models, optimizers, datasets, metrics, params, model_dir, tensorboard_dir,
                        restore_file=None):
     """Train the model and evaluate every epoch.
     Args:
@@ -169,7 +173,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
             restore_path = os.path.join(
                 model_dir, restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
-        utils.load_checkpoint(restore_path, embedding_model, outputs)  # not updating the optimizers for flexiblity
+        utils.load_checkpoint_attn(restore_path, models)  # not updating the optimizers for flexiblity
         # utils.load_checkpoint(restore_path, embedding_model, outputs, optimizer)
 
     best_val_acc = None  # for cindex
@@ -183,13 +187,12 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         for index, dataset in enumerate(datasets):
             # compute number of batches in one epoch (one full pass over the training set)
             dataloader, train_optimizer_mask, dataset_name = dataset
-            train_metrics = train(embedding_model, outputs, embedding_optimizer,
-                                  outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
+            train_metrics = train_attention(models, optimizers, dataloader['train'], metrics, params, train_optimizer_mask)
             train_metrics_all.append(train_metrics)
 
             # Evaluate for one epoch on validation set
             validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
-            val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file)
+            val_metrics = evaluate_attention(models, dataloader['val'], metrics, params, validation_file)
             val_metrics_all.append(val_metrics)
 
             # tensorboard logging
@@ -198,19 +201,16 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
             writer.add_scalars('val_' + str(index), val_metrics, epoch)
         # net.tracer()
 
-        for name, param1 in outputs.named_parameters():
-            try:
-                writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
-                writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
-            except:
-                pass
+        model_names = ["encoder", "attention", "decoder"]
 
-        for name, param1 in embedding_model.named_parameters():
-            try:
-                writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
-                writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
-            except:
-                pass
+        for model_name, model in zip(model_names, models):
+
+            for name, param1 in model.named_parameters():
+                try:
+                    writer.add_histogram(model_name + "/" + name, param1.clone().cpu().data.numpy(), epoch)
+                    writer.add_histogram("grad/" + model_name + "/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+                except:
+                    print("error in writing histogram")
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
@@ -225,10 +225,12 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
         # Save weights
         utils.save_checkpoint({'epoch': epoch + 1,
-                               'embedding_state_dict': embedding_model.state_dict(),
-                               'outputs_state_dict': outputs.state_dict(),
-                               'embedding_optim_dict': embedding_optimizer.state_dict(),
-                               'outputs_optim_dict': outputs_optimizer.state_dict()
+                               'embedding_state_dict': models[0].state_dict(),
+                               'attention_state_dict': models[1].state_dict(),
+                               'outputs_state_dict': models[2].state_dict(),
+                               'embedding_optim_dict': optimizers[0].state_dict(),
+                               'attention_optim_dict': optimizers[1].state_dict(),
+                               'outputs_optim_dict': optimizers[2].state_dict()
                                },
                               is_best=is_best,
                               checkpoint=tensorboard_dir)
@@ -243,7 +245,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                 tensorboard_dir, "metrics_val_best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
             # save best model
-            best_val_meterics_all = [evaluate(embedding_model, outputs, dataset[0]['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
+            best_val_meterics_all = [evaluate_attention(models, dataset[0]['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
             best_json_path_dataset = os.path.join(
                 tensorboard_dir, "metrics_val_best_weights_datasets.json")
             utils.save_dict_to_json(best_val_meterics_all, best_json_path_dataset)
@@ -270,8 +272,6 @@ if __name__ == '__main__':
     print(params.mask)
 
     # use GPU if available
-    # print(params.cuda)
-
     # Set the random seed for reproducible experiments
     torch.manual_seed(230)
     if params.cuda:
@@ -294,38 +294,27 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     ['train', 'val'], args.data_dir, params)
-    _, params.input_size, params.header, _ = datasets[0][0]['train']
+    _, _, params.header, _ = datasets[0][0]['train']
+    params.input_size = len(params.embedding_indices)
+    # net.tracer()
+    params.attention_input_size = len(params.attention_indices)
     params = net.define_metrics(params)
-    # _, _, val_dl = dataloaders['val']
-    # train_dl = dataloaders['train']
-    # val_dl = dataloaders['val']
-    # params.dict['num_batches_per_epoch'] = train_steps_gen
     logging.info("- done.")
 
     # Define the model and optimizer
-    # if len(params.out_channels_list) > 0:
-    # embedding_model = net.EmbeddingNet(
-    #     net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-    embedding_model = net.EmbeddingNet(params)
-    outputs = net.outputLayer(params)
+    modelClasses = [net.EmbeddingNet, net.AttentionEncoder, net.outputLayer]
+    models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
 
-    if params.cuda:
-        # model = model.cuda()
-        embedding_model = embedding_model.cuda()
-        outputs = outputs.cuda()
-
-    embedding_optimizer = optim.Adam(
-        embedding_model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
-    outputs_optimizer = optim.Adam(
-        outputs.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay)
+    # vectorized  optimizers
+    optimizers = [optim.Adam(
+        model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay) for model in models]
 
     # fetch loss function and metrics
-    # loss_fn = net.negative_log_partial_likelihood
     metrics = net.metrics
 
     # Train the model
     logging.info("Starting training for {} epoch(s)".format(params.num_epochs))
-    train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, outputs_optimizer, metrics, params, args.model_dir, tensorboard_dir,
+    train_and_evaluate(models, optimizers, datasets, metrics, params, args.model_dir, tensorboard_dir,
                        args.restore_file)
     # writer.export_scalars_to_json("./all_scalars.json")
     writer.close()

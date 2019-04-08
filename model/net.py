@@ -10,7 +10,13 @@ from sklearn import metrics as smetrics
 import r2python
 from scipy.stats.stats import spearmanr
 from past.builtins import basestring
+import copy
 # 3x3 convolution
+
+
+def clones(module, N):
+    "Produce N identical layers."
+    return nn.ModuleList([copy.deepcopy(module) for _ in range(N)])
 
 
 def conv1d(in_channels, out_channels, kernel_size=5, stride=2):
@@ -48,61 +54,35 @@ class ConvolutionBlock(nn.Module):
 
 # FC block
 
-class FullConnectedBlock_v2(nn.Module):
-
-    def __init__(self, in_channels, out_channels, dropout_rate):
-        super(FullConnectedBlock, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.dropout_rate = dropout_rate
-        self.fc1 = nn.Linear(in_channels, out_channels)
-        self.bn1 = nn.BatchNorm1d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.bn3 = nn.BatchNorm1d(out_channels)
-
-    def forward(self, x, use_residual=True):
-        residual = x
-        out = self.fc1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        if use_residual and self.in_channels == self.out_channels:
-            out += residual
-        out = self.bn3(out)
-        return out
-
-
-class FullConnectedBlock_v1(nn.Module):
-
-    def __init__(self, in_channels, out_channels, dropout_rate):
-        super(FullConnectedBlock, self).__init__()
-        self.in_channels = in_channels
-        self.out_channels = out_channels
-        self.dropout_rate = dropout_rate
-        self.fc1 = nn.Linear(in_channels, out_channels)
-        self.bn1 = nn.BatchNorm1d(out_channels)
-        self.fc2 = nn.Linear(out_channels, out_channels)
-        self.bn2 = nn.BatchNorm1d(out_channels)
-        self.relu = nn.ReLU(inplace=True)
-        self.bn3 = nn.BatchNorm1d(out_channels)
-
-    def forward(self, x, use_residual=True):
-        residual = x
-        out = self.fc1(x)
-        out = self.bn1(out)
-        out = self.relu(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        out = self.fc2(out)
-        out = self.bn2(out)
-        out = self.relu(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
-        if use_residual and self.in_channels == self.out_channels:
-            out += residual
-        out = self.bn3(out)
-        return out
-
-
 class FullConnectedBlock(nn.Module):
+    ''' Implmenent are resdual style fully connected layer"
+    '''
+
+    def __init__(self, in_channels, out_channels, dropout_rate, use_residual=True):
+        super(FullConnectedBlock, self).__init__()
+        self.in_channels = in_channels
+        self.out_channels = out_channels
+        self.dropout_rate = dropout_rate
+        self.use_residual = use_residual
+        self.norm1 = nn.LayerNorm(in_channels)
+        self.fc1 = nn.Linear(in_channels, out_channels)
+        self.relu = nn.ReLU(inplace=True)
+        self.norm2 = nn.LayerNorm(out_channels)
+
+    def forward(self, x):
+        residual = x
+        out = x
+        out = self.norm1(out)
+        out = self.fc1(out)
+        out = self.relu(out)
+        out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        out = self.norm2(out)
+        if self.use_residual and self.in_channels == self.out_channels:
+            out += residual
+        return out
+
+
+class FullConnectedBlock_v0(nn.Module):
 
     def __init__(self, in_channels, out_channels, dropout_rate):
         super(FullConnectedBlock, self).__init__()
@@ -130,7 +110,7 @@ class EmbeddingNet(nn.Module):
 
     def __init__(self, params, block=ConvolutionBlock):
         super(EmbeddingNet, self).__init__()
-        self.params = params
+        self.params = copy.deepcopy(params)
         self.in_channels = 1
         if len(self.params.kernel_sizes) == 1:
             self.params.kernel_sizes = [self.params.kernel_sizes[0]] * len(self.params.out_channels_list)
@@ -149,9 +129,11 @@ class EmbeddingNet(nn.Module):
 
         print("initial fully connected size")
         print(self.fc_output_size)
+        # self.params.FC_size_list.append(self.params.embedding_size)
         self.FC_block1 = self.make_layers_FC(
             FullConnectedBlock, self.params.FC_size_list, self.params.dropout_rate)
-        print("final output size")
+        print("Embedding size")
+        self.norm = nn.LayerNorm(self.fc_output_size)
         self.fc3 = nn.Linear(self.fc_output_size, self.params.embedding_size)
 
     def make_layers_FC(self, block, FC_size_list, dropout_rate):
@@ -189,6 +171,7 @@ class EmbeddingNet(nn.Module):
         temp = out.size()
         out = out.view(out.size(0), -1)
         out = self.FC_block1(out)
+        out = self.norm(out)
         out = self.fc3(out)
         return out
 
@@ -200,7 +183,7 @@ class outputLayer(nn.Module):
 
     def __init__(self, params):
         super(outputLayer, self).__init__()
-        self.params = params
+        self.params = copy.deepcopy(params)
         # change internal params to adapt encoder for internal_layers of decoder
         self.params.input_size = params.embedding_size
         self.survival_len, self.cont_len, self.bin_len = int(len(params.survival_indices) / 2), len(params.continuous_phenotype_indices), len(params.binary_phenotype_indices)
@@ -214,12 +197,53 @@ class outputLayer(nn.Module):
 
     def forward(self, x):
         out = self.internal_layers(x)
+        # tracer()
+        surv_out = out[:, :self.survival_len]
+        if self.survival_len > 0:
+            surv_out = self.dense1_bn(surv_out)
         out = torch.cat((
-            # self.dense1_bn(out[:, :self.survival_len]),
-            out[:, :self.survival_len],
+            surv_out,
             out[:, self.survival_len:(self.survival_len + self.cont_len)],
             self.sigmoid(out[:, (self.survival_len + self.cont_len):])
         ), 1)
+        return out
+
+
+def feature_attention(attn_mat, embedding, dropout=None):
+    "perform matrix multiplication "
+
+    bs = attn_mat.size(0)
+    embedding = embedding.view([bs, 1, embedding.shape[1]])
+    output = torch.matmul(embedding, attn_mat)
+    output = output.view([bs, output.shape[2]])
+    return output
+
+
+class AttentionEncoder(nn.Module):
+    "Attention Encoder for deepImmune produce a matrix that  could be multiplied with embedding"
+
+    def __init__(self, params):
+        super(AttentionEncoder, self).__init__()
+        self.params = copy.deepcopy(params)
+        self.output_size = params.embedding_size
+        # change internal params to adapt encoder for internal_layers of decoder
+        self.params.input_size = params.attention_input_size
+
+        self.params.embedding_size = self.output_size * self.output_size
+        self.params.out_channels_list = []  # no convolution layer
+        self.params.FC_size_list = params.attention_FC_size_list
+        self.internal_layers = EmbeddingNet(self.params)
+        # self.softmaxs = clones(nn.Softmax(dim=1), self.output_size)
+
+    def forward(self, x):
+        out = self.internal_layers(x)
+        # tracer()
+        bs = out.size(0)
+        out = out.view(bs, self.output_size, self.output_size)
+        out_list = [nn.Softmax(dim=1)(out[inx, :, :])
+                    for inx in range(bs)]
+        out = torch.stack(out_list)
+        out = out - 0.5  # for range [-0.5 0.5]
         return out
 
 
@@ -706,6 +730,22 @@ def isfinite(x):
     return not_inf & not_nan
 
 
+def isfinite_list(x):
+    """
+    Quick pytorch test that there are no nan's or infs.
+
+    note: torch now has torch.isnan
+    url: https://gist.github.com/wassname/df8bc03e60f81ff081e1895aabe1f519
+    """
+    out = 1
+    if x is not None:
+        not_inf = ((x + 1) != x)
+        not_nan = (x == x)
+        out = not_inf & not_nan
+        out = out.all()
+    return out
+
+
 def negative_log_partial_likelihood(survival, risk, debug=False):
     """Return the negative log-partial likelihood of the prediction
     y_true contains the survival time
@@ -946,7 +986,7 @@ def calculate_loss(labels, net_outputs, loss_fns):
     return total_loss
 
 
-def define_metrics(params, header):
+def define_metrics(params):
 
     survival_output_size = int(len(params.survival_indices) / 2)
     if isinstance(params.metrics[0], basestring):
@@ -960,7 +1000,7 @@ def define_metrics(params, header):
             ["auc"] * len(params.binary_phenotype_indices)
         for i in range(len(metrics_type)):
             loss_fn = params.loss_fns[i]
-            metrics.append([header[i], metrics_type[i], label_inx, i])
+            metrics.append([params.header[i], metrics_type[i], label_inx, i])
             if hasattr(loss_fn, '__name__'):
                 if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
                     label_inx = label_inx + 2
@@ -982,6 +1022,12 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         embedding_optimizer.zero_grad()
         outputs_optimizer.zero_grad()
         loss.backward()
+        # xx = [p.grad for p in outputs.parameters()]
+        # print(xx)
+        # tracer()
+
+        # if not all([isfinite(p.grad).all() for p in outputs.parameters()]):
+        # tracer()
         # performs updates using calculated gradients
         if train_optimizer_mask[0]:
             embedding_optimizer.step()
@@ -1028,8 +1074,10 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         if isnan(loss_curr):
             loss_curr = 0.
 
-        # tracer()
+        # print(net_output)
         # print(loss_curr)
+        # tracer()
+
         if is_train and params.pipeline_optimization and loss_curr != 0.:
             update_parameters(loss_curr, train_optimizer_mask, embedding_model, outputs)
 
@@ -1038,6 +1086,83 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
     # tracer()
     if is_train and not params.pipeline_optimization and total_loss != 0.:
         update_parameters(total_loss, train_optimizer_mask, embedding_model, outputs)
+    if total_loss != 0:
+        loss_val = total_loss.item()
+    else:
+        loss_val = 0.
+
+    return loss_val
+
+
+def update_loss_parameters_vectorized(labels, net_outputs, models, optimizers, params, train_optimizer_mask):
+    '''
+    define loss function and update parameters
+    '''
+
+    def update_parameters(loss):
+        "perorm parameter updates"
+        # clear previous gradients, compute gradients of all variables wrt loss
+        for optimizer in optimizers:
+            optimizer.zero_grad()
+
+        loss.backward()
+        # performs updates using calculated gradients
+        for mask, optimizer in zip(train_optimizer_mask, optimizers):
+            if mask:
+                optimizer.step()
+
+    total_loss = 0.
+    loss_fns = params.loss_fns
+    len_fns = len(loss_fns)
+
+    label_inx = 0
+    if sum(train_optimizer_mask):
+        is_train = True
+    else:
+        is_train = False
+
+    # loss_for_training = list(set(range(len(loss_fns))) - set(params.loss_excluded_from_training))
+    # import ipdb
+    # ipdb.set_trace()
+    for i in range(len(loss_fns)):
+        net_output, loss_fn = net_outputs[:, i], loss_fns[i]
+        if hasattr(loss_fn, '__name__'):
+            if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
+                label = labels[:, label_inx:(label_inx + 2)]
+                label_inx = label_inx + 2
+                # print(label.shape)
+                na_inx = ~(isnan(label[:, 0]) | isnan(label[:, 1]))
+                label, net_output = label[na_inx, :], net_output[na_inx]
+        else:
+            label = labels[:, label_inx]
+            label_inx = label_inx + 1
+            na_inx = ~isnan(label)
+            label, net_output = label[na_inx], net_output[na_inx]
+
+        if(len(label) > 1) and not any(np.array(params.loss_excluded_from_training) == i):
+            # in case of survival label is censor; censored data assumed to
+            # sorted based on patient event time.
+            loss_curr = loss_fn(net_output, label)
+            loss_curr = loss_curr + regularized_loss(models[2], params, i)
+        else:
+            # loss_curr = torch.zeros(1)
+            loss_curr = 0.
+
+        if isnan(loss_curr):
+            loss_curr = 0.
+
+        # print(net_output)
+        # print(loss_curr)
+        # tracer()
+
+        if is_train and params.pipeline_optimization and loss_curr != 0.:
+            update_parameters(loss_curr)
+
+        total_loss = total_loss + loss_curr
+
+    # tracer()
+    if is_train and not params.pipeline_optimization and total_loss != 0.:
+        update_parameters(total_loss)
     if total_loss != 0:
         loss_val = total_loss.item()
     else:

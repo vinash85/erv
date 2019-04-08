@@ -4,7 +4,8 @@ import os
 import shutil
 import torch
 import jstyleson
-from past.builtins import basestring    
+from past.builtins import basestring
+
 
 class Params():
     """Class that loads hyperparameters from a json file.
@@ -155,5 +156,29 @@ def load_checkpoint(checkpoint, embedding_model, outputs, embedding_optimizer=No
         embedding_optimizer.load_state_dict(checkpoint['embedding_optim_dict'])
     if outputs_optimizer:
         outputs_optimizer.load_state_dict(checkpoint['outputs_optim_dict'])
+
+    return checkpoint
+
+
+def load_checkpoint_attn(checkpoint, models, optimizers=None):
+    """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
+    optimizer assuming it is present in checkpoint.
+
+    Args:
+        checkpoint: (string) filename which needs to be loaded
+        model: (torch.nn.Module) model for which the parameters are loaded
+        optimizer: (torch.optim) optional: resume optimizer from checkpoint
+    """
+    if not os.path.exists(checkpoint):
+        raise "File doesn't exist {}"
+    checkpoint = torch.load(checkpoint)
+    models[0].load_state_dict(checkpoint['embedding_state_dict'])
+    models[1].load_state_dict(checkpoint['attention_state_dict'])
+    models[2].load_state_dict(checkpoint['outputs_state_dict'])
+
+    if optimizers:
+        optimizers[0].load_state_dict(checkpoint['embedding_optim_dict'])
+        optimizers[1].load_state_dict(checkpoint['attention_optim_dict'])
+        optimizers[2].load_state_dict(checkpoint['outputs_optim_dict'])
 
     return checkpoint

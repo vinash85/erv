@@ -27,7 +27,7 @@ parser.add_argument('--hyper_param', default='',
                     help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
 
 
-def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None):
+def evaluate_attention(models, dataloader, metrics, params, validation_file=None):
     """Evaluate the model on `num_steps` batches.
 
     Args:
@@ -40,8 +40,9 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
 
     # set model to evaluation mode
     # print(embedding_model.state_dict())
-    embedding_model.eval()
-    outputs.eval()
+    for inx in range(len(models)):
+        models[inx].eval()
+
     predictions = np.array([])
 
     num_batches_per_epoch, _, _, dataloader = dataloader
@@ -62,12 +63,17 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
         # fetch the next evaluation batch
+        embedding_input = data_batch[:, params.embedding_indices]
+        attention_input = data_batch[:, params.attention_indices]
+
+        embedding_batch = models[0](embedding_input)
+        attention_mat = models[1](attention_input)
+        transformed_batch = net.feature_attention(attention_mat, embedding_batch)
+        output_batch = models[2](transformed_batch)
 
         # compute model output
-        embedding_batch = embedding_model(data_batch)
-        output_batch = outputs(embedding_batch)
-        loss = net.update_loss_parameters(
-            labels_batch, output_batch, embedding_model, outputs, None, None, params, [0, 0])
+        loss = net.update_loss_parameters_vectorized(labels_batch, output_batch, models, None, params, [0, 0, 0])
+
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
         embedding_batch = embedding_batch.data.cpu().numpy()
@@ -97,6 +103,11 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     logging.info("- Eval metrics : " + metrics_string)
     if validation_file:
         predictions = pd.DataFrame(predictions)
+        header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
+        embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
+        all_header = params.header.tolist() + header_outputs + embedding_header
+        embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
+        predictions.columns = all_header
         predictions.to_csv(validation_file, sep='\t', index=False)
 
     return metrics_mean
@@ -140,20 +151,19 @@ if __name__ == '__main__':
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
-    _, params.input_size, _, param.header = datasets[0][0][type_file]
-    params = net.define_metrics(params)
 
+    params = net.create_lossfns_mask(params)
+    _, _, params.header, _ = datasets[0][0][type_file]
+    params.input_size = len(params.embedding_indices)
+    params.attention_input_size = len(params.attention_indices)
+    params = net.define_metrics(params)
     logging.info("- done.")
-    params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
+
+    # Define the model and optimizer
+    modelClasses = [net.EmbeddingNet, net.AttentionEncoder, net.outputLayer]
+    models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
 
     # Define the model
-    embedding_model = net.EmbeddingNet(params)
-    outputs = net.outputLayer(params)
-
-    if params.cuda:
-        # model = model.cuda()
-        embedding_model = embedding_model.cuda()
-        outputs = outputs.cuda()
 
     metrics = net.metrics
 
@@ -167,7 +177,7 @@ if __name__ == '__main__':
         restore_path = os.path.join(
             args.model_dir, args.restore_file + '.pth.tar')
     logging.info("Restoring parameters from {}".format(restore_path))
-    utils.load_checkpoint(restore_path, embedding_model, outputs)
+    utils.load_checkpoint_attn(restore_path, models)
 
     metrics = net.metrics
 
@@ -175,7 +185,7 @@ if __name__ == '__main__':
 
     data_dirs = pd.read_csv(args.data_dir, sep="\t")
     data_dirs = [row['data_dir'] for index, row in data_dirs.iterrows()]
-    val_metrics_all = [evaluate(embedding_model, outputs, dataset[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataset in zip(data_dirs, datasets)]
+    val_metrics_all = [evaluate_attention(models, dataset[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataset in zip(data_dirs, datasets)]
     val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
     save_path = os.path.join("{}.json".format(restore_path))
     utils.save_dict_to_json(val_metrics, save_path)

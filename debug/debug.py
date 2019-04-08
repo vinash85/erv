@@ -61,3 +61,29 @@ input = torch.randn(3, requires_grad=True)
 target = torch.empty(3).random_(2)
 output = loss(m(input), target)
 output.backward()
+
+
+# for debugging tensor for nans
+
+import torch
+from torch.autograd.variable import Variable
+import torch.nn.functional as F
+
+a = Variable(torch.FloatTensor(16, 3, 64, 64).zero_(), requires_grad=True)
+
+# b = a.std(dim=0).mean()  # NaN gradients
+b = (a - a.mean(dim=0, keepdim=True)).norm(p=2, dim=0).mean() / (15**0.5)  # 0 gradients
+
+b.backward()
+
+print(a.grad.data)
+
+
+if not all([isfinite(p.grad).all() for p in outputs.parameters()]):
+    tracer()
+
+# get intermediate ouputs
+# https://forums.fast.ai/t/pytorch-best-way-to-get-at-intermediate-layers-in-vgg-and-resnet/5707
+# res50_conv = nn.Sequential(*list(res50_model.children())[:-2])
+yy = [xx for xx in embedding_model.named_parameters()]
+aa = nn.Sequential(*list(embedding_model.children())[:2])

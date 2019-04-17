@@ -213,7 +213,8 @@ def train_and_evaluate(models, optimizers, datasets, metrics, params, model_dir,
                         writer.add_histogram(model_name + "/" + name, param1.clone().cpu().data.numpy(), epoch)
                         writer.add_histogram("grad/" + model_name + "/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
                     except:
-                        print("error in writing histogram")
+                        # print("error in writing histogram")
+                        pass
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 

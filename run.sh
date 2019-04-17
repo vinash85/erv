@@ -286,3 +286,10 @@ python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/data
 
 
 python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190407-213630/best.pth.tar
+
+
+
+python evaluate_attention.py  --data_dir  ../data/genentech.tpm/neoantigen.v2/impute/datasets_list.txt --model_dir ../data/genentech.tpm/neoantigen.v2/impute/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190412-151621/best.pth.tar
+
+
+python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.

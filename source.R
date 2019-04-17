@@ -6,6 +6,7 @@ normalize.std = function(tt){
 }
 
 # standardise
+# install.packages("data.table")
 minmax <- function(x) (x - min(x))/(max(x) - min(x))
 
 big.prcomp = function(data, center=TRUE, scale=FALSE){
@@ -22,7 +23,8 @@ big.prcomp = function(data, center=TRUE, scale=FALSE){
 	# out$x = pca$loadings
 	out
 }
-get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
+
+get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1, match_standard_deviation = F){
 	require(gmodels)
 	sds =  apply(data, 2,  sd)
 	zeros.sds = which(sds == 0)
@@ -44,8 +46,10 @@ get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 	}
 	if(is.null(pca_out)) {
 		aa = t(apply(data, 1, function(tt) {
-			## matching sds 
-			tt = tt * pca_obj$sds/sds ## matching the distribution
+			## matching sds
+			if(match_standard_deviation){ 
+				tt = tt * pca_obj$sds/sds ## matching the distribution
+			}
 			if(pca_obj$center[1]) 
 				tt = tt-pca_obj$center
 			if(pca_obj$scale[1]) 
@@ -58,10 +62,10 @@ get_pca = function(data, pca_obj=NULL, center = T, scale = F, subsample=1){
 }
 
 
-get_sel_pca(data, pca_sel_obj=NULL, center = T, scale = F, subsample=1){
-	data = data[,pca_sel_obj$genes]
+get_sel_pca = function(data, top.genes, pca_sel_obj=NULL, center = T, scale = F, subsample=1){
+	data = data[,top.genes]
 	temp_out = get_pca(data, pca_sel_obj, center , scale, subsample)
-	temp_out$genes = pca_sel_obj$genes
+	temp_out$genes = top.genes
 	temp_out
 }
 
@@ -141,5 +145,62 @@ create.km = function( times1, times2,  labels=list(Del="not-rescued", Norm="resc
   # print(aa)
   # dev.off()
   aa 
+}
+
+
+normalize.expression = function(mat, num.samp.thr=0){ 
+	require(edgeR)
+	require(limma)
+	mat = t(mat)
+	filter = rowSums(mat > 0) >= num.samp.thr
+	mat1 = mat[filter,]
+	aa =  calcNormFactors(mat1, method = "TMM")
+	inp.norm = mat1/aa
+	lcpm <- cpm(inp.norm, log=TRUE)
+	mat[filter,] = lcpm
+	t(mat)
+}
+
+match.distribution = function(dat, ref){
+	dens.obs = density(ref, adjust=0.1, n = length(dat))
+	dens.obs$x[order(dat)]
+}
+
+match.distribution.zeros = function(dat, ref){
+	## match dat with ref. 
+	#The minimum values and value < ref.min are replaced by ref.min
+	ref.min = min(ref)
+	min.inx = (dat ==min(dat))
+	dens.obs = density(ref, adjust=0.1, n = length(dat))
+	out = dens.obs$x[rank(dat,ties.method="min")]
+	out[out<ref.min| min.inx] = ref.min
+	out
+}
+
+match.expression.distribution = function(exp, ref.exp){
+	require(parallel)
+	out = t(do.call(rbind, mclapply(seq(ncol(exp)), function(tt) match.distribution.zeros(exp[,tt], ref.exp[,tt]), mc.cores=32)))
+	rownames(out) =rownames(exp)
+	colnames(out) =colnames(exp)
+	out 
+
+}
+
+match.expression.distribution.combat = function(exp, ref.exp, num.samp.thr=2){
+	require(sva) 
+	mat =rbind(exp, ref.exp)
+	exp.sd = apply(exp, 2, sd) >= 0
+	ref.exp.sd = apply(exp, 2, sd) >= 0
+	inp.dt = t(mat)
+	my.groups =factor(c(rep(1,nrow(exp)), rep(2,nrow(ref.exp))))
+	nz = apply(inp.dt, 1, function(tt) length(tt[tt!=0])>=num.samp.thr)
+	nz.all = nz & exp.sd & ref.exp.sd 
+    batch = as.numeric(my.groups)
+    nzed = inp.dt[nz.all,]
+    mod1 = model.matrix(~1, data=my.groups)
+    newdata = ComBat(nzed, batch=batch, mod=mod1, ref.batch =2, par.prior = TRUE, prior.plots = FALSE)
+    inp.dt[nz.all,] = newdata
+    new.exp = inp.dt[,seq(nrow(exp))]
+    t(new.exp)
 }
 

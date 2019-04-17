@@ -27,7 +27,7 @@ parser.add_argument('--hyper_param', default='',
                     help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
 
 
-def evaluate_attention(models, dataloader, metrics, params, validation_file=None):
+def evaluate_attention(models, dataloader, metrics, params, validation_file=None, writer=None, epoch=None, index=None, tsne=0):
     """Evaluate the model on `num_steps` batches.
 
     Args:
@@ -43,8 +43,6 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     for inx in range(len(models)):
         models[inx].eval()
 
-    predictions = np.array([])
-
     num_batches_per_epoch, _, _, dataloader = dataloader
 
     # summary for current eval loop
@@ -55,10 +53,14 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     # import ipdb
     # ipdb.set_trace()
 
-    for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
+    for i, (features, all_labels, curr_response) in zip(range(num_batches_per_epoch), dataloader):
         # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1).astype(float)
         labels_san_survival = all_labels
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
+        if(i == 0):
+            response = curr_response
+        else:
+            response = np.concatenate([response, curr_response], 0)
         # move to GPU if available
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
@@ -78,12 +80,12 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
         output_batch = output_batch.data.cpu().numpy()
         embedding_batch = embedding_batch.data.cpu().numpy()
 
-        if validation_file:
-            output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch], 1)
-            if i == 0:
-                predictions = output_and_predictions
-            else:
-                predictions = np.concatenate([predictions, output_and_predictions], 0)
+        # if validation_file and writer is not None:
+        output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch], 1)
+        if i == 0:
+            predictions = output_and_predictions
+        else:
+            predictions = np.concatenate([predictions, output_and_predictions], 0)
         # labels_batch = labels_batch.data.cpu().numpy()
 
         # compute all metrics on this batch
@@ -102,13 +104,27 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
     if validation_file:
-        predictions = pd.DataFrame(predictions)
+        predictions_df = pd.DataFrame(predictions)
         header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
         embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
         all_header = params.header.tolist() + header_outputs + embedding_header
         embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
-        predictions.columns = all_header
-        predictions.to_csv(validation_file, sep='\t', index=False)
+        predictions_df.columns = all_header
+        predictions_df.to_csv(validation_file, sep='\t', index=False)
+
+    if tsne:
+        if epoch % params.embedding_log == 0:  # will work with epoch
+            predicted_outputs = predictions[:, labels_san_survival.shape[1]: (labels_san_survival.shape[1] + output_batch.shape[1])]
+            predicted_shape = predicted_outputs.shape
+            response = response.tolist()
+            embedding = predictions[:, (labels_san_survival.shape[1] + output_batch.shape[1]):]
+            label_img = predicted_outputs.reshape((predicted_shape[0], 1, 1, predicted_shape[1]))
+            writer.add_embedding(
+                embedding,
+                metadata=response,
+                # label_img=label_img,
+                global_step=epoch,
+                tag='val_' + str(index))
 
     return metrics_mean
 

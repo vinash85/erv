@@ -6,6 +6,8 @@ import pandas as pd
 import os
 from scipy.stats import norm, rankdata
 from model.net import tracer
+from tensorboardX import SummaryWriter
+
 # from keras import backend as K
 
 
@@ -112,7 +114,7 @@ def processDataLabels(input_file, normalize=True, batch_by_type=False):
         return features, labels, None
 
 
-def generator_survival(features, labels, params, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize_input=False, dataset_type='non_icb', sort_survival=False, header=None):
+def generator_survival(features, labels, params, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize_input=False, dataset_type='non_icb', sort_survival=False, header=None, tsne_labels_mat=None):
     """
     Parses the input file and creates a generator for the input file
 
@@ -124,8 +126,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     """
 
     # np.random.seed(230)
-    def create_batches(feat, lab, batch_size, shuffle=True):
+    def create_batches(feat, lab, tsne_mat, batch_size, shuffle=True):
         data_size = len(feat)
+
         # tracer()
         lab_survival, lab_continuous, lab_binary = \
             np.take(lab, params.survival_indices, axis=1), \
@@ -138,6 +141,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         if normalize_input:
             feat = quantile_normalize(feat)
         feat = np.nan_to_num(feat)  # convert NANs to zeros
+        feat = feat.astype(float)
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -149,16 +153,16 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
             if batch_num == num_batches_per_epoch - 1:
                 end_index = data_size
 
-            temp = (feat[start_index:end_index], lab[start_index:end_index])
+            temp = (feat[start_index:end_index], lab[start_index:end_index], tsne_mat[start_index:end_index])
             batches_curr.append(temp)
 
         return batches_curr
 
     def get_batches():
         if batch_by_type:
-            batches = [Xy for type_curr in types for Xy in create_batches(features[cancertype == type_curr], labels[cancertype == type_curr], batch_size, shuffle)]
+            batches = [Xy for type_curr in types for Xy in create_batches(features[cancertype == type_curr], labels[cancertype == type_curr], tsne_labels_mat[cancertype == type_curr], batch_size, shuffle)]
         else:
-            batches = create_batches(features, labels, batch_size, shuffle)
+            batches = create_batches(features, labels, tsne_labels_mat, batch_size, shuffle)
         return batches
 
     if params.input_indices != "None":  # use == because param.input_indices is unicode
@@ -169,6 +173,8 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
             raise NameError("cancertype not found")
         # types = cancertype.dtype.categories
         types = set(cancertype)
+
+    # tracer()
 
     batches = get_batches()
     data_size = len(features)
@@ -186,10 +192,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     def data_generator():
         while True:
             batches = get_batches()
-            for X, y in batches:
+            for X, y, tsne_mat in batches:
                 # X, y = batch[0]
-                # import ipdb
-                # ipdb.set_trace()
+                # tracer()
                 if sort_survival:
                     sort_index = (input_size - 3) if dataset_type is 'icb' else 0
                     # this was assuming in icb dataset survival is done through
@@ -198,8 +203,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
                     # sort by survival time and take censored data
                     # y = y[idx, 1].reshape(-1, 1)
                     y = y[idx, :]
+                    tsne_mat = tsne_mat[idx, :]
 
-                yield X, y
+                yield X, y, tsne_mat
 
     return num_batches_per_epoch, input_size, header, data_generator()
 
@@ -251,7 +257,7 @@ def add2stringlist(prefix, List):
     return [prefix + elem for elem in List]
 
 
-def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, dataset_type='non_icb', shuffle=True):
+def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, dataset_type='non_icb', shuffle=True, tsne=0):
     """
     Fetches the DataLoader object for each type in types from data_dir.
 
@@ -273,16 +279,18 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
         prefix = ""
 
     for split in ['train', 'val', 'test']:
-        if split in types:
-            print(prefix)
-            path = os.path.join(data_dir, "{}".format(prefix))
+        print(prefix)
+        path = os.path.join(data_dir, "{}".format(prefix))
+        dataset_file = path + "dataset_" + split + ".txt"
+
+        if split in types and os.path.isfile(dataset_file):
             print(path)
             # import ipdb
             # ipdb.set_trace()
             version = 0.4
 
             if(version <= 0.3):
-                features = readFile(path + "ssgsea_" + split + ".txt")
+                features = readFile(dataset_file)
                 # remember survival is no longer survival.
                 phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
                 phenotypes = phenotypes_type[:, 1:]
@@ -290,18 +298,19 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
                     features, phenotypes, params, batch_by_type=params.batch_by_type, cancertype=phenotypes_type[:, 0], batch_size=params.batch_size, normalize_input=True, dataset_type=dataset_type, shuffle=shuffle)  # outputs (steps_gen, input_size, generator)
 
             else:
-                features_phenotypes, header = readFile(path + "dataset_" + split + ".txt", header=True)
+                features_phenotypes, header = readFile(dataset_file, header=True)
                 # phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
                 cancertype = features_phenotypes[:, 0]  # first column in cancertype in the file
+                tsne_labels_mat = np.take(features_phenotypes, params.label_index, axis=1)
                 features_phenotypes = features_phenotypes[:, 1:]
                 dl = generator_survival(
-                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=True, dataset_type=dataset_type, shuffle=shuffle, header=header)
+                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=False, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat)
 
             # phenotypes = phenotypes.astype(float)
 
             dataloaders[split] = dl
 
-    return dataloaders, train_optimizer_mask, name
+    return dataloaders, train_optimizer_mask, (name, tsne)
 
 
 def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
@@ -319,7 +328,8 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
 
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
+    # tracer()
 
-    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['train_optimizer_mask'], row['dataset_type'], shuffle=shuffle) for index, row in data_dirs.iterrows()]
+    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['train_optimizer_mask'], row['dataset_type'], shuffle=shuffle, tsne=row['tsne']) for index, row in data_dirs.iterrows()]
 
     return datasets

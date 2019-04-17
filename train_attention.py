@@ -95,7 +95,7 @@ def train_attention(models, optimizers, dataloader, metrics, params, train_optim
     # Use tqdm for progress bar
 
     with tqdm(total=num_batches_per_epoch) as t:
-        for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
+        for i, (features, all_labels, _) in zip(range(num_batches_per_epoch), dataloader):
             # survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
             # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phenotype_indices, axis=1).astype(float)
             labels_san_survival = all_labels
@@ -129,7 +129,7 @@ def train_attention(models, optimizers, dataloader, metrics, params, train_optim
                 summary_batch = {dd[0] + "_" + dd[1]: metrics[dd[1]](output_batch[:, dd[2]], labels_san_survival[:, dd[3]: (dd[3] + 2)])
                                  if dd[1] == 'c_index' else
                                  metrics[dd[1]](output_batch[:, dd[2]], labels_san_survival[:, dd[3]])
-                                 for inx, dd in enumerate(params.metrics)}  # TODO ugly solution, when more metrics change it!!
+                                 for inx, dd in enumerate(params.metrics)}
 
                 summary_batch['loss'] = loss
                 summary_batch['negative_loss'] = -loss
@@ -177,6 +177,7 @@ def train_and_evaluate(models, optimizers, datasets, metrics, params, model_dir,
         # utils.load_checkpoint(restore_path, embedding_model, outputs, optimizer)
 
     best_val_acc = None  # for cindex
+    # tsne_params_log = 5
 
     for epoch in range(params.num_epochs):
         # Run one epoch
@@ -186,31 +187,33 @@ def train_and_evaluate(models, optimizers, datasets, metrics, params, model_dir,
         val_metrics_all = []
         for index, dataset in enumerate(datasets):
             # compute number of batches in one epoch (one full pass over the training set)
-            dataloader, train_optimizer_mask, dataset_name = dataset
-            train_metrics = train_attention(models, optimizers, dataloader['train'], metrics, params, train_optimizer_mask)
-            train_metrics_all.append(train_metrics)
+            dataloader, train_optimizer_mask, (dataset_name, tsne) = dataset
+            if 'train' in dataloader.keys():
+                train_metrics = train_attention(models, optimizers, dataloader['train'], metrics, params, train_optimizer_mask)
+                train_metrics_all.append(train_metrics)
+                writer.add_scalars('train_' + str(index), train_metrics, epoch)
 
             # Evaluate for one epoch on validation set
-            validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
-            val_metrics = evaluate_attention(models, dataloader['val'], metrics, params, validation_file)
-            val_metrics_all.append(val_metrics)
+            if 'val' in dataloader.keys():
+                validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
+                val_metrics = evaluate_attention(models, dataloader['val'], metrics, params, validation_file, writer=writer, epoch=epoch, index=index, tsne=tsne)
+                val_metrics_all.append(val_metrics)
+                writer.add_scalars('val_' + str(index), val_metrics, epoch)
 
-            # tensorboard logging
-
-            writer.add_scalars('train_' + str(index), train_metrics, epoch)
-            writer.add_scalars('val_' + str(index), val_metrics, epoch)
         # net.tracer()
 
         model_names = ["encoder", "attention", "decoder"]
 
-        for model_name, model in zip(model_names, models):
+        if epoch % params.save_summary_steps == 0:
 
-            for name, param1 in model.named_parameters():
-                try:
-                    writer.add_histogram(model_name + "/" + name, param1.clone().cpu().data.numpy(), epoch)
-                    writer.add_histogram("grad/" + model_name + "/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
-                except:
-                    print("error in writing histogram")
+            for model_name, model in zip(model_names, models):
+
+                for name, param1 in model.named_parameters():
+                    try:
+                        writer.add_histogram(model_name + "/" + name, param1.clone().cpu().data.numpy(), epoch)
+                        writer.add_histogram("grad/" + model_name + "/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+                    except:
+                        print("error in writing histogram")
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 

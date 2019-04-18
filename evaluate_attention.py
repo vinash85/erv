@@ -79,9 +79,10 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
         # extract data from torch Variable, move to cpu, convert to numpy arrays
         output_batch = output_batch.data.cpu().numpy()
         embedding_batch = embedding_batch.data.cpu().numpy()
+        transformed_batch = transformed_batch.data.cpu().numpy()
 
         # if validation_file and writer is not None:
-        output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch], 1)
+        output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch, transformed_batch], 1)
         if i == 0:
             predictions = output_and_predictions
         else:
@@ -107,24 +108,36 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
         predictions_df = pd.DataFrame(predictions)
         header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
         embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
-        all_header = params.header.tolist() + header_outputs + embedding_header
-        embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
+        transformed_header = ["transformed" + str(inx) for inx in range(transformed_batch.shape[1])]
+        all_header = params.header.tolist() + header_outputs + embedding_header + transformed_header
         predictions_df.columns = all_header
         predictions_df.to_csv(validation_file, sep='\t', index=False)
 
     if tsne:
-        if epoch % params.embedding_log == 0:  # will work with epoch
-            predicted_outputs = predictions[:, labels_san_survival.shape[1]: (labels_san_survival.shape[1] + output_batch.shape[1])]
+          # will work with epoch
+        if epoch % params.embedding_log == 0:
+            split_indices = np.cumsum([labels_san_survival.shape[1], output_batch.shape[1],
+                                       embedding_batch.shape[1]])
+            _, output_mat, embedding_mat, transformed_mat = \
+                np.split(predictions, split_indices, axis=1)
+
             response = [tuple(row) for row in response]
-            embedding = predictions[:, (labels_san_survival.shape[1] + output_batch.shape[1]):]
-            label_img = np.apply_along_axis(utils.reshape_toimage, 1, predicted_outputs)
+            label_img = np.apply_along_axis(utils.reshape_toimage, 1, output_mat)
             writer.add_embedding(
-                embedding,
+                embedding_mat,
                 metadata=response,
                 label_img=torch.from_numpy(label_img).float(),
                 global_step=epoch,
                 metadata_header=params.metadata_header,
-                tag='val_' + str(index))
+                tag='val_' + 'embedding' + str(index))
+
+            writer.add_embedding(
+                transformed_mat,
+                metadata=response,
+                label_img=torch.from_numpy(label_img).float(),
+                global_step=epoch,
+                metadata_header=params.metadata_header,
+                tag='val_' + 'transformed' + str(index))
 
     return metrics_mean
 

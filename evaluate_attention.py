@@ -115,15 +115,15 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     if tsne:
         if epoch % params.embedding_log == 0:  # will work with epoch
             predicted_outputs = predictions[:, labels_san_survival.shape[1]: (labels_san_survival.shape[1] + output_batch.shape[1])]
-            predicted_shape = predicted_outputs.shape
-            response = response.tolist()
+            response = [tuple(row) for row in response]
             embedding = predictions[:, (labels_san_survival.shape[1] + output_batch.shape[1]):]
-            label_img = predicted_outputs.reshape((predicted_shape[0], 1, 1, predicted_shape[1]))
+            label_img = np.apply_along_axis(utils.reshape_toimage, 1, predicted_outputs)
             writer.add_embedding(
                 embedding,
                 metadata=response,
-                # label_img=label_img,
+                label_img=torch.from_numpy(label_img).float(),
                 global_step=epoch,
+                metadata_header=params.metadata_header,
                 tag='val_' + str(index))
 
     return metrics_mean

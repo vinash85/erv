@@ -11,6 +11,25 @@ from tensorboardX import SummaryWriter
 # from keras import backend as K
 
 
+def np_take(aa, indices, axis=0):
+    try:
+        out = np.take(aa, indices, axis)
+    except:
+        shape1 = aa.shape
+        new_shape = list(shape1)
+        new_shape[axis] = len(indices)
+        indices = np.array(indices)
+        inx = np.where(indices < shape1[axis])
+        indices_nan = indices[inx]
+        out = np.empty(new_shape)
+        out[:] = np.nan
+        out = out.astype(aa.dtype)
+        for ii, ind in enumerate(indices_nan):
+            out[:, ii] = aa[:, ind]
+
+    return out
+
+
 def qnorm_array(xx):
     """
     Perform quantile normalization on a np.array similar to qnorm_col
@@ -131,9 +150,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
 
         # tracer()
         lab_survival, lab_continuous, lab_binary = \
-            np.take(lab, params.survival_indices, axis=1), \
-            np.take(lab, params.continuous_phenotype_indices, axis=1),\
-            np.take(lab, params.binary_phenotype_indices, axis=1)
+            np_take(lab, params.survival_indices, axis=1), \
+            np_take(lab, params.continuous_phenotype_indices, axis=1),\
+            np_take(lab, params.binary_phenotype_indices, axis=1)
         lab_continuous = quantile_normalize(lab_continuous)
         # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
@@ -166,7 +185,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         return batches
 
     if params.input_indices != "None":  # use == because param.input_indices is unicode
-        features = np.take(features, params.input_indices, axis=1)
+        features = np_take(features, params.input_indices, axis=1)
 
     if (batch_by_type):
         if cancertype is None:
@@ -184,9 +203,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     if header is not None:
         header1 = np.array(header[1:])
         header = np.concatenate(
-            [np.take(header1, params.survival_indices),
-             np.take(header1, params.continuous_phenotype_indices),
-             np.take(header1, params.binary_phenotype_indices)])
+            [np_take(header1, params.survival_indices),
+             np_take(header1, params.continuous_phenotype_indices),
+             np_take(header1, params.binary_phenotype_indices)])
 
     # Sorts the batches by survival time
     def data_generator():
@@ -301,7 +320,9 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
                 features_phenotypes, header = readFile(dataset_file, header=True)
                 # phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
                 cancertype = features_phenotypes[:, 0]  # first column in cancertype in the file
-                tsne_labels_mat = np.take(features_phenotypes, params.label_index, axis=1)
+                if tsne:
+                    params.metadata_header = [header[inx] if inx < len(header) else str(inx) for inx in params.label_index]
+                tsne_labels_mat = np_take(features_phenotypes, params.label_index, axis=1)
                 features_phenotypes = features_phenotypes[:, 1:]
                 dl = generator_survival(
                     features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=False, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat)

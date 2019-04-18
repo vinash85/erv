@@ -4,6 +4,8 @@ import os
 import shutil
 import torch
 import jstyleson
+import numpy as np
+import math
 from past.builtins import basestring
 
 
@@ -182,3 +184,13 @@ def load_checkpoint_attn(checkpoint, models, optimizers=None):
         optimizers[2].load_state_dict(checkpoint['outputs_optim_dict'])
 
     return checkpoint
+
+
+def reshape_toimage(mat, dim1=None):
+    size1 = mat.size
+    if dim1 is None:
+        dim1 = math.ceil(size1**0.5 + 0.5)
+    dim2 = math.ceil(size1 / dim1 + 0.5)
+    mat = np.pad(mat, (0, dim1 * dim2 - size1), "constant", constant_values=(0, 0))
+    mat = mat.reshape(1, dim1, dim2)
+    return mat

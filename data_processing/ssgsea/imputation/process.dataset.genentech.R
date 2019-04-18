@@ -167,10 +167,15 @@ colnames(cancertype) = cancertype.inx
 cancertype[,"cancertype_BLCA"] = 1
 
 
-dataset = cbind(phenotype.ext.mat[,1,with=F], general.pcs, pca_top, "MLH1" = dataset_ssgsea_matched[,"MLH1"], phenotype.ext.mat[,2:35,with=F], extra.genes, neoantigen.pheno, msi.pheno, cancertype)
+dataset.small = cbind(phenotype.ext.mat[,1,with=F], general.pcs, pca_top, "MLH1" = dataset_ssgsea_matched[,"MLH1"], phenotype.ext.mat[,2:35,with=F], extra.genes, neoantigen.pheno, msi.pheno, cancertype)
 
+## adding genetech specific columns 
+imputed.response = phenotype.ext.mat$Response
+all.phenos = genentech.env$genentech.pheno[reorder,]
 
+genetech.specific.cols = cbind(imputed.response, all.phenos)
 
+dataset = cbind(dataset.small, genetech.specific.cols)
 
 write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
     row.names = F, col.names =T,  sep="\t", quote=F )

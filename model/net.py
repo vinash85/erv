@@ -987,6 +987,10 @@ def calculate_loss(labels, net_outputs, loss_fns):
 
 
 def define_metrics(params):
+    '''
+    Create the metrics if not defined
+    Format  ['name of. variable', 'metrics', 'index of predicted data', 'index of real data'. ]
+    '''
 
     survival_output_size = int(len(params.survival_indices) / 2)
     if isinstance(params.metrics[0], basestring):
@@ -999,8 +1003,9 @@ def define_metrics(params):
             ["correlation"] * len(params.continuous_phenotype_indices) + \
             ["auc"] * len(params.binary_phenotype_indices)
         for i in range(len(metrics_type)):
+            # i is output_batch
             loss_fn = params.loss_fns[i]
-            metrics.append([params.header[i], metrics_type[i], label_inx, i])
+            metrics.append([params.header[i], metrics_type[i], i, label_inx])
             if hasattr(loss_fn, '__name__'):
                 if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
                     label_inx = label_inx + 2

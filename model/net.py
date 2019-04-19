@@ -1005,13 +1005,14 @@ def define_metrics(params):
         for i in range(len(metrics_type)):
             # i is output_batch
             loss_fn = params.loss_fns[i]
-            metrics.append([params.header[i], metrics_type[i], i, label_inx])
+            metrics.append([params.header[label_inx], metrics_type[i], i, label_inx])
             if hasattr(loss_fn, '__name__'):
                 if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
                     label_inx = label_inx + 2
             else:
                 label_inx = label_inx + 1
         params.metrics = [metrics[tt] for tt in params.metrics]
+    # tracer()
 
     return params
 

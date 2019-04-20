@@ -96,7 +96,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
     # print(num_batches_per_epoch)
 
     with tqdm(total=num_batches_per_epoch) as t:
-        for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
+        for i, (features, all_labels, _) in zip(range(num_batches_per_epoch), dataloader):
             # survival = np.take(all_labels, params.survival_indices, axis=1) if len(params.survival_indices) else None
             # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phenotype_indices, axis=1).astype(float)
             labels_san_survival = all_labels
@@ -183,18 +183,20 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         for index, dataset in enumerate(datasets):
             # compute number of batches in one epoch (one full pass over the training set)
             dataloader, train_optimizer_mask, dataset_name = dataset
-            train_metrics = train(embedding_model, outputs, embedding_optimizer,
-                                  outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
-            train_metrics_all.append(train_metrics)
+            if 'train' in dataloader.keys():
+                train_metrics = train(embedding_model, outputs, embedding_optimizer,
+                                      outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
+                train_metrics_all.append(train_metrics)
+                writer.add_scalars('train_' + str(index), train_metrics, epoch)
 
             # Evaluate for one epoch on validation set
-            validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
-            val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file)
-            val_metrics_all.append(val_metrics)
+            if 'val' in dataloader.keys():
+                validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
+                val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file)
+                val_metrics_all.append(val_metrics)
 
             # tensorboard logging
 
-            writer.add_scalars('train_' + str(index), train_metrics, epoch)
             writer.add_scalars('val_' + str(index), val_metrics, epoch)
         # net.tracer()
 

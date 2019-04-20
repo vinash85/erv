@@ -293,3 +293,8 @@ python evaluate_attention.py  --data_dir  ../data/genentech.tpm/neoantigen.v2/im
 
 
 python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.
+
+
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.
+
+python train.py  --data_dir  ../data/ya/datasets_list.txt --model_dir ../data/ya/.

@@ -191,30 +191,33 @@ def train_and_evaluate(models, optimizers, datasets, metrics, params, model_dir,
             if 'train' in dataloader.keys():
                 train_metrics = train_attention(models, optimizers, dataloader['train'], metrics, params, train_optimizer_mask)
                 train_metrics_all.append(train_metrics)
-                writer.add_scalars('train_' + str(index), train_metrics, epoch)
+                if params.tensorboardlog[0]:
+                    writer.add_scalars('train_' + str(index), train_metrics, epoch)
 
             # Evaluate for one epoch on validation set
             if 'val' in dataloader.keys():
                 validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
                 val_metrics = evaluate_attention(models, dataloader['val'], metrics, params, validation_file, writer=writer, epoch=epoch, index=index, tsne=tsne)
                 val_metrics_all.append(val_metrics)
-                writer.add_scalars('val_' + str(index), val_metrics, epoch)
+                if params.tensorboardlog[0]:
+                    writer.add_scalars('val_' + str(index), val_metrics, epoch)
 
         # net.tracer()
 
         model_names = ["encoder", "attention", "decoder"]
 
-        if epoch % params.save_summary_steps == 0:
+        if params.tensorboardlog[1]:
+            if epoch % params.save_summary_steps == 0:
 
-            for model_name, model in zip(model_names, models):
+                for model_name, model in zip(model_names, models):
 
-                for name, param1 in model.named_parameters():
-                    try:
-                        writer.add_histogram(model_name + "/" + name, param1.clone().cpu().data.numpy(), epoch)
-                        writer.add_histogram("grad/" + model_name + "/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
-                    except:
-                        # print("error in writing histogram")
-                        pass
+                    for name, param1 in model.named_parameters():
+                        try:
+                            writer.add_histogram(model_name + "/" + name, param1.clone().cpu().data.numpy(), epoch)
+                            writer.add_histogram("grad/" + model_name + "/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+                        except:
+                            # print("error in writing histogram")
+                            pass
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
@@ -272,8 +275,8 @@ if __name__ == '__main__':
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params = net.create_lossfns_mask(params)
-    print(params.loss_fns)
-    print(params.mask)
+    # print(params.loss_fns)
+    # print(params.mask)
 
     # use GPU if available
     # Set the random seed for reproducible experiments

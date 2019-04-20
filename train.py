@@ -187,7 +187,8 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                 train_metrics = train(embedding_model, outputs, embedding_optimizer,
                                       outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
                 train_metrics_all.append(train_metrics)
-                writer.add_scalars('train_' + str(index), train_metrics, epoch)
+                if params.tensorboardlog[0]:
+                    writer.add_scalars('train_' + str(index), train_metrics, epoch)
 
             # Evaluate for one epoch on validation set
             if 'val' in dataloader.keys():
@@ -197,22 +198,24 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
             # tensorboard logging
 
-            writer.add_scalars('val_' + str(index), val_metrics, epoch)
+                if params.tensorboardlog[0]:
+                    writer.add_scalars('val_' + str(index), val_metrics, epoch)
         # net.tracer()
 
-        for name, param1 in outputs.named_parameters():
-            try:
-                writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
-                writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
-            except:
-                pass
+        if params.tensorboardlog[0]:
+            for name, param1 in outputs.named_parameters():
+                try:
+                    writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)
+                    writer.add_histogram("grad/outputs/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+                except:
+                    pass
 
-        for name, param1 in embedding_model.named_parameters():
-            try:
-                writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
-                writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
-            except:
-                pass
+            for name, param1 in embedding_model.named_parameters():
+                try:
+                    writer.add_histogram("embedding_model/" + name, param1.clone().cpu().data.numpy(), epoch)
+                    writer.add_histogram("grad/embedding_model/" + name, param1.grad.clone().cpu().data.numpy(), epoch)
+                except:
+                    pass
 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
@@ -268,8 +271,8 @@ if __name__ == '__main__':
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params = net.create_lossfns_mask(params)
-    print(params.loss_fns)
-    print(params.mask)
+    # print(params.loss_fns)
+    # print(params.mask)
 
     # use GPU if available
     # print(params.cuda)

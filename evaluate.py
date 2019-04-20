@@ -54,7 +54,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     # import ipdb
     # ipdb.set_trace()
 
-    for i, (features, all_labels) in zip(range(num_batches_per_epoch), dataloader):
+    for i, (features, all_labels, _) in zip(range(num_batches_per_epoch), dataloader):
         # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1).astype(float)
         labels_san_survival = all_labels
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()

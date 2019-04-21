@@ -145,10 +145,11 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     """
 
     # np.random.seed(230)
+    # tracer()
+
     def create_batches(feat, lab, tsne_mat, batch_size, shuffle=True):
         data_size = len(feat)
 
-        # tracer()
         lab_survival, lab_continuous, lab_binary = \
             np_take(lab, params.survival_indices, axis=1), \
             np_take(lab, params.continuous_phenotype_indices, axis=1),\
@@ -156,11 +157,12 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         lab_continuous = quantile_normalize(lab_continuous)
         # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
+        # tracer()
 
         if normalize_input:
             feat = quantile_normalize(feat)
-        feat = np.nan_to_num(feat)  # convert NANs to zeros
         feat = feat.astype(float)
+        feat = np.nan_to_num(feat)  # convert NANs to zeros
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))

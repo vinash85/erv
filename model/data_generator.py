@@ -30,6 +30,10 @@ def np_take(aa, indices, axis=0):
     return out
 
 
+def is_binary(a):
+    return ((a == 0) | (a == 1)).all()
+
+
 def qnorm_array(xx):
     """
     Perform quantile normalization on a np.array similar to qnorm_col
@@ -96,6 +100,22 @@ def quantile_normalize(data, method="qnorm_array"):
     return data
 
 
+def quantile_normalize_nonbinary(data, method="qnorm_array"):
+    """
+    Perform quantile normalization on a np.array similar to qnorm_col  (only to nonbinary data)
+    """
+
+    # force data into floats for np calculations
+    data = data.astype('float')
+    method = eval(method)
+    for index in range(data.shape[1]):
+        col = data[:, index]
+        if not is_binary(np.nan_to_num(col)):
+            data[:, index] = method(col)
+
+    return data
+
+
 def readFile(input_file, header=False):
     data = pd.read_csv(input_file, sep="\t")
     out = data.values
@@ -159,10 +179,6 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
         # tracer()
 
-        if normalize_input:
-            feat = quantile_normalize(feat)
-        feat = feat.astype(float)
-        feat = np.nan_to_num(feat)  # convert NANs to zeros
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))
@@ -179,7 +195,18 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
 
         return batches_curr
 
-    def get_batches():
+    def get_batches(features, labels):
+
+        features = features.astype(float)
+        features = np.nan_to_num(features)  # convert NANs to zeros
+        # tracer()
+        if normalize_input:
+            # normalization by type
+            # features = quantile_normalize(features)
+            for type_curr in types:
+                # print(type_curr)
+                features[cancertype == type_curr] = quantile_normalize_nonbinary(features[cancertype == type_curr])
+
         if batch_by_type:
             batches = [Xy for type_curr in types for Xy in create_batches(features[cancertype == type_curr], labels[cancertype == type_curr], tsne_labels_mat[cancertype == type_curr], batch_size, shuffle)]
         else:
@@ -189,15 +216,12 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     if params.input_indices != "None":  # use == because param.input_indices is unicode
         features = np_take(features, params.input_indices, axis=1)
 
-    if (batch_by_type):
-        if cancertype is None:
-            raise NameError("cancertype not found")
-        # types = cancertype.dtype.categories
+    if cancertype is None:
+        raise NameError("cancertype not found")
+    # types = cancertype.dtype.categories
+    else:
         types = set(cancertype)
-
-    # tracer()
-
-    batches = get_batches()
+    batches = get_batches(features, labels)
     data_size = len(features)
     num_batches_per_epoch = len(batches)
     input_size = features.shape[1]
@@ -212,7 +236,7 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     # Sorts the batches by survival time
     def data_generator():
         while True:
-            batches = get_batches()
+            batches = get_batches(features, labels)
             for X, y, tsne_mat in batches:
                 # X, y = batch[0]
                 # tracer()
@@ -327,13 +351,22 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
                 tsne_labels_mat = np_take(features_phenotypes, params.label_index, axis=1)
                 features_phenotypes = features_phenotypes[:, 1:]
                 dl = generator_survival(
-                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=False, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat)
+                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=params.normalize_input, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat)
 
             # phenotypes = phenotypes.astype(float)
 
             dataloaders[split] = dl
 
     return dataloaders, train_optimizer_mask, (name, tsne)
+
+
+def get_or_default(row, prefix, default_val):
+    try:
+        out = row[prefix]
+    except:
+        out = default_val
+
+    return out
 
 
 def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
@@ -352,7 +385,19 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
     # tracer()
+    datasets = []
+    for index, row in data_dirs.iterrows():
+        prefix = get_or_default(row, 'prefix', "")
+        data_dir = row['data_dir']
+        train_optimizer_mask = get_or_default(row, 'train_optimizer_mask', [1, 1, 1])
+        dataset_type = get_or_default(row, 'dataset_type', 'non_icb')
+        shuffle = get_or_default(row, 'shuffle', shuffle)
+        tsne = get_or_default(row, 'tsne', 0)
+        # normalize_input = get_or_default(params, 'normalize_input', False)
+        datasets.append(
+            fetch_dataloader(prefix, types, data_dir, params,
+                             train_optimizer_mask=train_optimizer_mask, dataset_type=dataset_type, shuffle=shuffle, tsne=tsne))
 
-    datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['train_optimizer_mask'], row['dataset_type'], shuffle=shuffle, tsne=row['tsne']) for index, row in data_dirs.iterrows()]
+    # datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['train_optimizer_mask'], row['dataset_type'], shuffle=shuffle, tsne=row['tsne']) for index, row in data_dirs.iterrows()]
 
     return datasets

@@ -25,6 +25,8 @@ parser.add_argument('--prefix', default='',
                     tcga_phenotype_[train,test,val].txt )")
 parser.add_argument('--hyper_param', default='',
                     help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
+parser.add_argument('--type_file', default="val",
+                    help="String for files from dataset for validation list will be executed")
 
 
 def evaluate_attention(models, dataloader, metrics, params, validation_file=None, writer=None, epoch=None, index=None, tsne=0):
@@ -173,10 +175,9 @@ if __name__ == '__main__':
     # params.metrics = eval(params.metrics)
 
     logging.info("Creating the dataset...")
-
+    # net.tracer()
     # fetch dataloaders
-    type_file = 'val'  # or 'test'
-
+    type_file = args.type_file
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)

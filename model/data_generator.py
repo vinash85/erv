@@ -314,6 +314,7 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
     Returns:
         data: (dict) contains the DataLoader object for each type in types
     """
+    # tracer()
     train_optimizer_mask = eval(train_optimizer_mask)
     dataloaders = {}
     name = prefix
@@ -323,10 +324,13 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
     else:
         prefix = ""
 
-    for split in ['train', 'val', 'test']:
+    for split in ['train', 'val', 'test', 'all']:
         print(prefix)
         path = os.path.join(data_dir, "{}".format(prefix))
-        dataset_file = path + "dataset_" + split + ".txt"
+        if split is not "all":
+            dataset_file = path + "dataset_" + split + ".txt"
+        else:
+            dataset_file = path + "dataset.txt"
 
         if split in types and os.path.isfile(dataset_file):
             print(path)

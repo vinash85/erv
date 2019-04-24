@@ -301,4 +301,13 @@ python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_
 python train.py  --data_dir  ../data/ya/datasets_tsne_list.txt --model_dir ../data/ya/.
 
 ## imputation 
-python evaluate_attention.py  --data_dir  ../data/genentech.tpm/neoantigen.v2/impute/datasets_list.txt --model_dir ../data/genentech.tpm/neoantigen.v2/impute/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190412-151621/best.pth.tar
+python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190422-080613/best.pth.tar --type_file="['']"
+
+python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/survival20190422-081755/datasets_impute_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/survival20190422-081755/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/survival20190422-081755/best.pth.tar --type_file="all"
+
+
+python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/genentech.imputed/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/genentech.imputed/.
+
+python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/.
+
+

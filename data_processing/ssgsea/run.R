@@ -18,3 +18,8 @@ xx1 = match.distribution.zeros( c(rep(0,100), rep(1,100)), aa)
 xx1 = match.distribution.zeros(aa, c(rep(0,100)))
 
 aa = match.expression.distribution(dataset_ssgsea_sel[,1:100], ref.expression.cancertype[,1:100])
+aa = match.distribution.zeros( dataset_ssgsea_sel[,"DPM1"], ref.expression.cancertype[,"DPM1"])
+
+# association of pi3k pathway and NK cell activity 
+# cor.test(dataset_ssgsea_sel.back[,"PIK3CA"], dataset$MLH1)
+

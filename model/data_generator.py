@@ -200,12 +200,15 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         features = features.astype(float)
         features = np.nan_to_num(features)  # convert NANs to zeros
         # tracer()
+        survival_time_index = np.take(params.survival_indices, range(0, len(params.survival_indices), 2))
         if normalize_input:
             # normalization by type
             # features = quantile_normalize(features)
             for type_curr in types:
                 # print(type_curr)
                 features[cancertype == type_curr] = quantile_normalize_nonbinary(features[cancertype == type_curr])
+                for ii in range(len(survival_time_index)):
+                    labels[cancertype == type_curr, ii] = quantile_normalize(labels[cancertype == type_curr, ii])
 
         if batch_by_type:
             batches = [Xy for type_curr in types for Xy in create_batches(features[cancertype == type_curr], labels[cancertype == type_curr], tsne_labels_mat[cancertype == type_curr], batch_size, shuffle)]

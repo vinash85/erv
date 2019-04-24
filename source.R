@@ -204,3 +204,31 @@ match.expression.distribution.combat = function(exp, ref.exp, num.samp.thr=2){
     t(new.exp)
 }
 
+write.dataset = function(output.dir,dataset, ref.dir =NULL, samples.names = NULL) {
+	dir.create(output.dir)
+	if(!is.null(ref.dir)){
+		list.of.files <- c( 
+			list.files(ref.dir, "datasets_*list.txt$", full.names=T), 
+			list.files(ref.dir, "datasets_tsne_list.txt$", full.names=T), 
+			list.files(ref.dir, "params.json$",full.names=T) 
+			)
+		file.copy(list.of.files, output.dir)
+	}
+	if(!is.null(samples.names)){
+		write.table(file=paste0(output.dir, "/samples.names.txt"), x = samples.names,
+		row.names = F, col.names =T,  sep="\t", quote=F )
+
+	}
+	write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
+		row.names = F, col.names =T,  sep="\t", quote=F )
+	rand_inx = sample(nrow(dataset))
+	dataset_shuffle = dataset[rand_inx,]
+	train.inx = 1:ceiling(.85 * nrow(dataset_shuffle))
+	val.inx = ceiling(.85 * nrow(dataset_shuffle)):nrow(dataset_shuffle)
+	write.table(file=paste0(output.dir, "/dataset_train.txt"),x = dataset_shuffle[train.inx,],
+		row.names = F, col.names =T,  sep="\t", quote=F )
+	write.table(file=paste0(output.dir, "/dataset_val.txt"),x = dataset_shuffle[val.inx,],
+		row.names = F, col.names =T,  sep="\t", quote=F )
+}
+
+

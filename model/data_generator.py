@@ -364,6 +364,13 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
 
             dataloaders[split] = dl
 
+    # replace 'all' dataloder with 'val'
+    try:
+        dataloaders['val'] = dataloaders['all']
+        del dataloaders['all']
+    except:
+        pass
+
     return dataloaders, train_optimizer_mask, (name, tsne)
 
 
@@ -374,6 +381,11 @@ def get_or_default(row, prefix, default_val):
         out = default_val
 
     return out
+
+
+def intersection(lst1, lst2):
+    lst3 = [value for value in lst1 if value in lst2]
+    return lst3
 
 
 def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
@@ -391,15 +403,20 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
 
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
-    # tracer()
+    tracer()
     datasets = []
     for index, row in data_dirs.iterrows():
         prefix = get_or_default(row, 'prefix', "")
         data_dir = row['data_dir']
-        train_optimizer_mask = get_or_default(row, 'train_optimizer_mask', [1, 1, 1])
+        train_optimizer_mask = get_or_default(row, 'train_optimizer_mask', '[1, 1, 1]')
         dataset_type = get_or_default(row, 'dataset_type', 'non_icb')
         shuffle = get_or_default(row, 'shuffle', shuffle)
         tsne = get_or_default(row, 'tsne', 0)
+        types = get_or_default(row, 'types', types)
+        try:
+            types = eval(types)
+        except:
+            pass
         # normalize_input = get_or_default(params, 'normalize_input', False)
         datasets.append(
             fetch_dataloader(prefix, types, data_dir, params,

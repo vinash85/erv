@@ -403,7 +403,7 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
 
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
-    tracer()
+    #tracer()
     datasets = []
     for index, row in data_dirs.iterrows():
         prefix = get_or_default(row, 'prefix', "")

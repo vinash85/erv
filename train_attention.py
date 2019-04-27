@@ -313,8 +313,8 @@ if __name__ == '__main__':
     models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
 
     # vectorized  optimizers
-    optimizers = [optim.Adam(
-        model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay) for model in models]
+    optimizers = [optim.SGD(
+        model.parameters(), lr=params.learning_rate, weight_decay=params.weight_decay, momentum=0.9) for model in models]
 
     # fetch loss function and metrics
     metrics = net.metrics

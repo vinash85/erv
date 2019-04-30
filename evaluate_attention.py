@@ -207,7 +207,7 @@ if __name__ == '__main__':
         restore_path = os.path.join(
             args.model_dir, args.restore_file + '.pth.tar')
     logging.info("Restoring parameters from {}".format(restore_path))
-    utils.load_checkpoint_attn(restore_path, models)
+    utils.load_checkpoint_attn(restore_path, models, params)
 
     metrics = net.metrics
 

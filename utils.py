@@ -162,7 +162,7 @@ def load_checkpoint(checkpoint, embedding_model, outputs, embedding_optimizer=No
     return checkpoint
 
 
-def load_checkpoint_attn(checkpoint, models, optimizers=None):
+def load_checkpoint_attn(checkpoint, models, params, optimizers=None):
     """Loads model parameters (state_dict) from file_path. If optimizer is provided, loads state_dict of
     optimizer assuming it is present in checkpoint.
 
@@ -173,7 +173,12 @@ def load_checkpoint_attn(checkpoint, models, optimizers=None):
     """
     if not os.path.exists(checkpoint):
         raise "File doesn't exist {}"
-    checkpoint = torch.load(checkpoint)
+
+    if params.cuda:
+        checkpoint = torch.load(checkpoint)
+    else:
+        checkpoint = torch.load(checkpoint, map_location='cpu')
+
     models[0].load_state_dict(checkpoint['embedding_state_dict'])
     models[1].load_state_dict(checkpoint['attention_state_dict'])
     models[2].load_state_dict(checkpoint['outputs_state_dict'])
@@ -192,5 +197,5 @@ def reshape_toimage(mat, dim1=None):
         dim1 = math.ceil(size1**0.5 + 0.5)
     dim2 = math.ceil(size1 / dim1 + 0.5)
     mat = np.pad(mat, (0, dim1 * dim2 - size1), "constant", constant_values=(0, 0))
-    mat = mat.reshape(1, dim1, dim2)
+    mat = 1 - mat.reshape(1, dim1, dim2)
     return mat

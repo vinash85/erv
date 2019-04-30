@@ -182,7 +182,9 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))
-            feat, lab = feat[shuffle_indices], lab[shuffle_indices]
+            # feat, lab = feat[shuffle_indices], lab[shuffle_indices]
+            feat, lab, tsne_mat = feat[shuffle_indices], lab[shuffle_indices], tsne_mat[shuffle_indices]
+
         batches_curr = []
         for batch_num in range(num_batches_per_epoch):
             start_index = batch_num * batch_size
@@ -403,7 +405,7 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
 
     data_dirs = pd.read_csv(data_dir_list, sep="\t")
     logging.info("Found {} datasets".format(len(data_dirs)))
-    #tracer()
+    # tracer()
     datasets = []
     for index, row in data_dirs.iterrows():
         prefix = get_or_default(row, 'prefix', "")

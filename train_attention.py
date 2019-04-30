@@ -173,7 +173,7 @@ def train_and_evaluate(models, optimizers, datasets, metrics, params, model_dir,
             restore_path = os.path.join(
                 model_dir, restore_file + '.pth.tar')
         logging.info("Restoring parameters from {}".format(restore_path))
-        utils.load_checkpoint_attn(restore_path, models)  # not updating the optimizers for flexiblity
+        utils.load_checkpoint_attn(restore_path, models, params)  # not updating the optimizers for flexiblity
         # utils.load_checkpoint(restore_path, embedding_model, outputs, optimizer)
 
     best_val_acc = None  # for cindex

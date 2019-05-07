@@ -7,7 +7,10 @@ import os
 from scipy.stats import norm, rankdata
 from model.net import tracer
 from tensorboardX import SummaryWriter
-
+# from sklearn.model_selection import train_test_split
+from imblearn.over_sampling import SMOTE
+from imblearn.combine import SMOTETomek
+from imblearn.over_sampling import SMOTENC
 # from keras import backend as K
 
 
@@ -30,8 +33,33 @@ def np_take(aa, indices, axis=0):
     return out
 
 
+def ncols(xx):
+    return xx.shape[1]
+
+
+def nrows(xx):
+    return xx.shape[0]
+
+
 def is_binary(a):
     return ((a == 0) | (a == 1)).all()
+
+
+def is_categorical(xx):
+    return any([isinstance(uu, str) for uu in xx])
+
+
+def cat2int(xx):
+    xx = pd.Series(xx).astype("category")
+    xx_int = xx.cat.codes
+    maped = dict(enumerate(xx.cat.categories))
+    return xx_int, maped
+
+
+def int2cat(xx, maped):
+    xx = pd.Series(xx).astype("category")
+    xx = xx.cat.codes.map(maped)
+    return xx
 
 
 def qnorm_array(xx):
@@ -153,7 +181,43 @@ def processDataLabels(input_file, normalize=True, batch_by_type=False):
         return features, labels, None
 
 
-def generator_survival(features, labels, params, cancertype=None, shuffle=True, batch_size=64, batch_by_type=False, normalize_input=False, dataset_type='non_icb', sort_survival=False, header=None, tsne_labels_mat=None):
+def DataAugmentation(data, labels, balance=False):
+    #     ipdb.set_trace()
+    categorical_features = [is_categorical(data[:, inx]) for inx in range(data.shape[1])]
+    categorical_features_index = np.where(categorical_features)[0]
+    labels = labels.astype('float32')
+    na_inx = np.isnan(labels)
+    data_na, labels_na = data[na_inx], labels[na_inx]
+    data1, labels1 = data[np.logical_not(na_inx)], labels[np.logical_not(na_inx)]
+
+    if len(labels1 > 2):
+        if balance:
+            data1 = np.nan_to_num(data1, copy=False)
+            data1 = pd.DataFrame(data1)
+            data1 = data1.fillna(0)
+            mappeds = []
+            for ii in categorical_features_index:
+                data1[ii], mapped = cat2int(data1[ii])
+                mappeds.append(mapped)
+            # imputation
+            sm = SMOTENC(random_state=42, categorical_features=categorical_features)
+    #         sm = SMOTETomek(ratio='auto')
+            data1, labels1 = sm.fit_sample(data1, labels1)
+            data1 = pd.DataFrame(data1)
+            for mapped, ii in zip(mappeds, categorical_features_index):
+                data1[ii] = int2cat(data1[ii], mapped)
+            data1 = data1.values
+
+        data = np.concatenate([data1, data_na], 0)
+        labels = np.concatenate([labels1, labels_na], 0)
+
+    return data, labels
+
+
+def generator_survival(features, labels, params, cancertype=None,
+                       shuffle=True, batch_size=64, batch_by_type=False,
+                       normalize_input=False, dataset_type='non_icb', sort_survival=False,
+                       header=None, tsne_labels_mat=None, data_augmentation=False, balance=False):
     """
     Parses the input file and creates a generator for the input file
 
@@ -163,12 +227,10 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
     it also sort the survival data
     data_generator() -- the generator function to yield the features and labels
     """
-
     # np.random.seed(230)
     # tracer()
 
     def create_batches(feat, lab, tsne_mat, batch_size, shuffle=True):
-        data_size = len(feat)
 
         lab_survival, lab_continuous, lab_binary = \
             np_take(lab, params.survival_indices, axis=1), \
@@ -176,13 +238,29 @@ def generator_survival(features, labels, params, cancertype=None, shuffle=True, 
             np_take(lab, params.binary_phenotype_indices, axis=1)
         lab_continuous = quantile_normalize(lab_continuous)
         # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
+
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
         # tracer()
+#         ipdb.set_trace()
 
+        if data_augmentation and len(params.binary_phenotype_indices) > 0:
+
+            labels_aug = lab_binary[:, 0]
+            data = np.concatenate([feat, tsne_mat, lab_survival, lab_continuous, lab_binary[:, 1:]], 1)
+            data, labels_aug = DataAugmentation(data, labels_aug, balance=balance)
+#             ipdb.set_trace()
+            feat = data[:, :ncols(feat)]
+            tsne_mat = data[:, ncols(feat): (ncols(feat) + ncols(tsne_mat))]
+            lab_augumented = data[:, ncols(feat) + ncols(tsne_mat):]
+            lab = np.concatenate([lab_augumented[:, : ncols(lab_survival) + ncols(lab_continuous)],
+                                  labels_aug.reshape(-1, 1), lab_augumented[:, ncols(lab_survival) + ncols(lab_continuous):]], 1)
+            feat = feat.astype("float")
+            lab = lab.astype("float")
+
+        data_size = len(feat)
         num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
         if shuffle:
             shuffle_indices = np.random.permutation(np.arange(data_size))
-            # feat, lab = feat[shuffle_indices], lab[shuffle_indices]
             feat, lab, tsne_mat = feat[shuffle_indices], lab[shuffle_indices], tsne_mat[shuffle_indices]
 
         batches_curr = []
@@ -307,7 +385,7 @@ def add2stringlist(prefix, List):
     return [prefix + elem for elem in List]
 
 
-def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, dataset_type='non_icb', shuffle=True, tsne=0):
+def fetch_dataloader(data_dir_params, params, types, shuffle):
     """
     Fetches the DataLoader object for each type in types from data_dir.
 
@@ -320,6 +398,19 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
         data: (dict) contains the DataLoader object for each type in types
     """
     # tracer()
+    prefix = get_or_default(data_dir_params, 'prefix', "")
+    data_dir = data_dir_params['data_dir']
+    train_optimizer_mask = get_or_default(data_dir_params, 'train_optimizer_mask', '[1, 1, 1]')
+    dataset_type = get_or_default(data_dir_params, 'dataset_type', 'non_icb')
+    shuffle = get_or_default(data_dir_params, 'shuffle', shuffle)
+    tsne = get_or_default(data_dir_params, 'tsne', 0)
+    data_augmentation_array = get_or_default(data_dir_params, 'data_augmentation', [0, 0])
+    data_augmentation = data_augmentation_array[0]
+    types = get_or_default(data_dir_params, 'types', types)
+    try:
+        types = eval(types)
+    except:
+        pass
     train_optimizer_mask = eval(train_optimizer_mask)
     dataloaders = {}
     name = prefix
@@ -359,8 +450,9 @@ def fetch_dataloader(prefix, types, data_dir, params, train_optimizer_mask, data
                     params.metadata_header = [header[inx] if inx < len(header) else str(inx) for inx in params.label_index]
                 tsne_labels_mat = np_take(features_phenotypes, params.label_index, axis=1)
                 features_phenotypes = features_phenotypes[:, 1:]
+                data_augmentation_curr = data_augmentation if split in ['train'] else False
                 dl = generator_survival(
-                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=params.normalize_input, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat)
+                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=params.normalize_input, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat, data_augmentation=data_augmentation, balance=True)
 
             # phenotypes = phenotypes.astype(float)
 
@@ -407,22 +499,10 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
     logging.info("Found {} datasets".format(len(data_dirs)))
     # tracer()
     datasets = []
-    for index, row in data_dirs.iterrows():
-        prefix = get_or_default(row, 'prefix', "")
-        data_dir = row['data_dir']
-        train_optimizer_mask = get_or_default(row, 'train_optimizer_mask', '[1, 1, 1]')
-        dataset_type = get_or_default(row, 'dataset_type', 'non_icb')
-        shuffle = get_or_default(row, 'shuffle', shuffle)
-        tsne = get_or_default(row, 'tsne', 0)
-        types = get_or_default(row, 'types', types)
-        try:
-            types = eval(types)
-        except:
-            pass
+    for index, data_dir_params in data_dirs.iterrows():
         # normalize_input = get_or_default(params, 'normalize_input', False)
         datasets.append(
-            fetch_dataloader(prefix, types, data_dir, params,
-                             train_optimizer_mask=train_optimizer_mask, dataset_type=dataset_type, shuffle=shuffle, tsne=tsne))
+            fetch_dataloader(data_dir_params, params, types, shuffle))
 
     # datasets = [fetch_dataloader(row['prefix'], types, row['data_dir'], params, row['train_optimizer_mask'], row['dataset_type'], shuffle=shuffle, tsne=row['tsne']) for index, row in data_dirs.iterrows()]
 

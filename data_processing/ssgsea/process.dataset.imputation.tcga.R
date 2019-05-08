@@ -201,6 +201,8 @@ dataset = cbind(phenotype.ext.mat[,1,with=F], general.pcs, pca_top, "MLH1" = dat
 
 
 
+write.table(file=paste0(output.dir, "/samples_name.txt"),x = common.patients,
+    row.names = F, col.names =T,  sep="\t", quote=F )
 write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
     row.names = F, col.names =T,  sep="\t", quote=F )
 # write.table(file=paste0(output.dir, "/dataset_phenotype.txt"),x = phenotype.ext.mat,

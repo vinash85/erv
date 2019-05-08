@@ -232,3 +232,49 @@ write.dataset = function(output.dir,dataset, ref.dir =NULL, samples.names = NULL
 }
 
 
+
+cohensD.na.sign = function(x,y, ...) {
+    tryCatch(
+        cohensD.sign(x, y, ...),
+        error = function(e) NA
+        )
+}
+
+cohensD.sign = function(x,y, ...){
+    require(lsr)
+    aa = cohensD(x, y, ...)
+    if(mean(x,na.rm=T)<mean(y,na.rm=T))
+        aa = -aa
+    aa
+}
+
+cohensD.na = function(x,y, ...) {
+  require(lsr)
+    tryCatch(
+        cohensD(x, y, ...),
+        error = function(e) NA
+        )
+}
+ttest.na = function(x,y, ...) {
+  require(lsr)
+    tryCatch(
+        t.test(x, y, ...)$p.value,
+        error = function(e) NA
+        )
+}
+
+
+
+
+plot.heatmap = function(dat, filename, height = 10, width =7){
+	hc = hclust(as.dist(1-cor(dat, method="spearman")), method="complete")
+	hr = hclust(as.dist(1-cor(t(dat), method="spearman")), method="complete")
+
+	require(heatmap3)
+	pdf( filename, height = height, width =width)
+
+	heatmap3(dat, Rowv=as.dendrogram(hr),  Colv=as.dendrogram(hc), scale="col", balanceColor=T, showRowDendro=T ,   showColDendro=F, cexRow = .5, cexCol = .5)
+
+	dev.off()
+}
+

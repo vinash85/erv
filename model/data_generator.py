@@ -11,7 +11,12 @@ from tensorboardX import SummaryWriter
 from imblearn.over_sampling import SMOTE
 from imblearn.combine import SMOTETomek
 from imblearn.over_sampling import SMOTENC
+import ipdb
 # from keras import backend as K
+
+
+def match(a, b):
+    return [b.index(x) if x in b else None for x in a]
 
 
 def np_take(aa, indices, axis=0):
@@ -304,6 +309,176 @@ def generator_survival(features, labels, params, cancertype=None,
     # types = cancertype.dtype.categories
     else:
         types = set(cancertype)
+    batches = get_batches(features, labels)
+    data_size = len(features)
+    num_batches_per_epoch = len(batches)
+    input_size = features.shape[1]
+
+    if header is not None:
+        header1 = np.array(header[1:])
+        header = np.concatenate(
+            [np_take(header1, params.survival_indices),
+             np_take(header1, params.continuous_phenotype_indices),
+             np_take(header1, params.binary_phenotype_indices)])
+
+    # Sorts the batches by survival time
+    def data_generator():
+        while True:
+            batches = get_batches(features, labels)
+            for X, y, tsne_mat in batches:
+                # X, y = batch[0]
+                # tracer()
+                if sort_survival:
+                    sort_index = (input_size - 3) if dataset_type is 'icb' else 0
+                    # this was assuming in icb dataset survival is done through
+                    idx = np.argsort(abs(y[:, sort_index]))[::-1]
+                    X = X[idx, :]
+                    # sort by survival time and take censored data
+                    # y = y[idx, 1].reshape(-1, 1)
+                    y = y[idx, :]
+                    tsne_mat = tsne_mat[idx, :]
+
+                yield X, y, tsne_mat
+
+    return num_batches_per_epoch, input_size, header, data_generator()
+
+
+def generator_survival_new(features, labels, params, cancertype=None,
+                           shuffle=True, batch_size=64, batch_by_type=False,
+                           normalize_input=False, dataset_type='non_icb', sort_survival=False,
+                           header=None, tsne_labels_mat=None, data_augmentation=False, balance=False):
+    """
+    Parses the input file and creates a generator for the input file
+
+    Returns:
+    num_batches_per_epoch -- The number of batches per epoch based on data size
+    input_size -- the dimensions of the input data
+    it also sort the survival data
+    data_generator() -- the generator function to yield the features and labels
+    """
+    # np.random.seed(230)
+    # tracer()
+
+    def create_batches(feat, lab, tsne_mat, batch_size, shuffle=True):
+
+        lab_survival, lab_continuous, lab_binary = \
+            np_take(lab, params.survival_indices, axis=1), \
+            np_take(lab, params.continuous_phenotype_indices, axis=1),\
+            np_take(lab, params.binary_phenotype_indices, axis=1)
+        lab_continuous = quantile_normalize(lab_continuous)
+        # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
+
+        lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
+
+        if data_augmentation and len(params.binary_phenotype_indices) > 0:
+
+            labels_aug = lab_binary[:, 0]
+            data = np.concatenate([feat, tsne_mat, lab_survival, lab_continuous, lab_binary[:, 1:]], 1)
+            data, labels_aug = DataAugmentation(data, labels_aug, balance=balance)
+#             ipdb.set_trace()
+            feat = data[:, :ncols(feat)]
+            tsne_mat = data[:, ncols(feat): (ncols(feat) + ncols(tsne_mat))]
+            lab_augumented = data[:, ncols(feat) + ncols(tsne_mat):]
+            lab = np.concatenate([lab_augumented[:, : ncols(lab_survival) + ncols(lab_continuous)],
+                                  labels_aug.reshape(-1, 1), lab_augumented[:, ncols(lab_survival) + ncols(lab_continuous):]], 1)
+            feat = feat.astype("float")
+            lab = lab.astype("float")
+
+        data_size = len(feat)
+        num_batches_per_epoch = max(1, int((data_size - 1) / batch_size))
+        if shuffle:
+            shuffle_indices = np.random.permutation(np.arange(data_size))
+            feat, lab, tsne_mat = feat[shuffle_indices], lab[shuffle_indices], tsne_mat[shuffle_indices]
+
+        batches_curr = []
+        for batch_num in range(num_batches_per_epoch):
+            start_index = batch_num * batch_size
+            end_index = (batch_num + 1) * batch_size
+            if batch_num == num_batches_per_epoch - 1:
+                end_index = data_size
+
+            temp = (feat[start_index:end_index], lab[start_index:end_index], tsne_mat[start_index:end_index])
+            batches_curr.append(temp)
+
+        return batches_curr
+
+    def get_batches(features, labels):
+
+        features = features.astype(float)
+        features = np.nan_to_num(features)  # convert NANs to zeros
+        # tracer()
+        survival_time_index = np.take(params.survival_indices, range(0, len(params.survival_indices), 2))
+        if normalize_input:
+            # normalization by type
+            # features = quantile_normalize(features)
+            for type_curr in types:
+                # print(type_curr)
+                features[cancertype == type_curr] = quantile_normalize_nonbinary(features[cancertype == type_curr])
+                for ii in range(len(survival_time_index)):
+                    labels[cancertype == type_curr, ii] = quantile_normalize(labels[cancertype == type_curr, ii])
+
+        if batch_by_type:
+            batches = [Xy for type_curr in types for Xy in create_batches(features[cancertype == type_curr], labels[cancertype == type_curr], tsne_labels_mat[cancertype == type_curr], batch_size, shuffle)]
+        else:
+            batches = create_batches(features, labels, tsne_labels_mat, batch_size, shuffle)
+
+        if drug_sel is not None:
+            batches = []
+
+            for inx, drug in enumerate(all_drugs):
+                sign_curr = 1 if sign.values[inx] > 0 else 0
+                ssgsva_curr = ssgsva1.iloc[inx, :].values
+                pos = ssgsva_curr < np.nanquantile(ssgsva_curr, q=0.05)
+                neg = ssgsva_curr > np.nanquantile(ssgsva_curr, q=0.95)
+
+                feat_new = np.concatenate([features[pos],
+                                           features[neg]], axis=0)
+
+                tsne_labels_mat_new = np.concatenate([tsne_labels_mat[pos],
+                                                      tsne_labels_mat[neg]], axis=0)
+                labels_new = np.empty((len(feat_new), ncols(labels) + 1))  # for nan reponse additional column
+                labels_new[:] = np.nan
+                response_inx = params.binary_phenotype_indices[0]
+                if sign.values[inx] > 0:
+                    labels_new[:, response_inx] = np.concatenate([np.zeros(sum(pos)),
+                                                                  np.ones(sum(neg))], axis=0)
+                else:
+                    labels_new[:, response_inx] = np.concatenate([np.ones(sum(pos)),
+                                                                  np.zeros(sum(neg))], axis=0)
+
+                # ipdb.set_trace()
+                batches_curr = create_batches(feat_new, labels_new, tsne_labels_mat_new, batch_size, shuffle)
+                batches = batches + batches_curr
+
+        return batches
+
+    if params.input_indices != "None":  # use == because param.input_indices is unicode
+        features = np_take(features, params.input_indices, axis=1)
+
+    if cancertype is None:
+        raise NameError("cancertype not found")
+    # types = cancertype.dtype.categories
+    else:
+        types = set(cancertype)
+
+    # drug_name = ["dexamethasone", "methotrexate", "mercaptopurine", "azathioprine", "ketoprofen", "colforsin", "Lenvatinib", "BMS−540215",
+    #              "AC220", "MS−275", "Phosphoric acid", "PTK−787", "lomustine", "aminophylline", "theophylline", "hydrocortisone", "betamethasone", "isoxsuprine", "tretinoin", "GSK2186269A", "Cdk4", "linezolid", "mefenamic", "nitrofurantoin", "Protelos", "diflorasone", "Valdecoxib", "5109870", "0297417", "crotamiton", "etoposide"]
+
+    drug_sel = "../data/tcga/neoantigen.v2/attention/tcga.imputed/drug_effect_sign.txt"
+    if drug_sel is not None:
+        ssgsva = pd.read_csv("../data/tcga/neoantigen.v2/attention/tcga.imputed/TCGA_Drugssgsva_sel.txt", sep="\t")
+        sign = pd.read_csv(drug_sel, sep="\t")
+        # all_drugs = list(sign.index)
+        # [x for x in lst if 'abc' in x]
+        # drug_name_complete = [x for drug in drug_name for x in all_drugs if drug in x]
+        all_drugs = ssgsva['V1'].values
+        ssgsva1 = ssgsva.iloc[:, 1:]
+        ssgsva1.index = all_drugs
+        inx = match(list(sign.index), list(all_drugs))
+        ssgsva1 = ssgsva1.iloc[inx, :]
+
+        # ssgsva1[sign.index,:]
+
     batches = get_batches(features, labels)
     data_size = len(features)
     num_batches_per_epoch = len(batches)

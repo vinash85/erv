@@ -11,6 +11,7 @@ import r2python
 from scipy.stats.stats import spearmanr
 from past.builtins import basestring
 import copy
+import ipdb
 # 3x3 convolution
 
 
@@ -1005,7 +1006,7 @@ def define_metrics(params):
         for i in range(len(metrics_type)):
             # i is output_batch
             loss_fn = params.loss_fns[i]
-            metrics.append([params.header[label_inx], metrics_type[i], i, label_inx])
+            metrics.append([params.header[label_inx] + "_" + str(i), metrics_type[i], i, label_inx])
             if hasattr(loss_fn, '__name__'):
                 if loss_fn.__name__ is 'negative_log_partial_likelihood_loss':
                     label_inx = label_inx + 2

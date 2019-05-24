@@ -55,14 +55,14 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     # import ipdb
     # ipdb.set_trace()
 
-    for i, (features, all_labels, curr_response) in zip(range(num_batches_per_epoch), dataloader):
+    for i, (features, all_labels, curr_tsne_labels_mat) in zip(range(num_batches_per_epoch), dataloader):
         # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1).astype(float)
         labels_san_survival = all_labels
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
         if(i == 0):
-            response = curr_response
+            tsne_labels_mat = curr_tsne_labels_mat
         else:
-            response = np.concatenate([response, curr_response], 0)
+            tsne_labels_mat = np.concatenate([tsne_labels_mat, curr_tsne_labels_mat], 0)
         # move to GPU if available
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
@@ -106,12 +106,15 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     metrics_mean = {metric: net.mean_na([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
+    sample_name = tsne_labels_mat[:, 0]
+    tsne_labels_mat = tsne_labels_mat[:, 1:]
     if validation_file:
+        predictions = np.concatenate([sample_name[:, None], predictions], axis=1)
         predictions_df = pd.DataFrame(predictions)
         header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
         embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
         transformed_header = ["transformed" + str(inx) for inx in range(transformed_batch.shape[1])]
-        all_header = params.header.tolist() + header_outputs + embedding_header + transformed_header
+        all_header = ["sample_name"] + params.header.tolist() + header_outputs + embedding_header + transformed_header
         predictions_df.columns = all_header
         predictions_df.to_csv(validation_file, sep='\t', index=False)
 
@@ -123,11 +126,11 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
             _, output_mat, embedding_mat, transformed_mat = \
                 np.split(predictions, split_indices, axis=1)
 
-            response = [tuple(row) for row in response]
+            tsne_labels_mat = [tuple(row) for row in tsne_labels_mat]
             label_img = np.apply_along_axis(utils.reshape_toimage, 1, output_mat)
             writer.add_embedding(
                 embedding_mat,
-                metadata=response,
+                metadata=tsne_labels_mat,
                 label_img=torch.from_numpy(label_img).float(),
                 global_step=epoch,
                 metadata_header=params.metadata_header,
@@ -135,7 +138,7 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
 
             writer.add_embedding(
                 transformed_mat,
-                metadata=response,
+                metadata=tsne_labels_mat,
                 label_img=torch.from_numpy(label_img).float(),
                 global_step=epoch,
                 metadata_header=params.metadata_header,

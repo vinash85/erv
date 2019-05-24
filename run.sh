@@ -311,3 +311,18 @@ python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/gene
 python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/. --restore_file ~/Dropbox/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/tensorboardLog/SGD_20190426-131226//best.pth.tar
 
 python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/. --restore_file ~/Dropbox/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/tensorboardLog/SGD_20190426-131226//best.pth.tar
+
+python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/. --restore_file ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/best.pth.tar
+
+python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_genentech_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/. --restore_file ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/best.pth.tar
+
+
+
+
+# kindney
+
+python -m ipdb train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_
+
+python -m ipdb  evaluate.py   --data_dir ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/datasets_tsne_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar
+
+ python  evaluate.py   --data_dir ../data/RCC_PD1_Miao/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/

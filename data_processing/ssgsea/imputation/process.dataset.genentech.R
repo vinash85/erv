@@ -119,9 +119,9 @@ f2 = t(genentech.env$cc[match(extra.genes.inx, genentech.env$bb$Symbol) ,])[reor
 colnames(f2)  = extra.genes.inx
 pheno1 = genentech.env$response.mat[reorder,]
 
-pheno.feat = phenotype.ext.mat[,5:34,drop=F]
-new.feature = cbind(dataset_ssgsea_sel, f1, f2, pheno.feat)
-new.pheno = cbind(phenotype.ext.mat, f1, f2, pheno1)
+# pheno.feat = phenotype.ext.mat[,5:34,drop=F]
+# new.feature = cbind(dataset_ssgsea_sel, f1, f2, pheno.feat)
+# new.pheno = cbind(phenotype.ext.mat, f1, f2, pheno1)
 # dataset_ssgsea_sel = new.feature
 # phenotype.ext.mat = new.pheno
 

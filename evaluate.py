@@ -25,6 +25,8 @@ parser.add_argument('--prefix', default='',
                     tcga_phenotype_[train,test,val].txt )")
 parser.add_argument('--hyper_param', default='',
                     help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
+parser.add_argument('--type_file', default="val",
+                    help="String for files from dataset for validation list will be executed")
 
 
 def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None):
@@ -54,17 +56,22 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     # import ipdb
     # ipdb.set_trace()
 
-    for i, (features, all_labels, _) in zip(range(num_batches_per_epoch), dataloader):
+    for i, (features, all_labels, curr_tsne_labels_mat) in zip(range(num_batches_per_epoch), dataloader):
         # labels_san_survival = np.take(all_labels, params.survival_indices + params.continuous_phenotype_indices + params.binary_phentoype_indices, axis=1).astype(float)
         labels_san_survival = all_labels
         data_batch, labels_batch = torch.from_numpy(features).float(), torch.from_numpy(labels_san_survival).float()
+        if(i == 0):
+            tsne_labels_mat = curr_tsne_labels_mat
+        else:
+            tsne_labels_mat = np.concatenate([tsne_labels_mat, curr_tsne_labels_mat], 0)
         # move to GPU if available
         if params.cuda:
             data_batch, labels_batch = data_batch.cuda(non_blocking=True), labels_batch.cuda(non_blocking=True)
         # fetch the next evaluation batch
 
         # compute model output
-        embedding_batch = embedding_model(data_batch)
+        embedding_input = data_batch[:, params.embedding_indices]
+        embedding_batch = embedding_model(embedding_input)
         output_batch = outputs(embedding_batch)
         loss = net.update_loss_parameters(
             labels_batch, output_batch, embedding_model, outputs, None, None, params, [0, 0])
@@ -95,9 +102,15 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     metrics_mean = {metric: net.mean_na([x[metric] for x in summ]) for metric in summ[0]}
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
+    sample_name = tsne_labels_mat[:, 0]
     if validation_file:
-        predictions = pd.DataFrame(predictions)
-        predictions.to_csv(validation_file, sep='\t', index=False)
+        predictions = np.concatenate([sample_name[:, None], predictions], axis=1)
+        predictions_df = pd.DataFrame(predictions)
+        header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
+        embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
+        all_header = ["sample_name"] + params.header.tolist() + header_outputs + embedding_header
+        predictions_df.columns = all_header
+        predictions_df.to_csv(validation_file, sep='\t', index=False)
 
     return metrics_mean
 
@@ -134,17 +147,17 @@ if __name__ == '__main__':
 
     logging.info("Creating the dataset...")
 
-    # fetch dataloaders
-    type_file = 'val'  # or 'test'
-
-    # fetch dataloaders
+    type_file = args.type_file
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
-    _, params.input_size, _, param.header = datasets[0][0][type_file]
+    params = net.create_lossfns_mask(params)
+    # fetch dataloaders
+    params = net.create_lossfns_mask(params)
+    _, _, params.header, _ = datasets[0][0][type_file]
+    params.input_size = len(params.embedding_indices)
+    params.attention_input_size = len(params.attention_indices)
     params = net.define_metrics(params)
-
     logging.info("- done.")
-    params.loss_fns, params.mask, linear_output_size, binary_output_size = net.create_lossfns_mask(params)
 
     # Define the model
     embedding_model = net.EmbeddingNet(params)

@@ -108,8 +108,9 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 train_batch, labels_batch = train_batch.cuda(
                     non_blocking=True), labels_batch.cuda(non_blocking=True)
             # convert to torch Variables
+            embedding_input = train_batch[:, params.embedding_indices]
 
-            embedding_batch = embedding_model(train_batch)
+            embedding_batch = embedding_model(embedding_input)
             output_batch = outputs(embedding_batch)
 
             loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask)
@@ -298,13 +299,11 @@ if __name__ == '__main__':
 
     # fetch dataloaders
     datasets = data_generator.fetch_dataloader_list(args.prefix,
-                                                    ['train', 'val'], args.data_dir, params)
-    _, params.input_size, params.header, _ = datasets[0][0]['train']
+                                                    ['train', 'val'], args.data_dir, params, shuffle=False)
+    # fetch dataloaders
+    _, _, params.header, _ = datasets[0][0]['train']
+    params.input_size = len(params.embedding_indices)
     params = net.define_metrics(params)
-    # _, _, val_dl = dataloaders['val']
-    # train_dl = dataloaders['train']
-    # val_dl = dataloaders['val']
-    # params.dict['num_batches_per_epoch'] = train_steps_gen
     logging.info("- done.")
 
     # Define the model and optimizer

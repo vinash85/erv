@@ -423,7 +423,7 @@ def generator_survival_new(features, labels, params, cancertype=None,
             batches = create_batches(features, labels, tsne_labels_mat, batch_size, shuffle)
 
         if drug_sel is not None:
-            batches = []
+            # batches  []
 
             for inx, drug in enumerate(all_drugs):
                 sign_curr = 1 if sign.values[inx] > 0 else 0
@@ -624,6 +624,8 @@ def fetch_dataloader(data_dir_params, params, types, shuffle):
                 if tsne:
                     params.metadata_header = [header[inx] if inx < len(header) else str(inx) for inx in params.label_index]
                 tsne_labels_mat = np_take(features_phenotypes, params.label_index, axis=1)
+                sample_name = np.array(list(range(len(features_phenotypes))))
+                tsne_labels_mat = np.concatenate([sample_name[:, None], tsne_labels_mat], axis=1)
                 features_phenotypes = features_phenotypes[:, 1:]
                 data_augmentation_curr = data_augmentation if split in ['train'] else False
                 dl = generator_survival(

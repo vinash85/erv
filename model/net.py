@@ -1155,6 +1155,12 @@ def update_loss_parameters_vectorized(labels, net_outputs, models, optimizers, p
             # loss_curr = torch.zeros(1)
             loss_curr = 0.
 
+        # if i == 2:
+        #     import ipdb
+        #     ipdb.set_trace()
+        #     print("loss_curr")
+        #     print(loss_curr)
+
         if isnan(loss_curr):
             loss_curr = 0.
 

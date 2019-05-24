@@ -45,7 +45,6 @@ if(!tpm){
         load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
         expression_mat = expression_mat[ ,common.genes] 
         stopifnot(any(!is.na(expression_mat)))
-
     }
 
 

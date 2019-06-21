@@ -113,7 +113,7 @@ def train_attention(models, optimizers, dataloader, metrics, params, train_optim
 
             embedding_batch = models[0](embedding_input)
             attention_mat = models[1](attention_input)
-            transformed_batch = net.feature_attention(attention_mat, embedding_batch)
+            transformed_batch = net.feature_attention(attention_mat, embedding_input)
             output_batch = models[2](transformed_batch)
 
             loss = net.update_loss_parameters_vectorized(labels_batch, output_batch, models, optimizers, params, train_optimizer_mask)
@@ -310,7 +310,14 @@ if __name__ == '__main__':
 
     # Define the model and optimizer
     modelClasses = [net.EmbeddingNet, net.AttentionEncoder, net.outputLayer]
-    models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
+    models = []
+    for inx, modelClass in enumerate(modelClasses):
+        if inx == 2 and hasattr(params, 'attention_output_size'):
+            params.embedding_size = params.attention_output_size
+
+        modelCurr = modelClass(params).cuda() if params.cuda else modelClass(params)
+        models.append(modelCurr)
+    # models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
 
     # vectorized  optimizers
     optimizers = [optim.SGD(

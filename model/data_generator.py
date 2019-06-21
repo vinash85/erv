@@ -301,6 +301,9 @@ def generator_survival(features, labels, params, cancertype=None,
             batches = create_batches(features, labels, tsne_labels_mat, batch_size, shuffle)
         return batches
 
+    # import ipdb
+    # ipdb.set_trace()
+
     if params.input_indices != "None":  # use == because param.input_indices is unicode
         features = np_take(features, params.input_indices, axis=1)
 

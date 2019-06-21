@@ -72,7 +72,7 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
 
         embedding_batch = models[0](embedding_input)
         attention_mat = models[1](attention_input)
-        transformed_batch = net.feature_attention(attention_mat, embedding_batch)
+        transformed_batch = net.feature_attention(attention_mat, embedding_input)
         output_batch = models[2](transformed_batch)
 
         # compute model output
@@ -82,9 +82,11 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
         output_batch = output_batch.data.cpu().numpy()
         embedding_batch = embedding_batch.data.cpu().numpy()
         transformed_batch = transformed_batch.data.cpu().numpy()
+        attention_mat = attention_mat.data.cpu().numpy()
+        attention_mat_flatten = attention_mat.reshape(attention_mat.shape[0], -1)
 
         # if validation_file and writer is not None:
-        output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch, transformed_batch], 1)
+        output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch, transformed_batch, attention_mat_flatten], 1)
         if i == 0:
             predictions = output_and_predictions
         else:
@@ -111,11 +113,14 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     if validation_file:
         predictions = np.concatenate([sample_name[:, None], predictions], axis=1)
         predictions_df = pd.DataFrame(predictions)
+        # import ipdb
+        # ipdb.set_trace()
         header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
-        embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
+        embedding_header = ["embedding" + str(inx) for inx in range(embedding_batch.shape[1])]
         transformed_header = ["transformed" + str(inx) for inx in range(transformed_batch.shape[1])]
         all_header = ["sample_name"] + params.header.tolist() + header_outputs + embedding_header + transformed_header
-        predictions_df.columns = all_header
+        padding_header = ["e" + str(inx) for inx in range(len(all_header), predictions_df.shape[1])]
+        predictions_df.columns = all_header + padding_header
         predictions_df.to_csv(validation_file, sep='\t', index=False)
 
     if tsne:
@@ -131,7 +136,7 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
             writer.add_embedding(
                 embedding_mat,
                 metadata=tsne_labels_mat,
-                label_img=torch.from_numpy(label_img).float(),
+                # label_img=torch.from_numpy(label_img.astype()).double(),
                 global_step=epoch,
                 metadata_header=params.metadata_header,
                 tag='val_' + 'embedding' + str(index))
@@ -139,7 +144,7 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
             writer.add_embedding(
                 transformed_mat,
                 metadata=tsne_labels_mat,
-                label_img=torch.from_numpy(label_img).float(),
+                # label_img=torch.from_numpy(label_img.astype(float)).double(),
                 global_step=epoch,
                 metadata_header=params.metadata_header,
                 tag='val_' + 'transformed' + str(index))
@@ -194,7 +199,14 @@ if __name__ == '__main__':
 
     # Define the model and optimizer
     modelClasses = [net.EmbeddingNet, net.AttentionEncoder, net.outputLayer]
-    models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
+    models = []
+    for inx, modelClass in enumerate(modelClasses):
+        if inx == 2 and hasattr(params, 'attention_output_size'):
+            params.embedding_size = params.attention_output_size
+
+        modelCurr = modelClass(params).cuda() if params.cuda else modelClass(params)
+        models.append(modelCurr)
+    # models = [modelClass(params).cuda() if params.cuda else modelClass(params) for modelClass in modelClasses]
 
     # Define the model
 

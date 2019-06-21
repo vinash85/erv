@@ -38,7 +38,7 @@ class ConvolutionBlock(nn.Module):
         # print(in_channels)
         # print(out_channels)
         self.conv1 = conv1d(in_channels, out_channels, kernel_size, stride=1)
-        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.bn1 = nn.BatchNorm1d(out_channels, )
         # self.relu = nn.Residual(inplace=True)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool1d(kernel_size=kernel_size, stride=stride)
@@ -57,18 +57,23 @@ class ConvolutionBlock(nn.Module):
 
 class FullConnectedBlock(nn.Module):
     ''' Implmenent are resdual style fully connected layer"
+    norm_layer could be either norm_layer or BatchNorm1d
     '''
 
-    def __init__(self, in_channels, out_channels, dropout_rate, use_residual=True):
+    def __init__(self, in_channels, out_channels, dropout_rate, use_residual=True, norm_layer=None):
         super(FullConnectedBlock, self).__init__()
         self.in_channels = in_channels
         self.out_channels = out_channels
         self.dropout_rate = dropout_rate
         self.use_residual = use_residual
+        if norm_layer is None:
+            norm_layer = nn.BatchNorm1d
+
         #self.norm1 = nn.LayerNorm(in_channels)
         self.fc1 = nn.Linear(in_channels, out_channels)
         self.relu = nn.ReLU(inplace=True)
-        self.norm2 = nn.LayerNorm(out_channels)
+        self.norm2 = norm_layer(out_channels)
+        # self.norm2 = norm_layer(out_channels, track_running_stats=False)
 
     def forward(self, x):
         residual = x
@@ -104,13 +109,14 @@ class FullConnectedBlock_v0(nn.Module):
 
 
 # EmbeddingNet
-class EmbeddingNet(nn.Module):
+class BasicLayers(nn.Module):
     '''
-    encoder
+     Convolution layers followed by FC layers using params
     '''
 
     def __init__(self, params, block=ConvolutionBlock):
-        super(EmbeddingNet, self).__init__()
+        super(BasicLayers, self).__init__()
+        # create copy of params in case used in forward
         self.params = copy.deepcopy(params)
         self.in_channels = 1
         if len(self.params.kernel_sizes) == 1:
@@ -120,7 +126,7 @@ class EmbeddingNet(nn.Module):
         self.output_size = self.params.input_size
         print("initial output size")
         print(self.output_size)
-        self.layers_block1 = self.make_layers(block, self.params.out_channels_list, kernel_sizes=self.params.kernel_sizes, strides=self.params.strides, dropout_rate=self.params.dropout_rate)
+        self.convolution_block = self.make_layers(block, self.params.out_channels_list, kernel_sizes=self.params.kernel_sizes, strides=self.params.strides, dropout_rate=self.params.dropout_rate)
         # output_size is updated
         print("final convolution layer output size")
         if(len(self.params.out_channels_list) > 0):
@@ -133,16 +139,14 @@ class EmbeddingNet(nn.Module):
         # self.params.FC_size_list.append(self.params.embedding_size)
         self.FC_block1 = self.make_layers_FC(
             FullConnectedBlock, self.params.FC_size_list, self.params.dropout_rate)
-        print("Embedding size")
-        self.norm = nn.LayerNorm(self.fc_output_size)
-        self.fc3 = nn.Linear(self.fc_output_size, self.params.embedding_size)
 
     def make_layers_FC(self, block, FC_size_list, dropout_rate):
         layers = []
         num_layers = len(FC_size_list)
         for i in range(0, num_layers):
             layers.append(block(self.fc_output_size, FC_size_list[
-                          i], dropout_rate))
+                          i], dropout_rate,
+                norm_layer=self.params.norm_layer))
             self.fc_output_size = FC_size_list[i]
             print(self.fc_output_size)
         return nn.Sequential(*layers)
@@ -168,10 +172,35 @@ class EmbeddingNet(nn.Module):
     def forward(self, x):
         # reshape numbatch * num_dim to numbatch * num_in_channel * num_dim
         out = x.view(x.size(0), 1, -1)
-        out = self.layers_block1(out)
+        out = self.convolution_block(out)
         temp = out.size()
         out = out.view(out.size(0), -1)
         out = self.FC_block1(out)
+        return out
+
+
+class EmbeddingNet(nn.Module):
+    '''
+    Encoder
+    '''
+
+    def __init__(self, params, block=ConvolutionBlock):
+        super(EmbeddingNet, self).__init__()
+        self.params = copy.deepcopy(params)
+        if not hasattr(self.params, 'norm_layer'):
+            self.params.norm_layer = nn.BatchNorm1d
+        if self.params.norm_layer is None:
+            self.params.norm_layer = nn.BatchNorm1d
+        # tracer()
+        self.basicLayers = BasicLayers(self.params)
+        self.fc_output_size = self.basicLayers.fc_output_size
+
+        self.norm = self.params.norm_layer(self.fc_output_size)
+        self.fc3 = nn.Linear(self.fc_output_size, self.params.embedding_size)
+
+    def forward(self, x):
+        out = self.basicLayers(x)
+        # tracer()
         out = self.norm(out)
         out = self.fc3(out)
         return out
@@ -192,13 +221,14 @@ class outputLayer(nn.Module):
         self.params.embedding_size = self.survival_len + self.cont_len + self.bin_len
         self.params.out_channels_list = []  # no convolution layer
         self.params.FC_size_list = params.decoder_FC_size_list
+        self.params.norm_layer = nn.BatchNorm1d
         self.internal_layers = EmbeddingNet(self.params)
         self.dense1_bn = nn.BatchNorm1d(self.survival_len)
         self.sigmoid = nn.Sigmoid()
 
     def forward(self, x):
-        out = self.internal_layers(x)
         # tracer()
+        out = self.internal_layers(x)
         surv_out = out[:, :self.survival_len]
         if self.survival_len > 0:
             surv_out = self.dense1_bn(surv_out)
@@ -210,42 +240,53 @@ class outputLayer(nn.Module):
         return out
 
 
-def feature_attention(attn_mat, embedding, dropout=None):
-    "perform matrix multiplication "
-
-    bs = attn_mat.size(0)
-    embedding = embedding.view([bs, 1, embedding.shape[1]])
-    output = torch.matmul(embedding, attn_mat)
-    output = output.view([bs, output.shape[2]])
-    return output
-
-
 class AttentionEncoder(nn.Module):
     "Attention Encoder for deepImmune produce a matrix that  could be multiplied with embedding"
 
     def __init__(self, params):
         super(AttentionEncoder, self).__init__()
         self.params = copy.deepcopy(params)
-        self.output_size = params.embedding_size
+        if hasattr(params, 'attention_output_size'):
+            self.output_size = params.attention_output_size
+        else:
+            self.output_size = params.embedding_size
+        self.embedding_size = params.embedding_size
         # change internal params to adapt encoder for internal_layers of decoder
         self.params.input_size = params.attention_input_size
 
-        self.params.embedding_size = self.output_size * self.output_size
+        self.params.embedding_size = self.output_size * self.embedding_size
         self.params.out_channels_list = []  # no convolution layer
         self.params.FC_size_list = params.attention_FC_size_list
-        self.internal_layers = EmbeddingNet(self.params)
+        self.params.norm_layer = nn.LayerNorm
+        self.internal_layers = BasicLayers(self.params)
+        self.norm = self.params.norm_layer(self.internal_layers.fc_output_size)
+        self.last_linear = nn.Linear(self.internal_layers.fc_output_size, self.params.embedding_size)
+
         # self.softmaxs = clones(nn.Softmax(dim=1), self.output_size)
 
     def forward(self, x):
         out = self.internal_layers(x)
         # tracer()
+        out = self.last_linear(out)
+
         bs = out.size(0)
-        out = out.view(bs, self.output_size, self.output_size)
-        out_list = [nn.Softmax(dim=1)(out[inx, :, :])
-                    for inx in range(bs)]
-        out = torch.stack(out_list)
-        out = out - 0.5  # for range [-0.5 0.5]
+        out = out.view(bs, self.embedding_size, self.output_size)
+        # out_list = [nn.Softmax(dim=0)(out[inx, :, :])
+        #             for inx in range(bs)]
+        # out = torch.stack(out_list)
+        # out = out - 0.5  # for range [-0.5 0.5]
         return out
+
+
+def feature_attention(attn_mat, embedding, dropout=None):
+    "perform matrix multiplication "
+
+    bs = attn_mat.size(0)
+    embedding = embedding.view([bs, 1, embedding.shape[1]])
+    # note matmul and bmm are similar -- > torch.bmm(xx,yy) = torch.matmul(xx,yy)
+    output = torch.matmul(embedding, attn_mat)
+    output = output.view([bs, output.shape[2]])
+    return output
 
 
 class outputLayer_simple(nn.Module):

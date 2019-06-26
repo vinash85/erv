@@ -281,10 +281,12 @@ class AttentionEncoder(nn.Module):
 def feature_attention(attn_mat, embedding, dropout=None):
     "perform matrix multiplication "
 
+    # import ipdb
+    # ipdb.set_trace()
     bs = attn_mat.size(0)
     embedding = embedding.view([bs, 1, embedding.shape[1]])
     # note matmul and bmm are similar -- > torch.bmm(xx,yy) = torch.matmul(xx,yy)
-    output = torch.matmul(embedding, attn_mat)
+    output = torch.bmm(embedding, attn_mat)
     output = output.view([bs, output.shape[2]])
     return output
 

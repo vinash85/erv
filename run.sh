@@ -321,11 +321,14 @@ python evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/t
 
 # kindney
 
-python -m ipdb train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_
 
 python -m ipdb  evaluate.py   --data_dir ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/datasets_tsne_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar
 
 python -m ipdb evaluate.py   --data_dir ../data/RCC_PD1_Miao/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar
+
+
+python evaluate.py   --data_dir ../data/RCC_PD1_Miao/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar
 
 
 
@@ -333,3 +336,18 @@ python  evaluate.py   --data_dir ../data/tcga/neoantigen.v2/attention/tcga.imput
 
 ## evaluating kidney cancer 
 python train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/.
+
+
+python  train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/.
+
+python  evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/. --restore_file  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/tensorboardLog/three_var_20190622-191219/best.pth.tar
+
+python  evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/. --restore_file  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/tensorboardLog/20190623-230228/best.pth.tar
+
+
+# scrRNA
+
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_
+
+python evaluate.py   --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_val_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-041025/best.pth.tar
+python evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-041025/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-041025/best.pth.tar

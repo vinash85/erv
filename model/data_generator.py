@@ -243,11 +243,9 @@ def generator_survival(features, labels, params, cancertype=None,
             np_take(lab, params.binary_phenotype_indices, axis=1)
         lab_continuous = quantile_normalize(lab_continuous)
         # lab_continuous = quantile_normalize(lab_continuous, method="znorm")
-
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
         # tracer()
 #         ipdb.set_trace()
-
         if data_augmentation and len(params.binary_phenotype_indices) > 0:
 
             labels_aug = lab_binary[:, 0]
@@ -325,6 +323,10 @@ def generator_survival(features, labels, params, cancertype=None,
              np_take(header1, params.binary_phenotype_indices)])
 
     # Sorts the batches by survival time
+
+    # import ipdb
+    # ipdb.set_trace()
+
     def data_generator():
         while True:
             batches = get_batches(features, labels)
@@ -645,6 +647,8 @@ def fetch_dataloader(data_dir_params, params, types, shuffle):
     except:
         pass
 
+    # import ipdb
+    # ipdb.set_trace()
     return dataloaders, train_optimizer_mask, (name, tsne)
 
 

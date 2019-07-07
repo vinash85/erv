@@ -103,16 +103,17 @@
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py",
 			"settings":
 			{
-				"buffer_size": 43402,
+				"buffer_size": 43440,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
 			"settings":
 			{
-				"buffer_size": 8561,
+				"buffer_size": 26741,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -121,6 +122,15 @@
 			"settings":
 			{
 				"buffer_size": 10852,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/tSNE_plot.R",
+			"settings":
+			{
+				"buffer_size": 3140,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -135,15 +145,6 @@
 			}
 		},
 		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/jian/runs.all.sample.R",
-			"settings":
-			{
-				"buffer_size": 954,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.imputation.tcga.R",
 			"settings":
 			{
@@ -152,10 +153,45 @@
 			}
 		},
 		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/auc.R",
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/weiner.golden.R",
 			"settings":
 			{
-				"buffer_size": 1594,
+				"buffer_size": 12236,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/drugs/ICB_msigdb.R",
+			"settings":
+			{
+				"buffer_size": 20079,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.Getz_scRNA.R",
+			"settings":
+			{
+				"buffer_size": 39150,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/From_chengfei/cfwang_pipeline.R",
+			"settings":
+			{
+				"buffer_size": 3805,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/From_chengfei/scRNAseq_function.R",
+			"settings":
+			{
+				"buffer_size": 16381,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -163,7 +199,33 @@
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/kidney.R",
 			"settings":
 			{
-				"buffer_size": 13533,
+				"buffer_size": 26488,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Downloads/params.json",
+			"settings":
+			{
+				"buffer_size": 2300,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_list.txt",
+			"settings":
+			{
+				"buffer_size": 126,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/datasets_val_list.txt",
+			"settings":
+			{
+				"buffer_size": 154,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -178,19 +240,29 @@
 			}
 		},
 		{
+			"contents": "###\n#######\n#processing of datasets\n######\n\n## TCGA dataset \ndataset_ssgsea = \"/liulab/asahu/data/ssgsea/xiaoman/TCGA_ssgsva.txt\"\ndataset_ssgsea = \"/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt\"\npathway_order = \"/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt\"\ndataset_phenotype = \"/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt\"\nphenotype_order = \"/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData\"\noutput.dir = \"~/project/deeplearning/icb/data/tcga/PCA/\"\n\noutput.dir = \"~/project/deeplearning/icb/data/tcga.blca/neoantigen/\"\n\n# ICB dataset\n\ndataset_ssgsea = \"/liulab/asahu/data/ssgsea/xiaoman/Avin/ICB_GSVA.txt\"\ndataset_ssgsea = \"/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt\"\n\n\npathway_order = \"/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt\"\ndataset_phenotype = \"/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB_oxphos.txt\"\nphenotype_order = \"/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData\"\noutput.dir = \"~/project/deeplearning/icb/data/pancancer_all_immune/all_icb\"\noutput.dir = \"~/project/deeplearning/icb/data/pancancer_all_immune/genetech\"\noutput.dir = \"~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed\"\noutput.dir = \"~/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pca/\"\noutput.dir = \"~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/\"\n\ndataset.prefix = \"Mel_CTLA4_Chiappinelli\"\ndataset.prefix = \"mGC_PD1_Kim\"\ndataset.prefix = \"RCC_PD1_Miao\"\n# dataset_ssgsea = sprintf(\"/liulab/asahu/data/ssgsea/xiaoman/expression/%s.expression\",dataset.prefix)\ndataset_ssgsea = sprintf(\"/liulab/asahu/data/ssgsea/xiaoman/expression/annot/%s.annot\",dataset.prefix)\n\noutput.dir = sprintf(\"~/project/deeplearning/icb/data/%s\", dataset.prefix)\n\npca_obj.RData = \"/homes6/asahu/project/deeplearning/icb/data/tcga.blca/neoantigen/pca_obj.RData\"\n\nfix_patient_name =F; ICB_dataset =T\n\n# precog dataset \ndataset_ssgsea = \"/liulab/asahu/data/ssgsea/xiaoman/Avin/Precog_GSVA.txt\"\npathway_order = \"/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt\"\ndataset_phenotype = \"/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_Precog_oxphos.txt\"\nphenotype_order = \"/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData\"\noutput.dir = \"~/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm\"\n\noutput.dir = \"~/project/deeplearning/icb/data/tcga.blca/tcga.blca.pca/\"\n\n#######\n######\n#######\n######\n#######\n######\n#######\n######\ndata_dir=\"/homes6/asahu/project/deeplearning/icb/data/ssgsea/datasets/\"\nmodel_dir=\"/homes6/asahu/project/deeplearning/icb/data/ssgsea/models/\"\n\n\n\n\n# python train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation/datasets\npython train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/datasets --prefix \"tcga\"\npython train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation15Feb/datasets_list.txt --model_dir  ~/Dropbox/project/code/deeplearning/icb/results/simulation15Feb/\n\npython train.py --data_dir $data_dir --model_dir $model_dir\n\npython train.py --data_dir ~/Dropbox/project/code/deeplearning/icb/results/simulation5jan/datasets_list.txt --prefix \"tcga\"\n# simulation from pixie \n\npython train.py --data_dir ../results/simulation5Feb/datasets_list.txt --model_dir ../results/simulation5Feb/\n\n\npython train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --model_dir /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_43\n\nipython -pdb train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --model_dir /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_43\n\n\npython train.py --prefix tcga --data_dir ~/local_data/processed/datasets/ --model_dir /homes6/asahu/project/deeplearning/icb/deepImmune/experiments/tcga_embedding8\n\n\npython train.py --prefix tcga --data_dir experiments/tcga_feb9/datasets_list.txt  --model_dir experiments/tcga_feb9\n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/\n\n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/ --restore_file tcga_survial\n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/survival/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/survival/ --restore_file tcga_survial\n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_icb/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_icb/ \n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_icb/icb/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_icb/icb/ --restore_file tcga_icb_last \n\n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_only/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_only/\n\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_only/icb_survival/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/tcga_only/icb_survival/ --restore_file intialize\n\n#precog\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/\n#tcga\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/\npython  train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/combined/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/combined/\n\npython train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.blca/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.blca \n\npython train.py --data_dir ../data/tcga.blca/genentech.pca/datasets_list.txt --model_dir ../data/tcga.blca/genentech.pca --restore_file ../data/tcga.blca/pca/tensorboardLog/20190307-140948/best.pth.tar\n\n\n\npython evaluate.py  --data_dir /Users/avi/Dropbox/project/code/deeplearning/icb/data/tcga.blca/genentech.pca/eval/datasets_list.txt  --model_dir /Users/avi/Dropbox/project/code/deeplearning/icb/data/tcga.blca/pca/tensorboardLog/20190307-140948/ --restore_file /Users/avi/Dropbox/project/code/deeplearning/icb/data/tcga.blca/pca/tensorboardLog/20190307-140948/best.pth.tar\n\n\npython train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/ --restore_file ~/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/last.best.pthr.tar\n\n\n\npython train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pretrain_tcga/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/pancancer_all_immune/genetech.imputed.same.survival/pretrain_tcga/ \n--restore_file ~/project/deeplearning/icb/data/pancancer_all_immune/precog.oxphos/norm/tcga/my.best.pth.tar\n\n\n\npython train.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/\n\npython evaluate.py  --data_dir  /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/datasets_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/tcga.oxphos/tcga_genentech/ --restore_file best\n\n\npython train.py  --data_dir  ../data/genentech.tpm/datasets_list.txt --model_dir ../data/genentech.tpm/. --tensorboard_prefix only_auc_ \n\n\n python  train.py  --data_dir  ../data/genentech.tpm/genentech.pca.tpm.phenotypes.32/datasets_list.txt --model_dir ../data/genentech.tpm/genentech.pca.tpm.phenotypes/ --tensorboard_prefix \"32_\"\n\n\n  --restore_file ../data/genentech.tpm/genentech.pca.phenotypes/tensorboardLog/surv_20190310-214230/best.pth.tar\n\n## Neoantigen\n \npython train.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. \n\npython  evaluate.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/.  --restore_file  ../data/tcga/PCA/./tensorboardLog/20190322-014624/best.pth.tar\n\npython  evaluate.py  --data_dir   ../data/tcga/PCA/prediction_genentech/datasets_list.txt --model_dir ../data/tcga/PCA/prediction_genentech/.  --restore_file  ../data/tcga/PCA/./tensorboardLog/20190322-014624/best.pth.tar\n\n\n#Neoantigen in BCB \npython train.py  --data_dir  ../data/tcga.blca/neoantigen/datasets_list.txt --model_dir ../data/tcga.blca/neoantigen/. \n\npython evaluate.py  --data_dir  ../data/tcga/PCA/datasets_list.txt --model_dir ../data/tcga/PCA/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar\n\npython  evaluate.py  --data_dir  ../data/genentech.tpm/Neoantigen/evaluate/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar\n\npython  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar\n\n\npython  train.py  --data_dir  ../data/genentech.tpm/Neoantigen/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen/. --restore_file ../data/tcga/PCA/tensorboardLog/20190315-150358/best.pth.tar --tensorboard_prefix pretrain_tcga_\n\n\n\n## Response prediction\npython  train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix auc_\n\npython  train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix auc_neo_ml_ --hyper_param \"input_indices=range(50)\"\n\n\npython  -m ipdb train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix outputs_10_ --hyper_param \"params.binary_phenotype_indices=[45,1,44,47,46,41];params.continuous_phenotype_indices=[0,42,43,49,50]\"\n\npython  -m ipdb train.py  --data_dir  ../data/genentech.tpm/Neoantigen.imputed/datasets_list.txt --model_dir ../data/genentech.tpm/Neoantigen.imputed/. --tensorboard_prefix outputs_10_ --hyper_param \"params.continuous_phenotype_indices=[0,42,43,49,50]\"\n# run run_hyper.R  with ii = 57\n\n## mGC_PD1_Kim\npython  evaluate.py \\\n --data_dir  ../data/mGC_PD1_Kim/datasets_list.txt \\\n --model_dir ../data/mGC_PD1_Kim/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]\"\n\n\n# imputing neoantigen etc. from tcga model \npython  evaluate.py \\\n --data_dir  ../data/mGC_PD1_Kim/Neoantigen/datasets_list.txt \\\n --model_dir ../data/mGC_PD1_Kim/Neoantigen/. \\\n --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar\n\n\npython  evaluate.py \\\n --data_dir  ../data/mGC_PD1_Kim/imputed/datasets_list.txt \\\n --model_dir ../data/mGC_PD1_Kim/imputed/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]\"\n\n\n\n\n\n## RCC_PD1_Miao\npython  evaluate.py \\\n --data_dir  ../data/RCC_PD1_Miao/datasets_list.txt \\\n --model_dir ../data/RCC_PD1_Miao/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar\n\n # Mel_CTLA4_VanAllen \n\n\n python  evaluate.py \\\n --data_dir  ../data/Mel_CTLA4_VanAllen/datasets_list.txt \\\n --model_dir ../data/Mel_CTLA4_VanAllen/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.cuda=False\" \n\npython  evaluate.py \\\n --data_dir  ../data/Mel_CTLA4_VanAllen/Neoantigen/datasets_list.txt \\\n --model_dir ../data/Mel_CTLA4_VanAllen/Neoantigen/. \\\n --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar\n\n python  evaluate.py \\\n --data_dir  ../data/Mel_CTLA4_VanAllen/imputed/datasets_list.txt \\\n --model_dir ../data/Mel_CTLA4_VanAllen/imputed/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]\"\n\n\n\n\n # Mel_CTLA4_VanAllen \n\n\n python  evaluate.py \\\n --data_dir  ../data/Mel_PD1_Hugo/datasets_list.txt \\\n --model_dir ../data/Mel_PD1_Hugo/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.cuda=False\" \n\n\npython  evaluate.py \\\n --data_dir  ../data/Mel_PD1_Hugo/Neoantigen/datasets_list.txt \\\n --model_dir ../data/Mel_PD1_Hugo/Neoantigen/. \\\n --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar\n\n\n\n## cancer type specific prediction \n## Note TCGA data is being used in the code \n## \n\n\n\n# imputing neoantigen etc. from tcga model \npython  evaluate.py \\\n --data_dir  ../data/tcga/PCA/Neoantigen/datasets_list.txt \\\n --model_dir ../data/tcga/PCA/Neoantigen/. \\\n --restore_file ../data/tcga/PCA/tensorboardLog/20190322-015246/best.pth.tar\n\n\npython  evaluate.py \\\n --data_dir  ../data/tcga/PCA/imputed/datasets_list.txt \\\n --model_dir ../data/tcga/PCA/imputed/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]\"\n\n\n## genetech response prediction\npython  evaluate.py \\\n --data_dir  ../data/genentech.tpm/Neoantigen.imputed/evaluate/datasets_list.txt \\\n --model_dir ../data/genentech.tpm/Neoantigen.imputed/evaluate/. \\\n --restore_file ~/project/deeplearning/icb/data/genentech.tpm/Neoantigen.imputed/tensorboardLog/output_22/inps_61_5720190321-104715/best.pth.tar \\\n --hyper_param \"params.binary_phenotype_indices=[42,43,45,1,44,47,46,41];params.continuous_phenotype_indices=[0,50,49,55,54,56,53,17,51,52,29,13,14,31,10];params.input_indices=[0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48,49,82,83,84,85,86,87,88,89,90,91,92,93,94,95,96,97,98,99,100,101,102,103,104,105,106,107,108,109,110,111,112,113,114,115,116,117,118,119,120,121,122,123,124,60,56]\"\n\n\n\n ## version > 0.3\n # ../data/tcga/neoantigen.v2\n\npython train.py  --data_dir  ../data/tcga/neoantigen.v2/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/. --tensorboard_prefix msi_only_ \n\npython train.py  --data_dir  ../data/ya/datasets_list.txt --model_dir ../data/ya/.\n\n# attention model \n\n\npython train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.\n\n\npython evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190407-213630/best.pth.tar\n\n\n\npython evaluate_attention.py  --data_dir  ../data/genentech.tpm/neoantigen.v2/impute/datasets_list.txt --model_dir ../data/genentech.tpm/neoantigen.v2/impute/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190412-151621/best.pth.tar\n\n\npython train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.\n\n\npython train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/.\n\n## ya's model \npython train.py  --data_dir  ../data/ya/datasets_tsne_list.txt --model_dir ../data/ya/.\n\n## imputation \npython evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190422-080613/best.pth.tar --type_file=\"['']\"\n\npython evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/survival20190422-081755/datasets_impute_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/survival20190422-081755/.  --restore_file  ../data/tcga/neoantigen.v2/attention/tensorboardLog/survival20190422-081755/best.pth.tar --type_file=\"all\"\n\n\npython train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/genentech.imputed/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/genentech.imputed/.\n\npython train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/. --restore_file ~/Dropbox/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/tensorboardLog/SGD_20190426-131226//best.pth.tar\n\npython train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/. --restore_file ~/Dropbox/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/tensorboardLog/SGD_20190426-131226//best.pth.tar\n\npython evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/. --restore_file ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/best.pth.tar\n\npython evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_genentech_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/. --restore_file ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/best.pth.tar\n\n\n\n\n# kindney\n\npython train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_\n\npython -m ipdb  evaluate.py   --data_dir ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/datasets_tsne_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar\n\npython -m ipdb evaluate.py   --data_dir ../data/RCC_PD1_Miao/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar\n\n\npython evaluate.py   --data_dir ../data/RCC_PD1_Miao/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar\n\n\n\npython  evaluate.py   --data_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_genentech_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190515-114038/best.pth.tar\n\n## evaluating kidney cancer \npython train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/drug/.\n\n\npython  train_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/.\n\npython  evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/. --restore_file  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/tensorboardLog/three_var_20190622-191219/best.pth.tar\n\npython  evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/. --restore_file  ../data/tcga/neoantigen.v2/attention/tcga.imputed/brca/tensorboardLog/20190623-230228/best.pth.tar\n\n\n# scrRNA\n\npython train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_\n\npython train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  restored_ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-233202/best.pth.tar\n\npython evaluate.py   --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_val_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-041025/best.pth.tar\n\n\npython evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-041025/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-041025/best.pth.tar\n\n# in pixie \n\npython evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-233202/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-233202/best.pth.tar\n\npython evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/restored_20190627-185716/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/restored_20190627-185716/best.pth.tar\n",
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
+			"file_size": 24491,
+			"file_write_time": 132061498258098677,
 			"settings":
 			{
-				"buffer_size": 22125,
-				"encoding": "UTF-8",
+				"buffer_size": 24757,
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/params.json",
+			"file": "/Users/avi/Downloads/source.R",
 			"settings":
 			{
-				"buffer_size": 2271,
+				"buffer_size": 813,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/params.json",
+			"settings":
+			{
+				"buffer_size": 2288,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -268,6 +340,26 @@
 		"selected_items":
 		[
 			[
+				"color",
+				"UI: Select Color Scheme"
+			],
+			[
+				"colors",
+				"UI: Select Color Scheme"
+			],
+			[
+				"makesn",
+				"SnippetMaker: Make Snippet"
+			],
+			[
+				"R snippet",
+				"Snippet: New col based on chars of old col"
+			],
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
 				"laex",
 				"Build With: LaTeX - Traditional"
 			],
@@ -276,20 +368,12 @@
 				"Build With: LaTeX"
 			],
 			[
-				"inst",
-				"Package Control: Install Package"
-			],
-			[
 				"col",
 				"UI: Select Color Scheme"
 			],
 			[
 				"ayu",
 				"ayu: Activate theme"
-			],
-			[
-				"color",
-				"UI: Select Color Scheme"
 			],
 			[
 				"ay",
@@ -314,10 +398,6 @@
 			[
 				"rever",
 				"File: Revert"
-			],
-			[
-				"colors",
-				"UI: Select Color Scheme"
 			],
 			[
 				"them",
@@ -466,9 +546,50 @@
 		"side_bar_visible": false,
 		"status_bar_visible": false
 	},
+	"expanded_folders":
+	[
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune"
+	],
 	"file_history":
 	[
+		"/Users/avi/Dropbox (Partners HealthCare)/From_chengfei/scRNAseq_annotation.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/From_chengfei/TabulaMuris_facs_markers_all.txt",
+		"/Users/avi/empty.sh",
+		"/Users/avi/run1.sh",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/jian/callCDR3fromSCbam.avi.p20.sh",
+		"/Users/avi/Downloads/igraph/config.log",
+		"/Library/Frameworks/R.framework/Resources/etc/Makeconf",
+		"/Users/avi/.Rprofile",
+		"/Users/avi/.bashrc",
+		"/Users/avi/Downloads/cluster.R",
 		"/Applications/Adobe Illustrator CC 2018/Support Files/AMT/AI/AMT/application.xml",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/weiner.golden.R",
+		"/Users/avi/.R/Makevars",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/datasets_val_list.txt",
+		"/Users/avi/projects/deepImmune/data/Getz_scRNA/datasets_list.txt",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.RCC_PD1_Miao.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/subset_cancertype.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/GSE120575_patient_ID_single_cells.txt",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/val_prediction.csv",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/tensorboardLog/three_var_20190622-191219/metrics_val_best_weights_datasets.json",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/tensorboardLog/three_var_20190622-191219/best_val_0.csv",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/params.json",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/params.json",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_tsne_list.txt",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_list.txt",
+		"/Users/avi/Library/Application Support/Sublime Text 3/Packages/User/write_table_R.sublime-snippets",
+		"/Users/avi/Library/Application Support/Sublime Text 3/Packages/All Autocomplete/All Autocomplete.sublime-settings",
+		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/tensorboardLog/20190612-072724/params.json",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/comparison_with_tcga.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/gene_quantification.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/source.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/uri/cancer/uri.tcga.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/uri/cancer/uri.cancer.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/auc.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/jian/runs.all.sample.R",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
 		"/Applications/Adobe Photoshop CC 2018/Presets/Scripts/ContactSheetII.jsx",
 		"/Applications/Adobe Illustrator CC 2018/AIFeatures.cfg",
 		"/Users/avi/Downloads/runTRUSTonMergedBAM.sh",
@@ -485,15 +606,12 @@
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/RCC_PD1_Miao/val_prediction.csv",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/results/may24/Bladder_melanoma_tcga.pdf",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/source.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/auc.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/params.json",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/source.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/run.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/geentech.imputed.R",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/datasets_tsne_list.txt",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/gene_quantification.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/drugs/TCGA_msigdb.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/check.sign.cox.coef.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/kidney.R",
@@ -504,8 +622,6 @@
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate_attention.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.RCC_PD1_Miao.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/train_attention.py",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/tensorboardLog/20190529-194121/best_val_0.csv",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/tensorboardLog/20190529-184401/best_val_0.csv",
@@ -518,7 +634,6 @@
 		"/Users/avi/Library/Containers/com.apple.mail/Data/Library/Mail Downloads/6AAD0234-EE8E-48A4-808E-944C61ABFFBF/ariel.brown.pub",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.Mel_CTLA4_Chiappinelli.R",
 		"/Users/avi/temp1.txt",
-		"/Users/avi/.bashrc",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/val_prediction.csv",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/datasets_tsne_list",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/source.goldenset.R",
@@ -529,10 +644,8 @@
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/genetech.data.analysis.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.genentech.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.mGC_PD1_Kim.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/comparison_with_tcga.R",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/val_prediction.csv",
 		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/datasets_tsne_list.txt",
-		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/params.json",
 		"/Users/avi/Downloads/blacklists/adult/domains",
 		"/Users/avi/Downloads/blacklists/adult/urls",
 		"/Users/avi/Dropbox (Partners HealthCare)/resume/current/avinash_01312019.tex",
@@ -566,40 +679,11 @@
 		"/Users/avi/.ssh/authorized_keys",
 		"/Users/avi/Downloads/tax.R",
 		"/Users/avi/Downloads/impute.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/run_hyper.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/NB_data_process.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/ggrocs.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/source.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/transformer.py",
-		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/temp.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/mda_broad_comparison/testing_combat.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.icb.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/immunological_correlation.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/amy/src/crispr.sl.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/debug/debug.py",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune.back1/deepImmune/data_processing/ssgsea/process.dataset.imputation.tcga.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.tcga.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/common.genes.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/neoantigen_results.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/cancertype_tcga_analysis.R",
-		"/Users/avi/Dropbox/project/code/deeplearning/pytorch/tutorial/pytorch-tutorial/tutorials/02-intermediate/deep_residual_network/main.py",
-		"/Users/avi/.bash",
-		"/Users/avi/pixie",
-		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tensorboardLog/20190407-213630/best_val_0.csv",
-		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/datasets_list.txt",
-		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/params.json",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/pytorch/cs230-code-examples/pytorch/vision/train.py",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/requirement.txt",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/amy/create.ceres.dataset.R",
-		"/Users/avi/.bash_profile",
-		"/Users/avi/.bashrc_curr",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/requirements.txt",
-		"/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/datasets_list.txt",
-		"/Users/avi/projects/deepImmune/data/ya/datasets_list.txt"
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/run_hyper.R"
 	],
 	"find":
 	{
-		"height": 54.0
+		"height": 26.0
 	},
 	"find_in_files":
 	{
@@ -613,6 +697,26 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"data.DI",
+			"data",
+			"tsne.dir",
+			"data_tsne.genes",
+			"pca",
+			"n_neighbor",
+			"num_threads",
+			"tsne",
+			"immune.factors",
+			"decresing",
+			"di.aucs.dt",
+			"pre_treatment.aucs",
+			"icb.expression.matched",
+			"new_residual_20190625-233202",
+			"ew_residual_20190625-233202",
+			"new_residual_20190515-114038",
+			"dataset_ssgsea",
+			"bladder.cancer",
+			"HSNC",
+			"dataset_train.txt",
 			"trial",
 			"sampleBam",
 			"sample.bam",
@@ -642,7 +746,7 @@
 	"groups":
 	[
 		{
-			"selected": 6,
+			"selected": 8,
 			"sheets":
 			[
 				{
@@ -658,8 +762,8 @@
 						"selection":
 						[
 							[
-								9320,
-								9320
+								3502,
+								3502
 							]
 						],
 						"settings":
@@ -686,14 +790,14 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 0
+								"xpos": 30
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 1739.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 5,
+					"stack_index": 16,
 					"type": "text"
 				},
 				{
@@ -702,15 +806,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 43402,
+						"buffer_size": 43440,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								8013,
-								8013
+								9468,
+								9387
 							]
 						],
 						"settings":
@@ -757,62 +861,67 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 47
+								"xpos": 21
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 8,
 					"type": "text"
 				},
 				{
 					"buffer": 2,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 8561,
+						"buffer_size": 26741,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								843,
-								843
+								25307,
+								25348
 							]
 						],
 						"settings":
 						{
-							"SL.37.region_keys":
+							"SL.16.region_keys":
+							[
+							],
+							"SL.93.region_keys":
 							[
 							],
 							"git_gutter_is_enabled": true,
-							"markdonw_live_preview_last_run": 1560342620.77,
+							"markdonw_live_preview_last_run": 1561163247.18,
 							"syntax": "Packages/Djaneiro/Syntaxes/Python Django.tmLanguage",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true,
 							"vintage":
 							{
+								"_vintageous_glue_until_normal_mode": false,
 								"action": null,
 								"action_count": "",
-								"mode": "mode_normal",
+								"mode": "mode_visual_line",
 								"motion": null,
 								"motion_count": "",
 								"must_capture_register_name": false,
+								"normal_insert_count": "1",
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 38
+								"xpos": 15
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 17,
 					"type": "text"
 				},
 				{
@@ -828,8 +937,8 @@
 						"selection":
 						[
 							[
-								5524,
-								5524
+								2158,
+								2158
 							]
 						],
 						"settings":
@@ -858,18 +967,71 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 18
+								"xpos": 13
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 15,
 					"type": "text"
 				},
 				{
 					"buffer": 4,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/tSNE_plot.R",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3140,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1237,
+								1252
+							]
+						],
+						"settings":
+						{
+							"SL.18.region_keys":
+							[
+							],
+							"SL.64.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": true,
+							"markdonw_live_preview_last_run": 1561651964.53,
+							"syntax": "Packages/R/R.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"_vintageous_glue_until_normal_mode": false,
+								"action": null,
+								"action_count": "",
+								"mode": "mode_visual",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"normal_insert_count": "1",
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 40
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 7,
+					"type": "text"
+				},
+				{
+					"buffer": 5,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/oxphos/crispr.sl.R",
 					"semi_transient": false,
 					"settings":
@@ -887,6 +1049,9 @@
 						],
 						"settings":
 						{
+							"SL.19.region_keys":
+							[
+							],
 							"git_gutter_is_enabled": false,
 							"highlight_line": false,
 							"markdonw_live_preview_last_run": 1560366489.96,
@@ -915,54 +1080,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/jian/runs.all.sample.R",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 954,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								455,
-								455
-							]
-						],
-						"settings":
-						{
-							"SL.32.region_keys":
-							[
-							],
-							"git_gutter_is_enabled": false,
-							"syntax": "Packages/R/R.sublime-syntax",
-							"vintage":
-							{
-								"_vintageous_glue_until_normal_mode": true,
-								"action": null,
-								"action_count": "",
-								"mode": "mode_insert",
-								"motion": null,
-								"motion_count": "",
-								"must_capture_register_name": false,
-								"normal_insert_count": "1",
-								"partial_sequence": "",
-								"register": "\"",
-								"sequence": "",
-								"xpos": 36
-							}
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 4,
+					"stack_index": 18,
 					"type": "text"
 				},
 				{
@@ -978,12 +1096,15 @@
 						"selection":
 						[
 							[
-								5542,
-								5542
+								5479,
+								5479
 							]
 						],
 						"settings":
 						{
+							"SL.20.region_keys":
+							[
+							],
 							"git_gutter_is_enabled": true,
 							"markdonw_live_preview_last_run": 1560525383.19,
 							"syntax": "Packages/R/R.sublime-syntax",
@@ -1000,44 +1121,42 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 54
+								"xpos": 61
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 2457.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 19,
 					"type": "text"
-				}
-			]
-		},
-		{
-			"selected": 1,
-			"sheets":
-			[
+				},
 				{
 					"buffer": 7,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/auc.R",
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/weiner.golden.R",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 1594,
+						"buffer_size": 12236,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1267,
-								1267
+								2690,
+								2690
 							]
 						],
 						"settings":
 						{
-							"git_gutter_is_enabled": true,
-							"markdonw_live_preview_last_run": 1559693209.43,
+							"SL.21.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1561835607.21,
 							"syntax": "Packages/R/R.sublime-syntax",
+							"translate_tabs_to_spaces": false,
 							"vintage":
 							{
 								"action": null,
@@ -1049,36 +1168,242 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 22
+								"xpos": 24
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
 					"buffer": 8,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/kidney.R",
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/drugs/ICB_msigdb.R",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 13533,
+						"buffer_size": 20079,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								13003,
-								13003
+								7789,
+								7789
+							]
+						],
+						"settings":
+						{
+							"SL.22.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": true,
+							"markdonw_live_preview_last_run": 1561878682.89,
+							"syntax": "Packages/R/R.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 27
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 110105.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 5,
+					"type": "text"
+				}
+			]
+		},
+		{
+			"selected": 2,
+			"sheets":
+			[
+				{
+					"buffer": 9,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.Getz_scRNA.R",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 39150,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								36571,
+								36571
+							]
+						],
+						"settings":
+						{
+							"SL.21.region_keys":
+							[
+							],
+							"SL.23.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": true,
+							"highlight_line": false,
+							"markdonw_live_preview_last_run": 1561390005.4,
+							"syntax": "Packages/R/R.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"_vintageous_glue_until_normal_mode": false,
+								"_vintageous_non_interactive": false,
+								"_vintageous_processing_notation": false,
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"normal_insert_count": "1",
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 35
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 14726.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 2,
+					"type": "text"
+				},
+				{
+					"buffer": 10,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/From_chengfei/cfwang_pipeline.R",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 3805,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1137,
+								1137
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1562356130.74,
+							"syntax": "Packages/R/R.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 48
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 1,
+					"type": "text"
+				},
+				{
+					"buffer": 11,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/From_chengfei/scRNAseq_function.R",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 16381,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								11555,
+								11555
+							]
+						],
+						"settings":
+						{
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1562356281.35,
+							"syntax": "Packages/R/R.sublime-syntax",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 34
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 3779.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 12,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/kidney.R",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 26488,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1296,
+								1296
 							]
 						],
 						"settings":
 						{
 							"SL.14.region_keys":
+							[
+							],
+							"SL.20.region_keys":
+							[
+							],
+							"SL.24.region_keys":
 							[
 							],
 							"git_gutter_is_enabled": true,
@@ -1102,18 +1427,167 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 0
+								"xpos": 18
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 7248.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 4,
+					"type": "text"
+				},
+				{
+					"buffer": 13,
+					"file": "/Users/avi/Downloads/params.json",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2300,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1468,
+								1468
+							]
+						],
+						"settings":
+						{
+							"SL.26.region_keys":
+							[
+							],
+							"SL.51.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1561489852.21,
+							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"_vintageous_glue_until_normal_mode": false,
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"normal_insert_count": "1",
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 20
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"stack_index": 3,
 					"type": "text"
 				},
 				{
-					"buffer": 9,
+					"buffer": 14,
+					"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/datasets_list.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 126,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								125,
+								125
+							]
+						],
+						"settings":
+						{
+							"SL.27.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1561206153.15,
+							"syntax": "Packages/Djaneiro/Syntaxes/HTML (Django).tmLanguage",
+							"vintage":
+							{
+								"_vintageous_glue_until_normal_mode": false,
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"normal_insert_count": "1",
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 84
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 13,
+					"type": "text"
+				},
+				{
+					"buffer": 15,
+					"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/datasets_val_list.txt",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 154,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								154,
+								154
+							]
+						],
+						"settings":
+						{
+							"SL.28.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1561490071.69,
+							"syntax": "Packages/Djaneiro/Syntaxes/HTML (Django).tmLanguage",
+							"vintage":
+							{
+								"_vintageous_glue_until_normal_mode": false,
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"normal_insert_count": "1",
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 80
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 10,
+					"type": "text"
+				},
+				{
+					"buffer": 16,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/source.R",
 					"semi_transient": false,
 					"settings":
@@ -1125,12 +1599,15 @@
 						"selection":
 						[
 							[
-								11658,
-								11658
+								7229,
+								7142
 							]
 						],
 						"settings":
 						{
+							"SL.29.region_keys":
+							[
+							],
 							"git_gutter_is_enabled": true,
 							"markdonw_live_preview_last_run": 1559720484.31,
 							"syntax": "Packages/R/R.sublime-syntax",
@@ -1147,36 +1624,42 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 0
+								"xpos": 4
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 14,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
+					"buffer": 17,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 22125,
+						"buffer_size": 24757,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								20076,
-								20076
+								24757,
+								24757
 							]
 						],
 						"settings":
 						{
 							"SL.15.region_keys":
+							[
+							],
+							"SL.25.region_keys":
+							[
+							],
+							"SL.30.region_keys":
 							[
 							],
 							"git_gutter_is_enabled": true,
@@ -1197,37 +1680,91 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 210
+								"xpos": 158
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
-					"buffer": 11,
-					"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/drug/params.json",
+					"buffer": 18,
+					"file": "/Users/avi/Downloads/source.R",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2271,
+						"buffer_size": 813,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								485,
-								485
+								337,
+								337
 							]
 						],
 						"settings":
 						{
+							"SL.31.region_keys":
+							[
+							],
 							"git_gutter_is_enabled": false,
-							"markdonw_live_preview_last_run": 1559915682.29,
+							"markdonw_live_preview_last_run": 1561519026.25,
+							"syntax": "Packages/R/R.sublime-syntax",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true,
+							"vintage":
+							{
+								"action": null,
+								"action_count": "",
+								"mode": "mode_normal",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 80
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 0.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 11,
+					"type": "text"
+				},
+				{
+					"buffer": 19,
+					"file": "/Users/avi/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/params.json",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 2288,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1561,
+								1561
+							]
+						],
+						"settings":
+						{
+							"SL.25.region_keys":
+							[
+							],
+							"SL.32.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": false,
+							"markdonw_live_preview_last_run": 1561206718.58,
 							"syntax": "Packages/JavaScript/JSON.sublime-syntax",
 							"tab_size": 4,
 							"translate_tabs_to_spaces": true,
@@ -1244,14 +1781,14 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 41
+								"xpos": 97
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 204.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 12,
 					"type": "text"
 				}
 			]
@@ -1259,7 +1796,7 @@
 	],
 	"incremental_find":
 	{
-		"height": 29.0
+		"height": 26.0
 	},
 	"input":
 	{
@@ -1285,7 +1822,7 @@
 		"cols":
 		[
 			0.0,
-			0.536449506646,
+			0.0694444444444,
 			1.0
 		],
 		"rows":
@@ -1315,7 +1852,7 @@
 	"project": "attention.sublime-project",
 	"replace":
 	{
-		"height": 54.0
+		"height": 48.0
 	},
 	"save_all_on_build": true,
 	"select_file":
@@ -1325,16 +1862,48 @@
 		"selected_items":
 		[
 			[
+				"runs",
+				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh"
+			],
+			[
+				"run",
+				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh"
+			],
+			[
+				"rusn",
+				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh"
+			],
+			[
+				"param",
+				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/params.json"
+			],
+			[
+				"para",
+				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/params.json"
+			],
+			[
+				"parama",
+				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/params.json"
+			],
+			[
+				"data",
+				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/datasets_val_list.txt"
+			],
+			[
+				"par",
+				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/brca/params.json"
+			],
+			[
+				"eva",
+				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate_attention.py"
+			],
+			[
 				"evalu",
 				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate_attention.py"
 			],
 			[
 				"net",
 				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/train_attention.py"
-			],
-			[
-				"eva",
-				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate_attention.py"
 			],
 			[
 				"cha",
@@ -1353,16 +1922,8 @@
 				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py"
 			],
 			[
-				"param",
-				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/params.json"
-			],
-			[
 				"params.",
 				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/params.json"
-			],
-			[
-				"data",
-				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py"
 			],
 			[
 				"dataset",
@@ -1397,16 +1958,8 @@
 				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/tcga.imputed/params.json"
 			],
 			[
-				"para",
-				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py"
-			],
-			[
 				"gene",
 				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/process.dataset.genentech.R"
-			],
-			[
-				"run",
-				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh"
 			],
 			[
 				"pa",
@@ -1423,10 +1976,6 @@
 			[
 				"ne",
 				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py"
-			],
-			[
-				"par",
-				"~/projects/deepImmune/data/tcga/neoantigen.v2/attention/params.json"
 			],
 			[
 				"imput",
@@ -1451,10 +2000,6 @@
 			[
 				"temp1",
 				"~/Downloads/temp1.py"
-			],
-			[
-				"runs",
-				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh"
 			],
 			[
 				"net.p",
@@ -1777,11 +2322,13 @@
 		],
 		"width": 536.0
 	},
-	"selected_group": 0,
+	"selected_group": 1,
 	"settings":
 	{
-		"_vintageous_last_buffer_search": "serial",
+		"_vintageous_last_buffer_search": "marker",
 		"_vintageous_last_buffer_search_command": "vi_slash",
+		"_vintageous_last_char_search_command": "vi_t",
+		"_vintageous_last_character_search": "h",
 		"_vintageous_reset_during_init": true,
 		"last_automatic_layout":
 		[
@@ -1800,7 +2347,7 @@
 		],
 		"vintage":
 		{
-			"_cmdline_cd": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/oxphos"
+			"_cmdline_cd": "/Users/avi/Downloads"
 		}
 	},
 	"show_minimap": false,

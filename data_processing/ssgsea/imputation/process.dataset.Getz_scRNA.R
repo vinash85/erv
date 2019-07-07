@@ -26,106 +26,107 @@ dataset_phenotype = fread(dataset_phenotype)
 dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea_temp[,seq(2,ncol(dataset_ssgsea_temp)),with=F]))
 setnames(dataset_ssgsea_temp, 1, "gene_name")
 colnames(dataset_ssgsea_mat) = dataset_ssgsea_temp$gene_name
+
 dataset_ssgsea_mat = dataset_ssgsea_mat[-16292,] # last column is NAs
 rownames(dataset_ssgsea_mat) = unlist(headers[1])[-1]
 tpm = T
 pca = T
 if(!tpm){
-  dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
-  dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
-}else{
-  pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
-  # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
-  load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
-  dataset_ssgsea_mat1 = impute.closest.gene(common.genes,dataset_ssgsea_mat)
-  dataset_ssgsea_mat = dataset_ssgsea_mat1[ ,common.genes] 
-  
-  stopifnot(any(!is.na(dataset_ssgsea_mat)))
-  
-}
+    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$pathway]  
+    dataset_ssgsea_mat = dataset_ssgsea_mat[,pathway_order$order]
+    }else{
+        pcgs = fread("/liulab/asahu/data/ssgsea/xiaoman/./pcg.txt")
+           # dataset_ssgsea_mat = dataset_ssgsea_mat[,toupper(colnames(dataset_ssgsea_mat)) %in% toupper(pcgs$Gene)] 
+        load("/liulab/asahu/data/ssgsea/xiaoman/commmon.genes.RData")
+        dataset_ssgsea_mat1 = impute.closest.gene(common.genes,dataset_ssgsea_mat)
+        dataset_ssgsea_mat = dataset_ssgsea_mat1[ ,common.genes] 
+
+        stopifnot(any(!is.na(dataset_ssgsea_mat)))
+
+    }
 
 
-patient.name = rownames(dataset_ssgsea_mat)
-patient.name = gsub(patient.name, pattern="-", replacement=".")
-rownames(dataset_ssgsea_mat) = patient.name
+    patient.name = rownames(dataset_ssgsea_mat)
+    patient.name = gsub(patient.name, pattern="-", replacement=".")
+    rownames(dataset_ssgsea_mat) = patient.name
 
 # phenotype data
-setnames(dataset_phenotype, 1, "patient.name")
-dataset_phenotype$patient.name = gsub(dataset_phenotype$patient.name, pattern="-", replacement=".")
-only_in_phenotype = setdiff(dataset_phenotype$patient.name, patient.name)
-only_in_ssgsea = setdiff( patient.name, dataset_phenotype$patient.name)
-common.patients = intersect(patient.name, dataset_phenotype$patient.name)
-dataset_ssgsea_sel = dataset_ssgsea_mat[match(common.patients, patient.name), ] 
+    setnames(dataset_phenotype, 1, "patient.name")
+    dataset_phenotype$patient.name = gsub(dataset_phenotype$patient.name, pattern="-", replacement=".")
+    only_in_phenotype = setdiff(dataset_phenotype$patient.name, patient.name)
+    only_in_ssgsea = setdiff( patient.name, dataset_phenotype$patient.name)
+    common.patients = intersect(patient.name, dataset_phenotype$patient.name)
+    dataset_ssgsea_sel = dataset_ssgsea_mat[match(common.patients, patient.name), ] 
 
-phenotype_sel = dataset_phenotype[match(common.patients, dataset_phenotype$patient.name)]
+    phenotype_sel = dataset_phenotype[match(common.patients, dataset_phenotype$patient.name)]
 
-colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
-colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
-phenotype_sel.mod = phenotype_sel
-dataset_ssgsea_norm = normalize.expression(dataset_ssgsea_sel)
-load(ref.expression.RData)
-load(ref.cancertype.RData)
-ref.expression.cancertype = ref.expression 
-dataset_ssgsea_matched = match.expression.distribution(dataset_ssgsea_sel, ref.expression.cancertype)
-dataset_ssgsea_sel.back = dataset_ssgsea_matched
+    colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern=" ", replacement="_")
+    colnames(phenotype_sel) = gsub(colnames(phenotype_sel), pattern="-", replacement="_")
+    phenotype_sel.mod = phenotype_sel
+    dataset_ssgsea_norm = normalize.expression(dataset_ssgsea_sel)
+    load(ref.expression.RData)
+    load(ref.cancertype.RData)
+    ref.expression.cancertype = ref.expression 
+    dataset_ssgsea_matched = match.expression.distribution(dataset_ssgsea_sel, ref.expression.cancertype)
+    dataset_ssgsea_sel.back = dataset_ssgsea_matched
 
-dataset_ssgsea_sel = dataset_ssgsea_sel.back
-
-
-
-# generate cibersort results. 
-sc.assign = c("Bactivate", "Bnaive", "CD4Tmactivate", "CD4Tmresting", "CD8T", "Monocyte", "NKactivate", "Tfh", "Treg")
-cibersort.assign = c("Plasma_cells", "B_cells_naive", "T_cells_CD4_memory_activated", "T_cells_CD4_memory_resting", "T_cells_CD8", "Monocytes", "NK_cells_activated", "T_cells_follicular_helper", "T_cells_regulatory_(Tregs)")
-
-cell.types = phenotype_sel.mod$assign.ident 
-cibersort.map = cbind(sc.assign, cibersort.assign)
-cibersort.index = phenotype_order[5:27]
-cibersort.mat = matrix(0, nrow=nrow(phenotype_sel.mod), ncol=length(cibersort.index))
-colnames(cibersort.mat) = cibersort.index
-
-
-for (ii in seq(nrow(cibersort.map))) {
-  map.curr = cibersort.map[ii,]
-  cibersort.mat[cell.types==map.curr[1],map.curr[2]] = 1
-  
-}
-cibersort.mat[,"Absolute_score"] = 1
-
-oxphos.dt = fread("/liulab/asahu/data/ssgsea/xiaoman/getz/gad_oxphos_score.csv")
-oxphos.score = oxphos.dt[match(common.patients,object)]$Cor
-
-phenotype_sel.mod = cbind(phenotype_sel.mod, cibersort.mat,  dataset_ssgsea_sel[, c("CD274", "PDCD1")])
-phenotype_sel.mod = cbind(phenotype_sel.mod, oxphos.score)
+    dataset_ssgsea_sel = dataset_ssgsea_sel.back
 
 
 
-phenotype_order[length(phenotype_order)] = "Response" # last is response
+    # generate cibersort results. 
+    sc.assign = c("Bactivate", "Bnaive", "CD4Tmactivate", "CD4Tmresting", "CD8T", "Monocyte", "NKactivate", "Tfh", "Treg")
+    cibersort.assign = c("Plasma_cells", "B_cells_naive", "T_cells_CD4_memory_activated", "T_cells_CD4_memory_resting", "T_cells_CD8", "Monocytes", "NK_cells_activated", "T_cells_follicular_helper", "T_cells_regulatory_(Tregs)")
 
-phenotype_mat =  phenotype_sel.mod
-temp = setdiff(phenotype_order, colnames(phenotype_mat))
-temp.mat = matrix(NA, ncol=length(temp), nrow=nrow(phenotype_mat))
-colnames(temp.mat) =temp
-phenotype_mat = cbind(phenotype_mat, temp.mat)
-phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
-
-if(pca){
-  load(pca_obj.RData)
-  # pca_obj = NULL
-  
-  temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj, scale=F) 
-  pca_obj = temp_out$pca_obj
-  pca_obj$len_selected = 50
-  save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
-  general.pcs = temp_out$pca_out[,seq(pca_obj$len_selected)]
-}
+    cell.types = phenotype_sel.mod$assign.ident 
+    cibersort.map = cbind(sc.assign, cibersort.assign)
+    cibersort.index = phenotype_order[5:27]
+    cibersort.mat = matrix(0, nrow=nrow(phenotype_sel.mod), ncol=length(cibersort.index))
+    colnames(cibersort.mat) = cibersort.index
 
 
+    for (ii in seq(nrow(cibersort.map))) {
+    map.curr = cibersort.map[ii,]
+    cibersort.mat[cell.types==map.curr[1],map.curr[2]] = 1
+
+    }
+    cibersort.mat[,"Absolute_score"] = 1
+
+    oxphos.dt = fread("/liulab/asahu/data/ssgsea/xiaoman/getz/gad_oxphos_score.csv")
+    oxphos.score = oxphos.dt[match(common.patients,object)]$Cor
+
+    phenotype_sel.mod = cbind(phenotype_sel.mod, cibersort.mat,  dataset_ssgsea_sel[, c("CD274", "PDCD1")])
+    phenotype_sel.mod = cbind(phenotype_sel.mod, oxphos.score)
 
 
-extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1") 
-extra.genes.ez = c("7040", "7048", "3821") 
-extra.genes = dataset_ssgsea_sel.back[, extra.genes.inx]
-colnames(extra.genes) = extra.genes.inx
+
+    phenotype_order[length(phenotype_order)] = "Response" # last is response
+    
+    phenotype_mat =  phenotype_sel.mod
+    temp = setdiff(phenotype_order, colnames(phenotype_mat))
+    temp.mat = matrix(NA, ncol=length(temp), nrow=nrow(phenotype_mat))
+    colnames(temp.mat) =temp
+    phenotype_mat = cbind(phenotype_mat, temp.mat)
+    phenotype.ext.mat = phenotype_mat[,match(phenotype_order, colnames(phenotype_mat)),with=F ]
+
+    if(pca){
+        load(pca_obj.RData)
+            # pca_obj = NULL
+
+        temp_out = get_pca(dataset_ssgsea_sel, pca_obj = pca_obj, scale=F) 
+        pca_obj = temp_out$pca_obj
+        pca_obj$len_selected = 50
+        save(file=paste0(output.dir, "/pca_obj.RData"), pca_obj)
+        general.pcs = temp_out$pca_out[,seq(pca_obj$len_selected)]
+    }
+
+
+
+
+    extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1") 
+    extra.genes.ez = c("7040", "7048", "3821") 
+    extra.genes = dataset_ssgsea_sel.back[, extra.genes.inx]
+    colnames(extra.genes) = extra.genes.inx
 
 
 # top pca
@@ -166,23 +167,23 @@ dataset = dataset.small
 
 
 write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
-            row.names = F, col.names =T,  sep="\t", quote=F )
+    row.names = F, col.names =T,  sep="\t", quote=F )
 
 write.table(file=paste0(output.dir, "/sample_names.txt"),x = common.patients,
-            row.names = F, col.names =T,  sep="\t", quote=F )
+    row.names = F, col.names =T,  sep="\t", quote=F )
 rand_inx = sample(nrow(dataset))
 dataset_shuffle = dataset[rand_inx,]
 train.inx = 1:ceiling(.85 * nrow(dataset_shuffle))
 val.inx = ceiling(.85 * nrow(dataset_shuffle)):nrow(dataset_shuffle)
 
 write.table(file=paste0(output.dir, "/dataset_train.txt"),x = dataset_shuffle[train.inx,],
-            row.names = F, col.names =T,  sep="\t", quote=F )
+    row.names = F, col.names =T,  sep="\t", quote=F )
 write.table(file=paste0(output.dir, "/dataset_val.txt"),x = dataset_shuffle[val.inx,],
-            row.names = F, col.names =T,  sep="\t", quote=F )
+    row.names = F, col.names =T,  sep="\t", quote=F )
 
 save(file=paste0(output.dir, "/phenotype_data.RData"), phenotype_sel.mod)
-
-
+save(file=paste0(output.dir, "/dataset_ssgsea_temp.RData"), dataset_ssgsea_temp) 
+save(file=paste0(output.dir, "/headers.RData"), headers)
 ############### 
 # read the model output
 load("~/project/deeplearning/icb/data/Getz_scRNA/phenotype_data.RData")
@@ -209,34 +210,34 @@ pretreatment.samples = grep(pre_post, pattern="^Pre")
 posttreatment.samples = grep(pre_post, pattern="^Post")
 
 calc.stat = function(response.curr, value){
-  tryCatch(
-    auc(response.curr, value, levels=c(0,1)),
-    error = function(e) NA
-  )
+        tryCatch(
+            auc(response.curr, value, levels=c(0,1)),
+            error = function(e) NA
+        )
 }
 plot.heatmap = function(dat, filename, height = 10, width =7){
   hc = hclust(as.dist(1-cor(dat, method="spearman", use="pairwise.complete.obs")), method="complete")
   hr = hclust(as.dist(1-cor(t(dat), method="spearman", use="pairwise.complete.obs")), method="complete")
-  
+
   require(heatmap3)
   pdf( filename, height = height, width =width)
-  
+
   heatmap3(dat, Rowv=as.dendrogram(hr),  Colv=as.dendrogram(hc), scale="none", balanceColor=T, showRowDendro=T ,   showColDendro=T, cexRow = .5, cexCol = 1)
-  
+
   dev.off()
 }
 
 indexes = colnames(icb.phenotype)[2:115]
 
 out = lapply(cell.types, function(cc) {
-  inx = intersect(which(phenotype_sel.mod$assign.ident==cc), pretreatment.samples)
-  response.curr= response.bin[inx]
-  sapply(indexes, function(tt){
-    value.all = icb.phenotype[[tt]]
-    calc.stat(response.curr, value.all[inx]) 
-  }
-  )
-})
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cc), pretreatment.samples)
+    response.curr= response.bin[inx]
+    sapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat(response.curr, value.all[inx]) 
+    }
+        )
+    })
 
 out.dt = do.call(cbind, out)
 colnames(out.dt) = cell.types
@@ -246,14 +247,14 @@ plot.heatmap(out.final, filename="pretreatment_aucs.pdf", height = 10, width =7)
 
 # posttreatment
 out = lapply(cell.types, function(cc) {
-  inx = intersect(which(phenotype_sel.mod$assign.ident==cc), posttreatment.samples)
-  response.curr= response.bin[inx]
-  sapply(indexes, function(tt){
-    value.all = icb.phenotype[[tt]]
-    calc.stat(response.curr, value.all[inx]) 
-  }
-  )
-})
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cc), posttreatment.samples)
+    response.curr= response.bin[inx]
+    sapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat(response.curr, value.all[inx]) 
+    }
+        )
+    })
 
 out.dt = do.call(cbind, out)
 colnames(out.dt) = cell.types
@@ -267,14 +268,14 @@ pre_or_post = rep(NA, nrow(phenotype_sel.mod))
 pre_or_post[posttreatment.samples] = 1
 pre_or_post[pretreatment.samples] = 0
 out = lapply(cell.types, function(cc) {
-  inx = which(phenotype_sel.mod$assign.ident==cc)
-  response.curr= pre_or_post[inx]
-  sapply(indexes, function(tt){
-    value.all = icb.phenotype[[tt]]
-    calc.stat(response.curr, value.all[inx]) 
-  }
-  )
-})
+    inx = which(phenotype_sel.mod$assign.ident==cc)
+    response.curr= pre_or_post[inx]
+    sapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat(response.curr, value.all[inx]) 
+    }
+        )
+    })
 
 out.dt = do.call(cbind, out)
 colnames(out.dt) = cell.types
@@ -284,14 +285,14 @@ plot.heatmap(out.final, filename="post_vs_pretreatment_aucs_all.pdf", height = 1
 
 # responders 
 out = lapply(cell.types, function(cc) {
-  inx = intersect(which(phenotype_sel.mod$assign.ident==cc), which(response=="Responder"))
-  response.curr= pre_or_post[inx] 
-  sapply(indexes, function(tt){
-    value.all = icb.phenotype[[tt]]
-    calc.stat(response.curr, value.all[inx]) 
-  }
-  )
-})
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cc), which(response=="Responder"))
+    response.curr= pre_or_post[inx] 
+    sapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat(response.curr, value.all[inx]) 
+    }
+        )
+    })
 
 out.dt = do.call(cbind, out)
 colnames(out.dt) = cell.types
@@ -302,14 +303,14 @@ responders.pre_post = out.dt
 
 # non responders
 out = lapply(cell.types, function(cc) {
-  inx = intersect(which(phenotype_sel.mod$assign.ident==cc), which(response=="Non-responder"))
-  response.curr= pre_or_post[inx] 
-  sapply(indexes, function(tt){
-    value.all = icb.phenotype[[tt]]
-    calc.stat(response.curr, value.all[inx]) 
-  }
-  )
-})
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cc), which(response=="Non-responder"))
+    response.curr= pre_or_post[inx] 
+    sapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat(response.curr, value.all[inx]) 
+    }
+        )
+    })
 
 out.dt = do.call(cbind, out)
 colnames(out.dt) = cell.types
@@ -330,15 +331,15 @@ plot.heatmap(diff.responders.pre_post, filename="post_vs_pretreatment_aucs_respo
 ###############
 
 calc.stat.new = function(response.curr, value){
-  aa = tryCatch(
-    as.numeric(auc(response.curr, value, levels=c(0,1))),
-    error = function(e) NA
-  )
-  bb = tryCatch(
-    wilcox.test(value[response.curr==0], value[response.curr==1], levels=c(0,1))$p.value,
-    error = function(e) NA
-  )
-  c(aa,bb)
+        aa = tryCatch(
+            as.numeric(auc(response.curr, value, levels=c(0,1))),
+            error = function(e) NA
+        )
+        bb = tryCatch(
+            wilcox.test(value[response.curr==0], value[response.curr==1], levels=c(0,1))$p.value,
+            error = function(e) NA
+        )
+        c(aa,bb)
 }
 
 icb.expression = t(dataset_ssgsea_temp[,2:16292, with=F])
@@ -353,64 +354,64 @@ colnames(icb.expression.matched) = dataset_ssgsea_temp$gene_name
 
 
 plot.aucs.hist = function(inx, filename, title){
-  cor.monocytes = cor(icb.expression.matched[inx,] ,response.bin[inx])
-  genes.sel = order(abs(cor.monocytes),decreasing=T)[1:500]
-  gene.select = unique( c(genes.sel, sample.int(length(cor.monocytes), 1000)))
-  # aa = auc( response.bin[inx], icb.expression.matched[inx, "HLA-G"]  )
-  response.curr = response.bin[inx]
-  out = mclapply(gene.select, function(tt){
-    value.all = icb.expression.matched[,tt]
-    calc.stat.new(response.curr, value.all[inx]) 
-  }, mc.cores=32
-  )
-  
-  ###############
-  # for each cell type create a figure for comparison of expression 
-  ###############
-  aucs.dt = do.call(rbind, out)
-  aucs.dt = data.table(aucs.dt)
-  aucs.dt$marker = dataset_ssgsea_temp$gene_name[gene.select]
-  aucs.dt$label = "gene" 
-  aucs.dt[,aucs:=ifelse( V1 < 0.5, 1-V1, V1)]
-  out = mclapply(indexes, function(tt){
-    value.all = icb.phenotype[[tt]]
-    calc.stat.new(response.curr, value.all[inx]) 
-  }, mc.cores=32
-  )
-  di.aucs.dt = do.call(rbind, out)
-  di.aucs.dt = data.table(di.aucs.dt)
-  di.aucs.dt$marker = indexes
-  di.aucs.dt$label = "signature"
-  di.aucs.dt = di.aucs.dt[!is.na(V1)]
-  di.aucs.dt[,aucs:=ifelse( V1 < 0.5, 1-V1, V1)]
-  pre_treatment.aucs = rbind(aucs.dt, di.aucs.dt)
-  pre_treatment.aucs = pre_treatment.aucs[order(aucs)]
-  setnames(pre_treatment.aucs, "V2", "P")
-  pre_treatment.aucs[,logP:=-log10(P)]
-  require(ggrepel)
-  m1 = di.aucs.dt[which(aucs > 0.7)]
-  if(nrow(m1) > 25) m1 = di.aucs.dt[order(aucs,decreasing=T)][1:25]
-  if(nrow(m1) < 2) m1 = di.aucs.dt[order(aucs,decreasing=T)[1:5]]
-  m2 = aucs.dt[which(aucs > 0.7)]
-  if(nrow(m2) > 20) m2 = aucs.dt[order(aucs,decreasing=T)[1:20]]
-  if(nrow(m2) < 2) m2 = aucs.dt[order(aucs,decreasing=T)[1:5]]
-  
-  
-  pre_treatment_subset = pre_treatment.aucs[marker %in% c(m1$marker, m2$marker)]
-  p = ggplot(pre_treatment.aucs, aes(x = aucs, y = logP)) +
+    cor.monocytes = cor(icb.expression.matched[inx,] ,response.bin[inx])
+    genes.sel = order(abs(cor.monocytes),decreasing=T)[1:500]
+    gene.select = unique( c(genes.sel, sample.int(length(cor.monocytes), 1000)))
+# aa = auc( response.bin[inx], icb.expression.matched[inx, "HLA-G"]  )
+    response.curr = response.bin[inx]
+    out = mclapply(gene.select, function(tt){
+        value.all = icb.expression.matched[,tt]
+        calc.stat.new(response.curr, value.all[inx]) 
+        }, mc.cores=32
+        )
+
+###############
+# for each cell type create a figure for comparison of expression 
+###############
+    aucs.dt = do.call(rbind, out)
+    aucs.dt = data.table(aucs.dt)
+    aucs.dt$marker = dataset_ssgsea_temp$gene_name[gene.select]
+    aucs.dt$label = "gene" 
+    aucs.dt[,aucs:=ifelse( V1 < 0.5, 1-V1, V1)]
+    out = mclapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat.new(response.curr, value.all[inx]) 
+        }, mc.cores=32
+        )
+    di.aucs.dt = do.call(rbind, out)
+    di.aucs.dt = data.table(di.aucs.dt)
+    di.aucs.dt$marker = indexes
+    di.aucs.dt$label = "signature"
+    di.aucs.dt = di.aucs.dt[!is.na(V1)]
+    di.aucs.dt[,aucs:=ifelse( V1 < 0.5, 1-V1, V1)]
+    pre_treatment.aucs = rbind(aucs.dt, di.aucs.dt)
+    pre_treatment.aucs = pre_treatment.aucs[order(aucs)]
+    setnames(pre_treatment.aucs, "V2", "P")
+    pre_treatment.aucs[,logP:=-log10(P)]
+    require(ggrepel)
+    m1 = di.aucs.dt[which(aucs > 0.7)]
+    if(nrow(m1) > 25) m1 = di.aucs.dt[order(aucs,decreasing=T)][1:25]
+    if(nrow(m1) < 2) m1 = di.aucs.dt[order(aucs,decreasing=T)[1:5]]
+    m2 = aucs.dt[which(aucs > 0.7)]
+    if(nrow(m2) > 20) m2 = aucs.dt[order(aucs,decreasing=T)[1:20]]
+    if(nrow(m2) < 2) m2 = aucs.dt[order(aucs,decreasing=T)[1:5]]
+
+
+    pre_treatment_subset = pre_treatment.aucs[marker %in% c(m1$marker, m2$marker)]
+    p = ggplot(pre_treatment.aucs, aes(x = aucs, y = logP)) +
     geom_point(aes(color=as.factor(label)), alpha=0.5) +
-    
+
     theme_minimal(base_size = 12) + theme(legend.position = "bottom") +
     labs(x="AUC", y="Significance", title=title)+
     geom_text_repel(
-      data = pre_treatment_subset,
-      aes(x = aucs, y = logP, label = marker),
-      size = 3,
-      box.padding = unit(0.35, "lines"),
-      point.padding = unit(0.3, "lines")
-    )  
-  
-  ggsave(p, file=filename)
+        data = pre_treatment_subset,
+        aes(x = aucs, y = logP, label = marker),
+        size = 3,
+        box.padding = unit(0.35, "lines"),
+        point.padding = unit(0.3, "lines")
+        )  
+
+    ggsave(p, file=filename)
 }
 
 ###############
@@ -421,14 +422,14 @@ require(doMC)
 require(foreach)
 registerDoMC(cores = 32)
 out = foreach(cell.type = cell.types) %dopar% { 
-  print(cell.type) 
-  inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), pretreatment.samples)
-  plot.aucs.hist(inx, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("Pretreatment %s ", cell.type))
-  inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), posttreatment.samples)
-  plot.aucs.hist(inx, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/aucs/posttreatment_%s.pdf", cell.type), title= sprintf("Posttreatment %s ", cell.type))
-  inx =which(phenotype_sel.mod$assign.ident==cell.type)
-  plot.aucs.hist(inx, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/aucs/all_%s.pdf", cell.type), title= sprintf("All %s ", cell.type))
-  
+    print(cell.type) 
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), pretreatment.samples)
+    plot.aucs.hist(inx, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("Pretreatment %s ", cell.type))
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), posttreatment.samples)
+    plot.aucs.hist(inx, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/aucs/posttreatment_%s.pdf", cell.type), title= sprintf("Posttreatment %s ", cell.type))
+    inx =which(phenotype_sel.mod$assign.ident==cell.type)
+    plot.aucs.hist(inx, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/aucs/all_%s.pdf", cell.type), title= sprintf("All %s ", cell.type))
+
 }
 
 
@@ -448,9 +449,9 @@ plotSNE <- function(data= data_tsne.merge,col = c(2:114),color.col = "condition"
                     title="t-SNE",size=0.25,do.discrete=T, filename=NULL, perplexity=30, theta=0.5, pca = FALSE, max_iter=5000, num_threads=32, tsne =NULL){
   set.seed(9)
   require(ggplot2)
-  
+
   if(is.null(tsne)) tsne <- Rtsne(as.matrix(data[,col]), check_duplicates = FALSE, 
-                                  pca = pca, perplexity=perplexity, theta=theta, dims=2, max_iter = max_iter, num_threads = num_threads)
+                pca = pca, perplexity=perplexity, theta=theta, dims=2, max_iter = max_iter, num_threads = num_threads)
   
   d_tsne_1 = as.data.frame(tsne$Y)
   d_tsne_1=cbind(d_tsne_1,data[,color.col,drop=F])
@@ -475,23 +476,23 @@ plotSNE <- function(data= data_tsne.merge,col = c(2:114),color.col = "condition"
 znorm = function(xx) (xx - mean(xx,na.rm=T))/sd(xx,na.rm=T)
 
 plotSNE.array <- function(data= data_tsne.merge,col = c(2:114), color.cols = "condition",
-                          title="t-SNE",size=0.25,do.discrete=T, filename=NULL, perplexity=30, theta=0.5, pca = FALSE, max_iter=5000, normalize=TRUE, num_threads=32){
+    title="t-SNE",size=0.25,do.discrete=T, filename=NULL, perplexity=30, theta=0.5, pca = FALSE, max_iter=5000, normalize=TRUE, num_threads=32){
   set.seed(9)
-  
+
   tsne <- Rtsne(as.matrix(data[,col]), check_duplicates = FALSE, 
-                pca = pca, perplexity=perplexity, theta=theta, dims=2, max_iter = max_iter, num_threads = num_threads)
+    pca = pca, perplexity=perplexity, theta=theta, dims=2, max_iter = max_iter, num_threads = num_threads)
   dt1 = as.data.frame(tsne$Y)
   ps = list()
   for (color.col in color.cols) {
-    if(normalize) data[[color.col]] = znorm(data[[color.col]])
-    d_tsne_1=cbind(dt1,col=data[[color.col]], shape=data$shape)
-    
-    
-    
-    title.curr = sprintf("%s_%s", title, color.col)
-    
-    ## plotting the results without clustering
-    p=ggplot(d_tsne_1, aes(x=V1, y=V2)) +
+      if(normalize) data[[color.col]] = znorm(data[[color.col]])
+      d_tsne_1=cbind(dt1,col=data[[color.col]], shape=data$shape)
+      
+
+
+      title.curr = sprintf("%s_%s", title, color.col)
+
+  ## plotting the results without clustering
+      p=ggplot(d_tsne_1, aes(x=V1, y=V2)) +
       geom_point(size=size,aes(color=col, shape=as.factor(shape)), alpha=0.8) +
       scale_color_gradient2(low = "blue", mid = "white",
                             high = "red", space = "Lab" ) + 
@@ -500,61 +501,61 @@ plotSNE.array <- function(data= data_tsne.merge,col = c(2:114), color.cols = "co
       ggtitle(label = title.curr) +
       theme_light(base_size=20) +
       theme(axis.text.x=element_blank(),
-            axis.text.y=element_blank()) 
-    if (do.discrete) {
-      p<- p+ scale_colour_brewer(palette = "Set2")
+          axis.text.y=element_blank()) 
+      if (do.discrete) {
+        p<- p+ scale_colour_brewer(palette = "Set2")
     }
-    ##theme(legend.position = "none")
+  ##theme(legend.position = "none")
     if(!is.null(filename)) {
       filename.curr = sprintf("%s_%s.pdf", filename, color.col)
-      
+
       ggsave(file=filename.curr, p)
       ps[[color.col]]  = p
-    }
   }
-  list(d_tsne_1, ps)
+}
+list(d_tsne_1, ps)
 }
 
 
 color.clusters.features <- function(data, cluster,  color.cols = "condition",
-                                    title="t-SNE",size=0.25,do.discrete=T, filename=NULL, normalize=TRUE){
-  require(viridis)
-  
+    title="t-SNE",size=0.25,do.discrete=T, filename=NULL, normalize=TRUE){
+    require(viridis)
+
   dt1 = as.data.frame(cluster)
   colnames(dt1) = c("V1", "V2")
   ps = list()
   for (color.col in color.cols) {
-    if(normalize) data[[color.col]] = znorm(data[[color.col]])
-    d_cluster_1=cbind(dt1,col=data[[color.col]], shape=data$shape)
-    title.curr = sprintf("%s_%s", title, color.col)
-    ## plotting the results without clustering
-    p=ggplot(d_cluster_1, aes(x=V1, y=V2)) +
+      if(normalize) data[[color.col]] = znorm(data[[color.col]])
+      d_cluster_1=cbind(dt1,col=data[[color.col]], shape=data$shape)
+      title.curr = sprintf("%s_%s", title, color.col)
+  ## plotting the results without clustering
+      p=ggplot(d_cluster_1, aes(x=V1, y=V2)) +
       geom_point(size=size,aes(color=col, shape=as.factor(shape)), alpha=0.7) +
       # scale_color_gradient2(low = "blue", mid = "white",
-      # high = "red", space = "Lab" ) +
-      
+                            # high = "red", space = "Lab" ) +
+                          
       # guides(colour=guide_legend(override.aes=list(size=2))) +
       xlab("Dim1") + ylab("Dim2") +
       ggtitle(label = title.curr) +
       theme_light(base_size=20) +
       theme(axis.text.x=element_blank(),
-            axis.text.y=element_blank()) 
-    if (do.discrete) {
-      p<- p+ scale_colour_brewer(palette = "Set2")
+          axis.text.y=element_blank()) 
+      if (do.discrete) {
+        p<- p+ scale_colour_brewer(palette = "Set2")
     }else{
-      # p <- p+  scale_color_viridis() 
-      p <- p+ scale_color_gradientn(colours = heat.colors(20, alpha=0.7, rev=T))
-      
+         # p <- p+  scale_color_viridis() 
+         p <- p+ scale_color_gradientn(colours = heat.colors(20, alpha=0.7, rev=T))
+
     }
-    ##theme(legend.position = "none")
+  ##theme(legend.position = "none")
     if(!is.null(filename)) {
       filename.curr = sprintf("%s_%s.pdf", filename, color.col)
-      
+
       ggsave(file=filename.curr, p)
       ps[[color.col]]  = p
-    }
   }
-  ps
+}
+ps
 }
 
 # phenotype_sel.mod.back = phenotype_sel.mod
@@ -575,23 +576,23 @@ require(doMC)
 require(foreach)
 registerDoMC(cores = 32)
 foreach(perplexity =  perplexities) %dopar% {
-  foreach(theta =  thetas) %dopar% {
+foreach(theta =  thetas) %dopar% {
     for(pca in pcas){
-      locx=which(data_tsne.merge$assign.ident=="Monocyte")
-      title = sprintf("perplexity:%s pca:%s", perplexity, pca)
-      all.p = plotSNE(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title=title,
-                      color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=2000)
-      
+        locx=which(data_tsne.merge$assign.ident=="Monocyte")
+        title = sprintf("perplexity:%s pca:%s", perplexity, pca)
+        all.p = plotSNE(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title=title,
+            color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=2000)
+
     }
-  }
-  
+}
+
 }
 ## preplexity = 45, PCA=F, theta = 0 
 
 locx=which(data_tsne.merge$assign.ident=="Monocyte")
 all.p = plotSNE(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title="Monocyte Response",
-                color.col = "response", perplexity = 45, theta = 0, pca=FALSE, 
-                filename=sprintf("%s/%s_%s_final.pdf", tsne.dir, "Monocyte", "response"), max_iter=5000)
+    color.col = "response", perplexity = 45, theta = 0, pca=FALSE, 
+    filename=sprintf("%s/%s_%s_final.pdf", tsne.dir, "Monocyte", "response"), max_iter=5000)
 
 
 # locx=which(data_tsne.merge$assign.ident=="Monocyte")
@@ -606,8 +607,8 @@ immune.factors = colnames(data_tsne.merge)[9:121]
 # data_tsne.merge$stroke = ifelse(data_tsne.merge$response == "Responder",  4, 0)
 data_tsne.merge$shape = data_tsne.merge$response
 final.tsne.p = plotSNE.array(data = data_tsne.merge[locx,], col=9:121, size = 4, do.discrete=F,title="Monocyte Response",
-                             color.cols = immune.factors, perplexity = 45, theta = 0, pca=FALSE, max_iter=5000,
-                             , filename=sprintf("%s/%s", tsne.dir, "Final"))
+    color.cols = immune.factors, perplexity = 45, theta = 0, pca=FALSE, max_iter=5000,
+        , filename=sprintf("%s/%s", tsne.dir, "Final"))
 
 
 # plot expression 
@@ -641,8 +642,8 @@ data_tsne.genes = cbind(data_tsne.merge, icb.expression.interesting)
 tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/tsnes/Monocyte/genes.unorm"
 dir.create(tsne.dir)
 genes.p = plotSNE.array(data = data_tsne.genes[locx,], col=9:121, size = 4, do.discrete=F,title="Monocyte Response",
-                        color.cols = genes.final, perplexity = 45, theta = 0, pca=FALSE, max_iter=5000,
-                        , filename=sprintf("%s/%s", tsne.dir, "Final"), normalize=F)
+    color.cols = genes.final, perplexity = 45, theta = 0, pca=FALSE, max_iter=5000,
+        , filename=sprintf("%s/%s", tsne.dir, "Final"), normalize=F)
 
 
 
@@ -650,16 +651,16 @@ tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/tsnes/Monocyte/genes.tsne"
 dir.create(tsne.dir)
 registerDoMC(cores = 32)
 foreach(perplexity =  perplexities) %dopar% {
-  foreach(theta =  thetas) %dopar% {
+foreach(theta =  thetas) %dopar% {
     for(pca in pcas){
-      locx=which(data_tsne.genes$assign.ident=="Monocyte")
-      title = sprintf("perplexity:%s pca:%s", perplexity, pca)
-      all.p = plotSNE(data = data_tsne.genes[locx,], col=124:223, size = 2,do.discrete=F, title=title,
-                      color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=1000)
-      
+        locx=which(data_tsne.genes$assign.ident=="Monocyte")
+        title = sprintf("perplexity:%s pca:%s", perplexity, pca)
+        all.p = plotSNE(data = data_tsne.genes[locx,], col=124:223, size = 2,do.discrete=F, title=title,
+            color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=1000)
+
     }
-  }
-  
+}
+
 }
 
 
@@ -670,27 +671,27 @@ pcas= c(TRUE)
 tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/tsnes/Monocyte/genes.all.tsne"
 dir.create(tsne.dir)
 foreach(perplexity =  perplexities) %dopar% {
-  foreach(theta =  thetas) %dopar% {
+foreach(theta =  thetas) %dopar% {
     for(pca in pcas){
-      locx=which(data_tsne.all.genes$assign.ident=="Monocyte")
-      title = sprintf("perplexity:%s pca:%s", perplexity, pca)
-      all.p = plotSNE(data = data_tsne.all.genes[locx,], col=124:55860, size = 2,do.discrete=F, title=title,
-                      color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=1000)
-      
+        locx=which(data_tsne.all.genes$assign.ident=="Monocyte")
+        title = sprintf("perplexity:%s pca:%s", perplexity, pca)
+        all.p = plotSNE(data = data_tsne.all.genes[locx,], col=124:55860, size = 2,do.discrete=F, title=title,
+            color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=1000)
+
     }
-  }
-  
+}
+
 }
 ## UMAP
 library(uwot) 
 
 plotUMAP <- function(data, col = c(2:114), color.col = "condition",
-                     title="UMAP",size=0.25, do.discrete=T, filename=NULL, n_neighbors =  15, learning_rate = 1, init = "spectral", min_dist = .01, pca = NULL,  n_threads=32){
+                    title="UMAP",size=0.25, do.discrete=T, filename=NULL, n_neighbors =  15, learning_rate = 1, init = "spectral", min_dist = .01, pca = NULL,  n_threads=32){
   set.seed(9)
-  
+
   umap.model <- umap(as.matrix(data[,col]), 
-                     pca = pca, n_neighbors =  n_neighbors, learning_rate = learning_rate, init = init, min_dist = min_dist, n_threads = n_threads, ret_model=T)
-  
+                pca = pca, n_neighbors =  n_neighbors, learning_rate = learning_rate, init = init, min_dist = min_dist, n_threads = n_threads, ret_model=T)
+
   
   d_umap_1 = as.data.frame(umap.model$embedding)
   d_umap_1=cbind(d_umap_1,data[,color.col,drop=F])
@@ -719,24 +720,24 @@ learning_rates = c(.1,.01,1)
 tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/umaps/Monocyte"
 dir.create(tsne.dir)
 foreach(min_dist =  min_dists) %dopar% {
-  foreach(n_neighbor =  n_neighbors) %dopar% {
-    foreach(pca =  pcas) %dopar% {
-      foreach(learning_rate =  learning_rates) %dopar% {
-        all.p = plotUMAP(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title="Monocyte Response",
-                         color.col = "response",
-                         n_neighbors =  n_neighbor, learning_rate = learning_rate, init = "spectral", min_dist = min_dist, pca = pca, 
-                         filename=sprintf("%s/%s_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", min_dist, n_neighbor, ifelse(is.null(pca), 0, pca), learning_rate))
-      }}}}
+foreach(n_neighbor =  n_neighbors) %dopar% {
+foreach(pca =  pcas) %dopar% {
+foreach(learning_rate =  learning_rates) %dopar% {
+    all.p = plotUMAP(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title="Monocyte Response",
+        color.col = "response",
+         n_neighbors =  n_neighbor, learning_rate = learning_rate, init = "spectral", min_dist = min_dist, pca = pca, 
+        filename=sprintf("%s/%s_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", min_dist, n_neighbor, ifelse(is.null(pca), 0, pca), learning_rate))
+}}}}
 
 
 foreach(min_dist =  min_dists) %dopar% {
-  foreach(n_neighbor =  n_neighbors) %dopar% {
-    foreach(learning_rate =  learning_rates) %dopar% {
-      all.p = plotUMAP(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title="Monocyte Response",
-                       color.col = "response",
-                       n_neighbors =  n_neighbor, learning_rate = learning_rate, init = "spectral", min_dist = min_dist, pca = NULL, 
-                       filename=sprintf("%s/%s_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", min_dist, n_neighbor, "NULL", learning_rate))
-    }}}
+foreach(n_neighbor =  n_neighbors) %dopar% {
+foreach(learning_rate =  learning_rates) %dopar% {
+    all.p = plotUMAP(data = data_tsne.merge[locx,], col=9:121, size = 2,do.discrete=F, title="Monocyte Response",
+        color.col = "response",
+         n_neighbors =  n_neighbor, learning_rate = learning_rate, init = "spectral", min_dist = min_dist, pca = NULL, 
+        filename=sprintf("%s/%s_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", min_dist, n_neighbor, "NULL", learning_rate))
+}}}
 
 
 
@@ -748,15 +749,15 @@ tsne.dir = "~/project/deeplearning/icb/data/Getz_scRNA/data/Monocytes/tsnes/all.
 title = "Monocyte all genes"
 locx=which(data_tsne.merge$assign.ident=="Monocyte")
 all.genes.tsne = plotSNE(data = data_tsne.all.genes[locx,], col=124:55858, size = 2,do.discrete=F, title=title,
-                         color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/final_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=1000, num_threads=10)
+            color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/final_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=1000, num_threads=10)
 
 
 n_neighbor = 15; learning_rate = 1; min_dist = 0.01; pca = 50
 
 all.umap.tsne= plotUMAP(data = data_tsne.all.genes[locx,], col=124:55858, do.discrete=F, title="Monocyte Response",
-                        color.col = "response",
-                        n_neighbors =  n_neighbor, learning_rate = learning_rate, init = "spectral", min_dist = min_dist, pca = NULL, 
-                        filename=sprintf("%s/%s_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", min_dist, n_neighbor, "NULL", learning_rate))
+        color.col = "response",
+         n_neighbors =  n_neighbor, learning_rate = learning_rate, init = "spectral", min_dist = min_dist, pca = NULL, 
+        filename=sprintf("%s/%s_%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", min_dist, n_neighbor, "NULL", learning_rate))
 
 
 
@@ -774,7 +775,7 @@ features.final = intersect(sc.genes, c(feature.sel, alt.genes))
 
 data_tsne.all.genes$shape = data_tsne.merge$response
 xx = color.clusters.features( data=data_tsne.all.genes[locx,], cluster=all.umap.tsne[[1]]$embedding,  color.cols = features.final,
-                              title="t-SNE",size=2, filename=sprintf("%s/%s", tsne.dir, "gene"), normalize=F, do.discrete=F)
+    title="t-SNE",size=2, filename=sprintf("%s/%s", tsne.dir, "gene"), normalize=F, do.discrete=F)
 
 
 
@@ -783,12 +784,12 @@ xx = color.clusters.features( data=data_tsne.all.genes[locx,], cluster=all.umap.
 ### perform kmean clustering
 # centers = 3; iter.max=10;  nstart=20
 perform.kmeans = function(data, col = c(1:2), title = "kmean", centers = 3, iter.max=10,  nstart=20, size=0.25, filename = NULL){
-  set.seed(20)
-  colnames(data)[col] = c("V1", "V2")
-  dataCluster <- kmeans(data[, col,drop=T], centers= centers, iter.max=iter.max,  nstart=nstart)
-  data$clust = as.factor(dataCluster$cluster)
-  
-  p=ggplot(data, aes(x=V1, y=V2)) +
+    set.seed(20)
+    colnames(data)[col] = c("V1", "V2")
+    dataCluster <- kmeans(data[, col,drop=T], centers= centers, iter.max=iter.max,  nstart=nstart)
+    data$clust = as.factor(dataCluster$cluster)
+
+    p=ggplot(data, aes(x=V1, y=V2)) +
     geom_point(size=size,aes(color=clust), alpha=0.8) +
     guides(colour=guide_legend(override.aes=list(size=2))) +
     xlab("Dim1") + ylab("Dim2") +
@@ -796,7 +797,7 @@ perform.kmeans = function(data, col = c(1:2), title = "kmean", centers = 3, iter
     theme_light(base_size=20) +
     theme(axis.text.x=element_blank(),
           axis.text.y=element_blank()) 
-  # p<- p+ scale_colour_brewer(palette = "Set2")
+    # p<- p+ scale_colour_brewer(palette = "Set2")
   ##theme(legend.position = "none")
   if(!is.null(filename)) ggsave(file=filename, p)
   dataCluster
@@ -810,9 +811,9 @@ final.tsne.map = final.tsne.p[[1]]
 kmean.dir = "~/project/deeplearning/icb/data/Getz_scRNA/data/Monocytes/tsnes/kmeans/"
 dir.create(kmean.dir)
 out = foreach(centers =  centers.all) %dopar% {
-  all.p = perform.kmeans(
-    data = final.tsne.map, col = c(1:2), centers = centers, iter.max=iter.max,  nstart=nstart, size=2, title="Monocyte kmean",
-    filename=sprintf("%s/%s_%s.pdf", kmean.dir, "Monocyte", centers))
+    all.p = perform.kmeans(
+        data = final.tsne.map, col = c(1:2), centers = centers, iter.max=iter.max,  nstart=nstart, size=2, title="Monocyte kmean",
+        filename=sprintf("%s/%s_%s.pdf", kmean.dir, "Monocyte", centers))
 }
 
 
@@ -827,23 +828,22 @@ data.exp <- normalize(data.exp) # not -working
 # Defining clusters and markers:
 library(scran)
 data.DI = data_tsne.all.genes[locx,9:121]
-data.gene = 
-  snn.gr <- buildSNNGraph(t(data.DI))
+snn.gr <- buildSNNGraph(t(data.DI))
 data.tsne$clust = factor(igraph::cluster_walktrap(snn.gr)$membership)
 p=ggplot(data.tsne, aes(x=V1, y=V2)) +
-  geom_point(size=size,aes(color=clust), alpha=0.8) +
-  guides(colour=guide_legend(override.aes=list(size=2))) +
-  xlab("Dim1") + ylab("Dim2") +
-  ggtitle(label = title) +
-  theme_light(base_size=20) +
-  theme(axis.text.x=element_blank(),
-        axis.text.y=element_blank()) 
+geom_point(size=size,aes(color=clust), alpha=0.8) +
+guides(colour=guide_legend(override.aes=list(size=2))) +
+xlab("Dim1") + ylab("Dim2") +
+ggtitle(label = title) +
+theme_light(base_size=20) +
+theme(axis.text.x=element_blank(),
+  axis.text.y=element_blank()) 
 if(!is.null(filename)) ggsave(file=filename, p)
 
 library(scater)
 monocyte.exp  = data.exp[,locx]
 sce = SingleCellExperiment(
-  assays = list(counts = monocyte.exp))
+    assays = list(counts = monocyte.exp))
 
 
 ave.counts <- rowMeans(counts(sce))
@@ -862,7 +862,7 @@ sce1 = normalize(sce1)
 
 
 # sce <- SCESet(countData=monocyte.exp)
-
+ 
 my.clusters = as.numeric(data.tsne$clust)
 clust.col <- rainbow(max(my.clusters))
 markers <- findMarkers(sce1, data.tsne$clust)
@@ -884,8 +884,8 @@ my.clusters1 = my.clusters[order(my.clusters)]
 
 pdf("temp2.pdf")
 heatmap3(heat.vals.reorder,   cexRow=0.6,
-         ColSideColors=clust.col[my.clusters1], Rowv = T, Colv=NA, showColDendro=F, showRowDendro=F) 
-legend("bottomleft", col=clust.col, legend=sort(unique(my.clusters1)), pch=16)
+    ColSideColors=clust.col[my.clusters1], Rowv = T, Colv=NA, showColDendro=F, showRowDendro=F) 
+    legend("bottomleft", col=clust.col, legend=sort(unique(my.clusters1)), pch=16)
 dev.off()
 
 
@@ -895,7 +895,7 @@ dt.summary = dt.summary[order(clust)]
 
 dt.summary$clust = factor(dt.summary$clust, levels=seq(7,1))
 p = ggplot(data=dt.summary, aes(x=clust, y=V1)) + 
-  geom_col(aes(fill=V1)) + coord_flip() + theme_minimal() 
+geom_col(aes(fill=V1)) + coord_flip() + theme_minimal() 
 ggsave(file="temp3.pdf", p)
 
 
@@ -908,8 +908,8 @@ my.clusters1 = my.clusters[order(my.clusters)]
 
 pdf("~/project/deeplearning/icb/data/Getz_scRNA/data/Monocytes/immune_factor_heatmap.pdf")
 heatmap3(monocyte.immune.reorder,   cexRow=0.6,
-         ColSideColors=clust.col[my.clusters1], Rowv = T, Colv=NA, showColDendro=F, showRowDendro=F) 
-# legend("bottomleft", col=clust.col, legend=sort(unique(my.clusters1)), pch=16)
+    ColSideColors=clust.col[my.clusters1], Rowv = T, Colv=NA, showColDendro=F, showRowDendro=F) 
+    # legend("bottomleft", col=clust.col, legend=sort(unique(my.clusters1)), pch=16)
 dev.off()
 
 
@@ -930,16 +930,16 @@ require(doMC)
 require(foreach)
 registerDoMC(cores = 32)
 foreach(perplexity =  perplexities) %dopar% {
-  foreach(theta =  thetas) %dopar% {
+foreach(theta =  thetas) %dopar% {
     for(pca in pcas){
-      locx=which(data_tsne.merge$assign.ident=="Monocyte")
-      title = sprintf("perplexity:%s pca:%s", perplexity, pca)
-      all.p = plotSNE(data = data_tsne.merge[locx,], col=58:121, size = 2,do.discrete=F, title=title,
-                      color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=2000)
-      
+        locx=which(data_tsne.merge$assign.ident=="Monocyte")
+        title = sprintf("perplexity:%s pca:%s", perplexity, pca)
+        all.p = plotSNE(data = data_tsne.merge[locx,], col=58:121, size = 2,do.discrete=F, title=title,
+            color.col = "response", perplexity = perplexity, theta = theta, pca=pca, filename=sprintf("%s/%s_%s_%s_%s_%s.pdf", tsne.dir, "Monocyte", "response", perplexity, pca, theta), max_iter=2000)
+
     }
-  }
-  
+}
+
 }
 
 

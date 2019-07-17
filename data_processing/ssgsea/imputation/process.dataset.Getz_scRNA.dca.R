@@ -1,34 +1,37 @@
 
 source("~/project/deeplearning/icb/deepImmune/source.R")
 
-dataset_ssgsea =  "~/project/deeplearning/icb/data/Getz_scRNA/data/GSE120575_Sade_Feldman_melanoma_single_cells_TPM_GEO.txt"
+dataset_ssgsea =  "/liulab/asahu/data/ssgsea/xiaoman/getz/dca/mean_norm.tsv"
 dataset_phenotype =  "~/project/deeplearning/icb/data/Getz_scRNA/data/cell_label.csv"
 options(error=recover)
-dataset.prefix = "Getz_scRNA"
+dataset.prefix = "dca"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/getz/cell_label.csv"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
-dataset_ssgsea =  "/liulab/asahu/data/ssgsea/xiaoman/getz/GSE120575_Sade_Feldman_melanoma_single_cells_TPM_GEO.txt"
+xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
 
-output.dir = sprintf("~/project/deeplearning/icb/data/%s", dataset.prefix)
-pca_obj.RData = "/homes6/asahu/project/deeplearning/icb/data/tcga.blca/neoantigen/pca_obj.RData"
+load(phenotype_)
 
-pca_sel_obj.RData = "~/project/deeplearning/icb/data/tcga/neoantigen.v2/pca_sel_obj.RData"
-ref.expression.RData = "~/project/deeplearning/icb/data/tcga/neoantigen.v2/ref.expression.RData"
-ref.cancertype.RData = "~/project/deeplearning/icb/data/tcga/neoantigen.v2/ref.cancertype.RData"
+output.dir = sprintf("~/project/deeplearning/icb/data/Getz_scRNA/%s", dataset.prefix)
+pca_obj.RData = "~/project/deeplearning/icb/data/tcga/scrna.v1//pca_obj.RData"
+
+pca_sel_obj.RData = "~/project/deeplearning/icb/data/tcga/scrna.v1/pca_sel_obj.RData"
+ref.expression.RData = "~/project/deeplearning/icb/data/tcga/scrna.v1/ref.expression.RData"
+ref.cancertype.RData = "~/project/deeplearning/icb/data/tcga/scrna.v1/ref.cancertype.RData"
+match.dataset.header = "~/project/deeplearning/icb/data/tcga/scrna.v1/dataset.txt"
 library(data.table)
 dir.create(output.dir, showWarnings = FALSE)
 
 
-dataset_ssgsea_temp = fread(dataset_ssgsea, skip=2)
-headers = fread(dataset_ssgsea, nrow=2)
+dataset_ssgsea_temp = fread(dataset_ssgsea)
 dataset_phenotype = fread(dataset_phenotype)
 # xx = load(phenotype_order); phenotype_order = eval(parse(text=xx))
 dataset_ssgsea_mat= t(as.matrix(dataset_ssgsea_temp[,seq(2,ncol(dataset_ssgsea_temp)),with=F]))
 setnames(dataset_ssgsea_temp, 1, "gene_name")
 colnames(dataset_ssgsea_mat) = dataset_ssgsea_temp$gene_name
-
+rownames(dataset_ssgsea_mat)[16292]
 dataset_ssgsea_mat = dataset_ssgsea_mat[-16292,] # last column is NAs
-rownames(dataset_ssgsea_mat) = unlist(headers[1])[-1]
+rownames(dataset_ssgsea_mat) = colnames(dataset_ssgsea_temp)[-1]
+# rownames(dataset_ssgsea_mat) = unlist(headers[1])[-1]
 tpm = T
 pca = T
 if(!tpm){
@@ -96,7 +99,7 @@ if(!tpm){
     oxphos.score = oxphos.dt[match(common.patients,object)]$Cor
 
     phenotype_sel.mod = cbind(phenotype_sel.mod, cibersort.mat,  dataset_ssgsea_sel[, c("CD274", "PDCD1")])
-    phenotype_sel.mod = cbind(phenotype_sel.mod, oxphos.score)
+    phenotype_sel.mod = cbind(phenotype_sel.mod, oxphos_score=oxphos.score)
 
 
 
@@ -165,14 +168,36 @@ dataset.small = cbind(phenotype.ext.mat[,1,with=F], general.pcs, pca_top, "MLH1"
 
 dataset = dataset.small
 
+### add additonal columns to the dataset
+match.dataset.header = colnames(fread(match.dataset.header, nrows=1))
 
-write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
+# genes
+checkpoint.genes = setdiff(intersect(match.dataset.header, dataset_ssgsea_temp$gene_name), colnames(dataset.small))
+missing.genes = setdiff(match.dataset.header[seq(189,518)], dataset_ssgsea_temp$gene_name)
+
+
+dataset_ssgsea_temp1 = dataset_ssgsea_temp[gene_name %in% checkpoint.genes]
+gene_name_ord = dataset_ssgsea_temp$gene_name[dataset_ssgsea_temp$gene_name%in% checkpoint.genes]
+dataset_ssgsea_mat1= t(as.matrix(dataset_ssgsea_temp1[,seq(2,ncol(dataset_ssgsea_temp1)),with=F]))
+colnames(dataset_ssgsea_mat1) = gene_name_ord
+rownames(dataset_ssgsea_mat1) = patient.name
+dataset_checkpoint1 = dataset_ssgsea_mat1[common.patients,]
+# phenotype data
+
+
+dataset_genes_missing = impute.closest.gene(missing.genes,dataset_ssgsea_sel, exp2.dt=fread("/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"))
+dataset.curr = cbind(dataset, dataset_checkpoint1, dataset_genes_missing)
+# NA columns
+dataset.matched = match.matrix.col(dataset.curr, match.dataset.header)
+
+dataset.new = data.table(dataset.matched)
+write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset.new,
     row.names = F, col.names =T,  sep="\t", quote=F )
 
 write.table(file=paste0(output.dir, "/sample_names.txt"),x = common.patients,
     row.names = F, col.names =T,  sep="\t", quote=F )
-rand_inx = sample(nrow(dataset))
-dataset_shuffle = dataset[rand_inx,]
+rand_inx = sample(nrow(dataset.new))
+dataset_shuffle = dataset.new[rand_inx,]
 train.inx = 1:ceiling(.85 * nrow(dataset_shuffle))
 val.inx = ceiling(.85 * nrow(dataset_shuffle)):nrow(dataset_shuffle)
 
@@ -227,6 +252,7 @@ plot.heatmap = function(dat, filename, height = 10, width =7){
   dev.off()
 }
 
+  heatmap3(dat, Rowv=as.dendrogram(hr),  Colv=as.dendrogram(hc), scale="none", balanceColor=T, showRowDendro=F ,   showColDendro=F)
 indexes = colnames(icb.phenotype)[2:115]
 
 out = lapply(cell.types, function(cc) {

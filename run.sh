@@ -359,3 +359,17 @@ python evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir
 # in pixie 
 
 python evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-233202/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-233202/best.pth.tar
+
+python evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir  ../data/tcga/neoantigen.v2/attention/tensorboardLog/restored_20190627-185716/ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/restored_20190627-185716/best.pth.tar
+
+
+dca /homes6/asahu/project/deeplearning/icb/data/Getz_scRNA/data/count.mat.txt /homes6/asahu/project/deeplearning/icb/data/Getz_scRNA/data/dca_impute/
+
+
+# tar -xf /rna-seq/dbGAP_tar/Post_P16_CD45+.tar --wildcards --no-anchored '*.tab'  -C /rna-seq/counts/.  
+
+# scRNA version deepImmune 
+
+python train.py  --data_dir  ../data/tcga//scrna.v1/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v1/. 
+
+python evaluate.py  --data_dir  ../data/Getz_scRNA/dca/datasets_list.txt --model_dir ../data/Getz_scRNA/dca/.  --restore_file ../data/tcga/scrna.v1/saved_model/20190715-115243/best.pth.tar

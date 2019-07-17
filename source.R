@@ -87,24 +87,26 @@ qnorm.array <- function(mat)
     mat.back
 }
 
-impute.closest.gene = function(common.genes, dataset_ssgsea_mat){
+impute.closest.gene = function(common.genes, dataset_ssgsea_mat, exp2.dt= NULL){
 	  genes.imputed = setdiff(common.genes, colnames(dataset_ssgsea_mat))
 	  if(length(genes.imputed) > 0) {
 	  gene1 = colnames(dataset_ssgsea_mat)
-	  exp2.dt = fread("/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt")
+	  if(is.null(class(exp2.dt))){
+	  	exp2.dt = fread("/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt")
+	  }
 	  exp2 = t(as.matrix(exp2.dt[,seq(2,ncol(exp2.dt)),with=F]))
 	  setnames(exp2.dt, 1, "gene_name")
 	  colnames(exp2 ) = exp2.dt$gene_name
-	  impute = exp2[,genes.imputed]
+	  impute = exp2[,genes.imputed, drop=F]
 	  only.genes = intersect(gene1, exp2.dt$gene_name)
-	  dataset_ssgsea_mat = dataset_ssgsea_mat[,only.genes]
-	  exp.present = exp2[,only.genes]
+	  dataset_ssgsea_mat = dataset_ssgsea_mat[,only.genes, drop=F]
+	  exp.present = exp2[,only.genes,drop=F]
 	  cors = cor(impute, exp.present)
 	  genes.inx = apply(cors,1, 
 	  	function(tt) ifelse(sum(!is.na(tt)), which.max(tt), NA)
 	  	)
 
-	  imputed = dataset_ssgsea_mat[,genes.inx]
+	  imputed = dataset_ssgsea_mat[,genes.inx, drop=F]
 	  imputed[is.na(imputed)] = 0
 	  colnames(imputed) = genes.imputed
 	  merged = cbind(dataset_ssgsea_mat, imputed) 
@@ -365,4 +367,18 @@ theme_geometry <- function(xvals, yvals, xgeo = 0, ygeo = 0,
   #Add theme
   #theme.list[[3]] <- 
   return(theme.list)
+}
+
+
+match.matrix.col = function(dat, header, fill=NA) {
+	"match column of dat to header and fill with NA"
+	dat.out = matrix(fill, ncol=length(header), nrow=nrow(dat))
+	colnames(dat.out) = header
+	aa = intersect(colnames(dat),header)
+	xx = match(header,colnames(dat))
+	match1.inx = which(!is.na(xx))
+	match2.inx = xx[match1.inx]
+	# match.inx = match(colnames(dat),header)
+	dat.out[,match1.inx] = as.matrix(dat[,match2.inx, with=F])
+	dat.out
 }

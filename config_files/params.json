@@ -1,46 +1,53 @@
 {
-    // Note all the string value starting with "e" shall be considered as python expressin and will be evaluated using eval in python e.g. var = "e[1,2]" will be converted to var = [1,2]
-    "learning_rate": 1e-3,
+    // Note all the string value starting with "e" shall be considered as python expression and will be evaluated using eval in python e.g. var = "e[1,2]" will be converted to var = [1,2]
+    "learning_rate": 1e-6,
     "weight_decay": 0,
     //weight decay aka. l2-regulatrizer on parameters
     "batch_size": 50,
-    "use_residual": false,
-    //Whether to use residual network 
-    "num_epochs": 100,
+    "use_residual": true,
+    //Whether to use residual network
+    "num_epochs": 500,
     "dropout_rate": 0.3,
-    "embedding_size": 16,
+    "embedding_size": 64,
+    "embedding_log" : 1,
     "batch_by_type" : false,
     "save_summary_steps": 2,
-    "embedding_log" : 1,
     "aggregate": "min",
     "best_model_metric" : "negative_loss",
     "metrics": "all",
+    "shuffle": true,
+    "normalize_input" : true,
     // "metrics": "e[['OS', 'c_index', 0, 0],['Response', 'auc', -1, -1]]",
     // "metrics": "e[['OS', 'c_index', 0, 0],['OS', 'correlation', 1, 2],['SNV.Neoantigens', 'correlation', 2, 3],['Nonsilent.Mutation.Rate', 'correlation', 3, 4], ['Response', 'auc', 4, 5]]",
-     // Format if metrices ['name of. variable', 'metrics', 'index of predicted data', 'index of real data'. Support multiple metrics.
-    "l1_regularizer" : 0,
-    "l2_regularizer" : 0,
-    "pipeline_optimization" : 0,
-    "out_channels_list": [],
-    "kernel_sizes": [5, 5],
-    "strides": [1, 3],
-    "FC_size_list": [32, 16, 16],
-    "attention_FC_size_list": [32, 16, 16],
-    "decoder_FC_size_list": [],
-    // decoder assumed no colovution layer and configurable internal layers
-    "input_indices": "e list(range(2-1,62-1)) + list(range(66-1, 99-1)) + list(range(138-1,169-1))",
-    //input indces:  None (implies all of the input indices) or  any python expression 
-    "embedding_indices": "e list(range(63))",
-    //embedding_indices:  embedding indices relative to input indices 
-    "attention_indices": "e list(range(0,2)) + list(range(63, 94)) ",
-    //attention_indices:  attention indices relative to input indices 
-    "survival_indices": "e[]",
-    "label_index" : [0,42],
-    // reponse information labelling the tsne
-    // "continuous_phenotype_indices" : "e list(range(89-1,126-1))",
-    "continuous_phenotype_indices" : "e list(range(127-1,137-1))",
-    "binary_phenotype_indices": "e[]",
-    "loss_excluded_from_training" : "e[]",
-    "num_workers": 4
+    // Format if metrices ['name of. variable', 'metrics', 'index of predicted data', 'index of real data'. Support multiple metrics.        "l1_regularizer" : 0,
+        "l2_regularizer" : 0,
+        "tensorboardlog": [1,1],
+        "pipeline_optimization" : 0,
+        "out_channels_list": [],
+        "kernel_sizes": [5, 5],
+        "strides": [1, 3],
+        "FC_size_list": [64, 64, 64, 64],
+        "attention_FC_size_list": [32, 16, 16],
+        "decoder_FC_size_list": [64],
+        // decoder assumed no colovution layer and configurable internal layers
+        // "input_indices": "e list(range(2-2,62-1)) + list(range(66-2, 99-1))",
+        "input_indices": "e list(range(2-2,518-1))",
+        //input indces: Union of input of embedding and attention indices. None (implies all of the input indices) or  any python expression. This assumes first column (cancertype) is removed and so PC1=Column0,
+        "embedding_indices": "e list(range(61)) + list(range(89-2, 90-1)) + list(range(97-2, 99-1)) + list(range(189-2, 518-1))",
+        //embedding_indices:  embedding indices relative to input indices
+        "attention_indices": "e list(range(0,2)) + list(range(63, 94)) ",
+        //attention_indices:  attention indices relative to input indices
+        "survival_indices": "e list(range(170-2,177-1))",
+        "label_index" : [0, 10],
+        // reponse information labelling the tsne
+        "continuous_phenotype_indices" : "e list(range(69-2,137-1)) +  list(range(178-2, 518-1))",
+        // "continuous_phenotype_indices" : "e list(range(127-1,137-1))",
+        "binary_phenotype_indices": "e[]",
+        "loss_excluded_from_training" : "e list(range(4,37)) + list(range(39, 45)) + list(range(53,64)) + list(range(67,413))",
+        // loss_excluded_from_training is ordered as output of neural network: survival, continuous, binary.  
+        // 37-38
+        // 45-52
+        // 64-66
 
+        "num_workers": 4
 }

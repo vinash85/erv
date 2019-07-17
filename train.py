@@ -237,7 +237,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                                'outputs_optim_dict': outputs_optimizer.state_dict()
                                },
                               is_best=is_best,
-                              checkpoint=tensorboard_dir)
+                              checkpoint=tensorboard_dir, epoch=epoch + 1)
 
         # If best_eval, best_save_path
         if is_best:

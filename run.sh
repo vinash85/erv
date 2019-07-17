@@ -373,3 +373,8 @@ dca /homes6/asahu/project/deeplearning/icb/data/Getz_scRNA/data/count.mat.txt /h
 python train.py  --data_dir  ../data/tcga//scrna.v1/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v1/. 
 
 python evaluate.py  --data_dir  ../data/Getz_scRNA/dca/datasets_list.txt --model_dir ../data/Getz_scRNA/dca/.  --restore_file ../data/tcga/scrna.v1/saved_model/20190715-115243/best.pth.tar
+
+
+python evaluate.py  --data_dir  ../data/tcga//scrna.v1/datasets_test_list.txt --model_dir ../data/tcga/scrna.v1/saved_model/20190715-115243/ --restore_file ../data/tcga/scrna.v1/saved_model/20190715-115243/best.pth.tar
+
+python train.py  --data_dir  ../data/tcga//scrna.v1/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v1/.  --restore_file ../data/tcga/scrna.v1/tensorboardLog/20190715-115243/best.pth.tar --tensorboard_prefix boosting_

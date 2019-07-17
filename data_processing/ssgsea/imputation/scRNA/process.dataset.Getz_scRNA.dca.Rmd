@@ -8,12 +8,12 @@ author: Avinash Das Sahu
 library(data.table)
 source("/homes6/asahu/project/deeplearning/icb/deepImmune/source.R")
 getwd()
-icb.phenotype = fread("~/project/deeplearning/icb/data/Getz_scRNA/val_prediction.csv")
-dataset.prefix = "Getz_scRNA"
+icb.phenotype = fread("~/project/deeplearning/icb/data/Getz_scRNA/dca/val_prediction.csv")
+dataset.prefix = "Getz_scRNA_dca"
 icb.phenotype = icb.phenotype[unlist(icb.phenotype$sample_name) +1]
 ```
 ```{r}
-load("~/project/deeplearning/icb/data/Getz_scRNA/phenotype_data.RData")
+load("~/project/deeplearning/icb/data/Getz_scRNA/dca/phenotype_data.RData")
 resp = fread("/liulab/asahu/data/ssgsea/xiaoman/getz/GSE120575_patient_ID_single_cells.txt", skip=19)
 xx = paste0("V",1:35)
 colnames(resp)[1:35] = xx
@@ -22,7 +22,167 @@ resp$V2 = gsub(resp$V2, pattern="-", replacement=".")
 resp.matched=resp[match(phenotype_sel.mod$patient.name, resp$V2)]
 response = resp.matched$V6
 response.bin = ifelse(response=="Responder", 1, 0)
+
+library(pROC)
+cell.types = unique((phenotype_sel.mod$assign.ident) )
+pre_post = resp$V5
+pretreatment.samples = grep(pre_post, pattern="^Pre")
+posttreatment.samples = grep(pre_post, pattern="^Post")
+
 ```
+
+## plot AUCs 
+```{r}
+#stored top genes predictive of responder vs. non responders
+load("/liulab/asahu/data/ssgsea/xiaoman/getz/topaucs.genes.RData")
+```
+
+
+```{r}
+calc.stat.new = function(response.curr, value){
+        aa = tryCatch(
+            as.numeric(auc(response.curr, value, levels=c(0,1))),
+            error = function(e) NA
+        )
+        bb = tryCatch(
+            wilcox.test(value[response.curr==0], value[response.curr==1], levels=c(0,1))$p.value,
+            error = function(e) NA
+        )
+        c(aa,bb)
+}
+
+plot.aucs.hist = function(inx, indexes, filename, title, aucs.dt = NULL){
+  
+  response.curr = response.bin[inx]
+  if(is.null(aucs.dt)){
+    cor.monocytes = cor(icb.expression.matched[inx,] ,response.bin[inx])
+    genes.sel = order(abs(cor.monocytes),decreasing=T)[1:500]
+    gene.select = unique( c(genes.sel, sample.int(length(cor.monocytes), 1000)))
+# aa = auc( response.bin[inx], icb.expression.matched[inx, "HLA-G"]  )
+    out = mclapply(gene.select, function(tt){
+        value.all = icb.expression.matched[,tt]
+        calc.stat.new(response.curr, value.all[inx]) 
+        }, mc.cores=32
+        )
+
+###############
+# for each cell type create a figure for comparison of expression 
+###############
+    aucs.dt = do.call(rbind, out)
+    aucs.dt = data.table(aucs.dt)
+    aucs.dt$marker = dataset_ssgsea_temp$gene_name[gene.select]
+     
+    aucs.dt[,aucs:=ifelse( V1 < 0.5, 1-V1, V1)]
+  }
+  aucs.dt = aucs.dt[,.(V1, V2, marker, label, aucs)]
+  aucs.dt$label = "gene"
+    
+    out = mclapply(indexes, function(tt){
+        value.all = icb.phenotype[[tt]]
+        calc.stat.new(response.curr, value.all[inx]) 
+        }, mc.cores=32
+        )
+    di.aucs.dt = do.call(rbind, out)
+    di.aucs.dt = data.table(di.aucs.dt)
+    di.aucs.dt$marker = indexes
+    di.aucs.dt$label = "signature"
+    di.aucs.dt = di.aucs.dt[!is.na(V1)]
+    di.aucs.dt[,aucs:=ifelse( V1 < 0.5, 1-V1, V1)]
+    pre_treatment.aucs = rbind(aucs.dt, di.aucs.dt)
+    pre_treatment.aucs = pre_treatment.aucs[order(aucs)]
+    setnames(pre_treatment.aucs, "V2", "P")
+    pre_treatment.aucs[,logP:=-log10(P)]
+    require(ggrepel)
+    m1 = di.aucs.dt[which(aucs > 0.7)]
+    if(nrow(m1) > 25) m1 = di.aucs.dt[order(aucs,decreasing=T)][1:25]
+    if(nrow(m1) < 2) m1 = di.aucs.dt[order(aucs,decreasing=T)[1:5]]
+    m2 = aucs.dt[which(aucs > 0.7)]
+    if(nrow(m2) > 20) m2 = aucs.dt[order(aucs,decreasing=T)[1:20]]
+    if(nrow(m2) < 2) m2 = aucs.dt[order(aucs,decreasing=T)[1:5]]
+
+
+    pre_treatment_subset = pre_treatment.aucs[marker %in% c(m1$marker, m2$marker)]
+    p = ggplot(pre_treatment.aucs, aes(x = aucs, y = logP)) +
+    geom_point(aes(color=as.factor(label)), alpha=0.5) +
+
+    theme_minimal(base_size = 12) + theme(legend.position = "bottom") +
+    labs(x="AUC", y="Significance", title=title)+
+    geom_text_repel(
+        data = pre_treatment_subset,
+        aes(x = aucs, y = logP, label = marker),
+        size = 3,
+        box.padding = unit(0.35, "lines"),
+        point.padding = unit(0.3, "lines")
+        )  
+
+    ggsave(p, file=filename, width =7, height = 7)
+    p
+}
+
+dir.create("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/")
+indexes = grep(colnames(icb.phenotype), pattern = "embedding", value = T)
+require(doMC)
+require(foreach)
+registerDoMC(cores = 32)
+Pre.p = Post.p = All.p = list()
+library(parallel)
+# out = foreach(cell.type = cell.types) %dopar% { 
+for(cell.type in cell.types) { 
+    print(cell.type)
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), pretreatment.samples)
+    aucs.dt = topaucs.genes[treat=="Pre" & label==cell.type]
+    Pre.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("Pretreatment %s", cell.type), aucs.dt = aucs.dt)
+    
+    inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), posttreatment.samples)
+    aucs.dt = topaucs.genes[treat=="Post" & label==cell.type]
+    Post.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("Posttreatment %s  ", cell.type), aucs.dt = aucs.dt)
+    
+    
+    inx =which(phenotype_sel.mod$assign.ident==cell.type)
+    aucs.dt = topaucs.genes[treat=="All" & label==cell.type]
+    All.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("All %s  ", cell.type), aucs.dt = aucs.dt)
+
+}
+
+```
+
+```{r}
+pdf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/Pre.pdf", width=15, height=15)
+multiplot(plotlist = Pre.p, cols = 3)
+dev.off()
+```
+
+```{r}
+pdf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/Post.pdf", width=15, height=15)
+multiplot(plotlist = Post.p, cols = 3)
+dev.off()
+pdf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/All.pdf", width=15, height=15)
+multiplot(plotlist = All.p, cols = 3)
+dev.off()
+```
+
+```{r}
+library(heatmap3)
+plot.heatmap = function(dat, filename, height =7, width =7){
+  hc = hclust(as.dist(1-cor(dat, method="spearman", use="pairwise.complete.obs")), method="complete")
+  hr = hclust(as.dist(1-cor(t(dat), method="spearman", use="pairwise.complete.obs")), method="complete")
+
+  require(heatmap3)
+   heatmap3(dat, Rowv=as.dendrogram(hr),  Colv=as.dendrogram(hc), scale="none", balanceColor=T, showRowDendro=F ,   showColDendro=F)
+
+}
+tcga.phenotype = fread("~/project/deeplearning/icb/data/tcga/scrna.v1//val_prediction.csv")
+tcga.dataset = fread("~/project/deeplearning/icb/data/tcga/scrna.v1/dataset.txt")
+tcga.phenotype = tcga.phenotype[unlist(tcga.phenotype$sample_name) +1]
+tcga.phenotype.skcm = tcga.phenotype[which(tcga.dataset$cancertype=="SKCM"),]
+col.pheno = colnames(tcga.phenotype)
+embedding.matrix = as.matrix(tcga.phenotype.skcm[,grep(col.pheno, pattern="embedding"),with=F])
+pheno.matrix = as.matrix(tcga.phenotype.skcm[,493:503,with=F])
+aa = cor(embedding.matrix, pheno.matrix, use="pairwise.complete.obs")
+plot.heatmap(aa, filename="/liulab/asahu/data/ssgsea/xiaoman/getz/dca/emb_pheno_skcm.pdf") 
+
+```
+
 ## create tsnes 
 
 ```{r}
@@ -142,16 +302,22 @@ color.clusters.features <- function(data, cluster,  color.cols = "condition",
 
 
 ```
-## Only use deepImmune embedding to get tsne ( **TODO** perhaps use umap to perform final cluster)
+
+
+
 ```{r}
-tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/tsnes/Monocyte_emb"
+tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/dca/"
+dir.create(tsne.dir)
+tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/dca/tsnes"
+dir.create(tsne.dir)
+tsne.dir = "/liulab/asahu/data/ssgsea/xiaoman/getz/dca/tsnes/Monocyte_emb"
 dir.create(tsne.dir)
 loc=grep(pattern = ".output",colnames(icb.phenotype))
 loc2=grep(pattern = "embedding",colnames(icb.phenotype))
 d1=icb.phenotype[,c(loc,loc2),with=F]
 d2 = resp.matched[,.(V2, V5, V6,V7)]
 setnames(d2, 1:4,c("sample.name", "patient.name", "response", "treatment"))
-d3 = phenotype_sel.mod[,.(assign.ident, CD274, PDCD1, oxphos.score)]
+d3 = phenotype_sel.mod[,.(assign.ident, CD274, PDCD1, oxphos_score)]
 data_tsne.merge = as.data.frame(cbind(d3, d2, d1))
 
 locx=which(data_tsne.merge$assign.ident=="Monocyte")

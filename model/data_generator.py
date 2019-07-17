@@ -233,7 +233,7 @@ def generator_survival(features, labels, params, cancertype=None,
     data_generator() -- the generator function to yield the features and labels
     """
     # np.random.seed(230)
-    # tracer()
+    tracer()
 
     def create_batches(feat, lab, tsne_mat, batch_size, shuffle=True):
 

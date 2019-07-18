@@ -19,7 +19,7 @@ dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ssgsva.txt"
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt"
-output.dir = "~/project/deeplearning/icb/data/tcga/scrna.v1/"
+output.dir = "~/project/deeplearning/icb/data/tcga/scrna.v2/"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 # pca_obj.RData = "/homes6/asahu/project/deeplearning/icb/data/tcga.blca/neoantigen/pca_obj.RData"
 tpm =T
@@ -345,26 +345,31 @@ for(cell.type in unique(cell.types)){
     out.all[[cell.type]] = rbind(topgene.Pretreatment, topgene.Posttreatment, topgene.Alltreatment)
 
 }
+topaucs.genes.list = out.all
 
 topaucs.genes = do.call(rbind, out.all)
+topaucs1 = topaucs.genes[aucs>0.79]
 
-topaucs1 = topaucs.genes[aucs>0.8]
+topaucs2 = do.call(rbind,lapply(out.all, function(tt) 
+    rbind(
+        tt[treat=="Pre"][order(aucs,decreasing=T)][V2<1E-8][1:10],
+        tt[treat=="Post"][order(aucs,decreasing=T)][V2<1E-8][1:10],
+        tt[treat=="All"][order(aucs,decreasing=T)][V2<1E-8][1:5])
 
-topaucs2 = do.call(rbind,lapply(out.all, function(tt) {
-    tt[order(aucs)][V2<1E-10][1:15]
-    }))
+    ))
 topaucs2 = topaucs2[!is.na(V1)]
 topaucs3 = topaucs.genes[aucs>0.75][V2<1E-20]
 topaucs4 = topaucs.genes[V2<1E-40]
 topaucs.final = rbind(topaucs1, topaucs2, topaucs3, topaucs4)
+save(file="/liulab/asahu/data/ssgsea/xiaoman/getz/topaucs.genes.list.RData", topaucs.genes.list)
 save(file="/liulab/asahu/data/ssgsea/xiaoman/getz/topaucs.final.RData", topaucs.final)
 save(file="/liulab/asahu/data/ssgsea/xiaoman/getz/topaucs.genes.RData", topaucs.genes)
-load("/liulab/asahu/data/ssgsea/xiaoman/getz/topaucs.final.RData")
+
 
 
 ## all expression 
-
-immune.genes.compiled = intersect(all.genes, c(topaucs.final$marker, checkpoint.genes.final))
+load("/liulab/asahu/data/ssgsea/xiaoman/getz/topaucs.final.RData")
+immune.genes.compiled = intersect(all.genes, unique(c(topaucs.final$marker, checkpoint.genes.final)))
 
 all.exp_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
 patient.name = rownames(all.exp_mat)
@@ -445,3 +450,4 @@ write.table(file=paste0(output.dir, "/dataset_train.txt"),x = dataset_shuffle[tr
     row.names = F, col.names =T,  sep="\t", quote=F )
 write.table(file=paste0(output.dir, "/dataset_val.txt"),x = dataset_shuffle[val.inx,],
     row.names = F, col.names =T,  sep="\t", quote=F )
+

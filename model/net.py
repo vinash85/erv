@@ -1071,7 +1071,7 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         # tracer()
         embedding_optimizer.zero_grad()
         outputs_optimizer.zero_grad()
-        loss.backward()
+        loss.backward(retain_graph=True)
         # xx = [p.grad for p in outputs.parameters()]
         # print(xx)
         # tracer()

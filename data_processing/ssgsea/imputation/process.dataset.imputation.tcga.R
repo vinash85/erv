@@ -15,7 +15,6 @@
 #Checking output of pca. prcomp function returns standard deviation (sdev), rotation and loadings.
 source("~/project/deeplearning/icb/deepImmune/source.R")
 
-dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ssgsva.txt"
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"
 pathway_order = "/liulab/asahu/data/ssgsea/xiaoman/ssgsea.order_tcga.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/tcga_biom_oxphos.txt"

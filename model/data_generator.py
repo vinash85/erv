@@ -584,14 +584,15 @@ def fetch_dataloader(data_dir_params, params, types, shuffle):
     dataset_type = get_or_default(data_dir_params, 'dataset_type', 'non_icb')
     shuffle = get_or_default(data_dir_params, 'shuffle', shuffle)
     tsne = get_or_default(data_dir_params, 'tsne', 0)
-    data_augmentation_array = get_or_default(data_dir_params, 'data_augmentation', [0, 0])
-    data_augmentation = data_augmentation_array[0]
+    data_augmentation_array = get_or_default(data_dir_params, 'data_augmentation', '[0, 0]')
     types = get_or_default(data_dir_params, 'types', types)
     try:
         types = eval(types)
     except:
         pass
     train_optimizer_mask = eval(train_optimizer_mask)
+    data_augmentation_array = eval(data_augmentation_array)
+    data_augmentation = data_augmentation_array[0]
     dataloaders = {}
     name = prefix
     prefix = None  # assume there is no prefix in file names

@@ -634,7 +634,7 @@ def fetch_dataloader(data_dir_params, params, types, shuffle):
                 features_phenotypes = features_phenotypes[:, 1:]
                 data_augmentation_curr = data_augmentation if split in ['train'] else False
                 dl = generator_survival(
-                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=params.normalize_input, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat, data_augmentation=data_augmentation, balance=True)
+                    features_phenotypes, features_phenotypes, params, batch_by_type=params.batch_by_type, cancertype=cancertype, batch_size=params.batch_size, normalize_input=params.normalize_input, dataset_type=dataset_type, shuffle=shuffle, header=header, tsne_labels_mat=tsne_labels_mat, data_augmentation=data_augmentation_curr, balance=True)
 
             # phenotypes = phenotypes.astype(float)
 

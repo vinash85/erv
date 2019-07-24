@@ -347,7 +347,7 @@ python  evaluate_attention.py  --data_dir  ../data/tcga/neoantigen.v2/attention/
 
 # scrRNA
 
-python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  new_residual_
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. 
 
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/. --tensorboard_prefix  restored_ --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/new_residual_20190625-233202/best.pth.tar
 
@@ -379,5 +379,9 @@ python evaluate.py  --data_dir  ../data/tcga//scrna.v1/datasets_test_list.txt --
 
 python train.py  --data_dir  ../data/tcga//scrna.v1/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v1/.  --restore_file ../data/tcga/scrna.v1/tensorboardLog/20190715-115243/best.pth.tar --tensorboard_prefix boosting_
 
-python train.py  --data_dir  ../data/tcga//scrna.v2/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v2/.
+python train.py  --data_dir  ../data/tcga//scrna.v2/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v2/. --restore_file ../data/tcga/scrna.v2/tensorboardLog/20190717-195353/best.pth.tar --tensorboard_prefix boosting_
 
+python train.py  --data_dir  ../data/tcga//scrna.v2/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v2/. --tensorboard_prefix indel_only_1ouptput_
+
+python train.py  --data_dir  ../data/tcga//scrna.v3/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v3/. 
+python train.py  --data_dir  ../data/tcga/scrna.v4.pcs/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.pcs/. 

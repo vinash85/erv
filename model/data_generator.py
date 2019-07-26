@@ -33,7 +33,10 @@ def np_take(aa, indices, axis=0):
         out[:] = np.nan
         out = out.astype(aa.dtype)
         for ii, ind in enumerate(indices_nan):
-            out[:, ii] = aa[:, ind]
+            if(len(shape1) == 1):
+                out[ii] = aa[ind]
+            else:
+                out[:, ii] = aa[:, ind]
 
     return out
 

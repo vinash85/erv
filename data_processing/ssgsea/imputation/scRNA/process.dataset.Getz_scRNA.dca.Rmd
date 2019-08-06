@@ -1,16 +1,21 @@
 ---
-output: html_document
+output: html_notebook
 author: Avinash Das Sahu
 ---
-# this report test if the scRN gene clusters are predictive of ICB response in Genentech cohorts.
+# this report test if the scRNA gene clusters are predictive of ICB response in Genentech cohorts.
 # response_information
 ```{r}
 library(data.table)
 source("/homes6/asahu/project/deeplearning/icb/deepImmune/source.R")
+setwd("/homes6/asahu/project/deeplearning/icb/data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/getz/epoch-52/")
 getwd()
-icb.phenotype = fread("~/project/deeplearning/icb/data/Getz_scRNA/dca/val_prediction.csv")
+icb.phenotype = fread("/homes6/asahu/project/deeplearning/icb/data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/getz/epoch-52/val_prediction.csv")
 dataset.prefix = "Getz_scRNA_dca"
 icb.phenotype = icb.phenotype[unlist(icb.phenotype$sample_name) +1]
+## correct the headers 
+header = fread("/homes6/asahu/project/deeplearning/icb/data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/best_val_0.csv",nrows = 1)
+colnames(icb.phenotype) = colnames(header)
+
 ```
 ```{r}
 load("~/project/deeplearning/icb/data/Getz_scRNA/dca/phenotype_data.RData")
@@ -140,16 +145,16 @@ for(cell.type in cell.types) {
   inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), pretreatment.samples)
   # aucs.dt = topaucs.genes[treat=="Pre" & label==cell.type]
   aucs.dt = (topaucs.genes.list[[cell.type]])[treat=="Pre"][order(V2)][1:2000]
-  Pre.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename =sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("Pretreatment %s", cell.type), aucs.dt = aucs.dt)
+  Pre.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename =sprintf("%s/pretreatment_%s.pdf", cell.type), title= sprintf("Pretreatment %s", cell.type), aucs.dt = aucs.dt)
   
   inx = intersect(which(phenotype_sel.mod$assign.ident==cell.type), posttreatment.samples)
   aucs.dt = topaucs.genes.list[[cell.type]][treat=="Post"][order(V2)][1:2000]
-  Post.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("Posttreatment %s  ", cell.type), aucs.dt = aucs.dt)
+  Post.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("%s/posttreatment_%s.pdf", cell.type), title= sprintf("Posttreatment %s  ", cell.type), aucs.dt = aucs.dt)
   
   
   inx =which(phenotype_sel.mod$assign.ident==cell.type)
   aucs.dt = topaucs.genes.list[[cell.type]][treat=="All"][order(V2)][1:2000]
-  All.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("/liulab/asahu/data/ssgsea/xiaoman/getz/dca/aucs/pretreatment_%s.pdf", cell.type), title= sprintf("All %s  ", cell.type), aucs.dt = aucs.dt)
+  All.p[[cell.type]] = plot.aucs.hist(inx, indexes = indexes, filename = sprintf("%s/Alltreatment_%s.pdf", cell.type), title= sprintf("All %s  ", cell.type), aucs.dt = aucs.dt)
   
 }
 

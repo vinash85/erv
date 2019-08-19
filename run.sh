@@ -388,7 +388,29 @@ python train.py  --data_dir  ../data/tcga/scrna.v4.pcs/datasets_tsne_list.txt --
 
 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix no_pipeline_
 
-CUDA_VISIBLE_DEVICES=3,4;python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix no_pipeline_
+python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix no_pipeline_
 
 
-CUDA_VISIBLE_DEVICES=1,2; python train.py  --data_dir  ../data/tcga/scrna.v4.allgenes.nopcs/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.allgenes.nopcs/.  --tensorboard_prefix no_pipeline_
+python train.py  --data_dir  ../data/tcga/scrna.v4.allgenes.nopcs/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.allgenes.nopcs/.  --tensorboard_prefix no_pipeline_
+
+
+
+python evaluate.py  --data_dir  ../data/Getz_scRNA/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/best.pth.tar
+
+python evaluate.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/best.pth.tar
+
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/Getz_scRNA/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/epoch-52.pth.tar
+
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_test_list.txt  --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/epoch-52.pth.tar
+
+
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/oxphos/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/epoch-52.pth.tar
+
+
+
+
+
+### TCR Amino acid training 
+
+CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA/. --tensorboard_prefix emb_n_immuneFactors_ 
+

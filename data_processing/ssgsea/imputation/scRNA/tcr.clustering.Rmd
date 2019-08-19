@@ -1,0 +1,289 @@
+---
+title: "T-cell receptor clustering"
+output: html_notebook
+---
+
+## Identify CDR3 regions in T-cells 
+
+Run in Kraken 
+```{r}
+
+library(data.table)
+require(doMC)
+require(foreach)
+registerDoMC(cores = 32)
+
+files = list.files(path="/rna-seq/trust4/outputs", pattern = "*.cdr3.out", full.names = T, recursive = T)
+filenames = gsub("TRUST_", gsub("_cdr3.out", basename(files), replacement = ""), replacement = "")
+cdr3.all = foreach( file1=files) %dopar%  fread(file1, header=F)
+names(cdr3.all) = filenames 
+
+files = list.files(path="/rna-seq/trust4/outputs", pattern = "*annot.out", full.names = T, recursive = T)
+filenames = gsub("TRUST_", gsub("_annot.out", basename(files), replacement = ""), replacement = "")
+annot.all = foreach( file1=files) %dopar%  fread(file1, header=F)
+names(annot.all) = filenames 
+
+trust4.out = list(cdr3.all, annot.all)
+save(file="/liulab/asahu/data/ssgsea/xiaoman/getz/trust4.out.RData", trust4.out)
+
+```
+
+
+## Create the features for embedding prediction 
+
+```{r}
+load("/liulab/asahu/data/ssgsea/xiaoman/getz/trust4.out.RData")
+names(trust4.out) = c("cdr3", "annot")
+substr.id = function(tt){
+    paste(strsplit(tt, split="_")[[1]][1:3], collapse = "_")
+}
+
+trust4.cellid = sapply(names(trust4.out[[1]]), substr.id)
+tcell.id = sapply(colnames(sco.curr),  substr.id)
+sum(trust4.cellid %in% tcell.id) ## only 3196 
+only.tcells = setdiff(tcell.id, trust4.cellid)
+head(only.tcells)
+grep(trust4.cellid, pattern="M47", value = T)
+grep(tcell.id, pattern="H6_P9_M47", value = T)
+common.cellids = intersect(trust4.cellid,tcell.id)
+
+cdr3.tcell = trust4.out$cdr3[match(common.cellids, trust4.cellid)]
+cdr3.tcell1 = lapply(cdr3.tcell, function(tt) {
+    if(nrow(tt) > 0) out = tt[V9> 0]
+    out
+})
+xx = unlist(sapply(cdr3.tcell, nrow))
+yy = unlist(sapply(cdr3.tcell1, nrow))
+# translate 
+
+# Biostrings::translate(Biostrings::DNAStringSet(trust4.out[[1]][[2]]$V8))
+# Biostrings::translate(Biostrings::DNAStringSet("TGTGCCAGCAGTTTCGGGCCGAACACTGAAGCTTTCTTTNNNNNNNACTGAAGCTTTCTT"))
+# 
+# dna3 <- DNAStringSet(c("ATC", "GCTG", "CGACT"))
+
+# head(names(trust4.out[[1]]))
+
+
+```
+```{r}
+library(stringr)
+library(stringi)
+translate.seq = function(tt) {
+    ifelse(stringr::str_length(tt) %% 3 ==0, 
+        as.character(Biostrings::translate(Biostrings::DNAStringSet(tt),if.fuzzy.codon = "X")), NA)
+}
+get.aminoacid = function(CDR3, V , J){
+    missing = "X"
+    out = NA
+    str.len = stringr::str_length(CDR3)
+    if(V!="*" & J=="*"){
+        CDR3 = substr(CDR3,1, floor(str.len/3) *3)
+        out = translate.seq(CDR3)
+        out = stringr::str_c( out, missing)
+    }else if(V=="*" & J!="*"){
+        # CDR3 = stringi::stri_reverse(CDR3)
+        CDR3 = substr(CDR3,1 + ( str.len %%3), str.len)
+        out = translate.seq(CDR3)
+        out = stringr::str_c(missing, out)
+        # out = stringi::stri_reverse(out)
+    }else if(V!="*" & J!="*" & str.len %%3 == 0){
+        out = translate.seq(CDR3)
+    }
+    out
+}
+get.aminoacid.vec = Vectorize(get.aminoacid)
+
+my.translate = function(dt, name=NULL, min.len= 6, max.len = 25){
+    out = NULL 
+    if(nrow(dt)){
+    cols = c("consesus_id", "the_index_of_CDR3_in_that_consensus", "V", "J", "C", "CDR1", "CDR2", "CDR3", "score_of_CDR3", "abundance")
+    setnames(dt,1:10, cols)
+    dt$name = name 
+    dt[,aa:=get.aminoacid.vec(CDR3, V , J)]
+    dt[,aa.len:=stringr::str_length(aa)]
+    dt[,is.alpha:=ifelse(grepl("TRA", V)|grepl("TRA", J)| grepl("TRA", C), T, F)]
+    dt[,abs.score:= abundance * (score_of_CDR3+.001)]
+    if(!is.na(min.len)) dt = dt[aa.len>= min.len]
+    if(!is.na(max.len)) dt = dt[aa.len< max.len]
+    dt.alpha = dt[is.alpha==T][abs.score == max(abs.score)]
+    if(nrow(dt.alpha) > 1) dt.alpha = dt.alpha[which.min(aa.len)]
+    dt.beta = dt[is.alpha==F][abs.score == max(abs.score, na.rm = T)]
+    if(nrow(dt.beta) > 1) dt.beta = dt.beta[which.min(aa.len)]
+    out = rbind(dt.alpha, dt.beta)
+    }
+    out
+}
+
+
+
+
+```
+
+```{r}
+
+# trust4.filtered = for(dt in trust4.out$cdr3)
+    # uu = my.translate(dt)
+require(doMC)
+require(foreach)
+registerDoMC(cores = 32)
+trust4.filtered = foreach(dt=trust4.out$cdr3) %dopar%{
+    my.translate(dt)
+}
+
+## convert to unicode 
+
+```
+
+## run in data table to make it faster 
+```{r}
+
+trust4.cdr3  =do.call(rbind,  lapply(seq_along(trust4.out$cdr3), function(tt) {
+    dt = trust4.out$cdr3[[tt]]
+    if(nrow(dt) ==0 ){ 
+        dt = NULL
+    }else{
+        dt$cellid = names(trust4.out$cdr3)[[tt]]
+    }
+    dt
+}))
+min.len = 7*3
+max.len =25*3
+cols = c("consesus_id", "the_index_of_CDR3_in_that_consensus", "V", "J", "C", "CDR1", "CDR2", "CDR3", "score_of_CDR3", "abundance")
+setnames(trust4.cdr3,1:10, cols)
+trust4.cdr3[,str.len:=stringr::str_length(CDR3)]
+trust4.cdr3[,is.alpha:=ifelse(grepl("TRA", V)|grepl("TRA", J)| grepl("TRA", C), T, F)]
+trust4.cdr3[,is.beta:=ifelse(grepl("TRB", V)|grepl("TRB", J)| grepl("TRB", C), T, F)]
+trust4.cdr3[,abs.score:= abundance * (score_of_CDR3+.001)]
+if(!is.na(min.len)) trust4.cdr3 = trust4.cdr3[str.len>= min.len]
+if(!is.na(max.len)) trust4.cdr3 = trust4.cdr3[str.len<= max.len]
+
+tcell.cdr3 = trust4.cdr3[is.alpha|is.beta]
+xx = trust4.cdr3[!(is.alpha|is.beta)]
+tcell.cdr3$aa = tcell.cdr3[,{
+    start = ifelse(V=="*", 1 + ( str.len %%3), 1)
+    end = ifelse(J=="*", floor(str.len/3) *3, str.len)
+   aa = translate.seq(stringr::str_sub(CDR3,start, end))
+   ifelse(V=="*", stringi::stri_c("X", aa), 
+          ifelse(J=="*", stringi::stri_c("X", aa), aa))
+}]
+tcell.cdr3[,aa.len:=stringr::str_length(aa)]
+tcell.cdr3 = tcell.cdr3[!is.na(aa.len)]
+tcell.cdr3 = tcell.cdr3[!grepl(pattern="\\*", tcell.cdr3$aa)]
+tcell.cdr3 = tcell.cdr3[aa.len <=20]
+# ww = tcell.cdr3[1:100]
+# ww[,aa:=mapply(get.aminoacid,CDR3, V , J)]
+# 
+# ww[,start:=ifelse(V=="*", 1 + ( str.len %%3), 1)]
+# ww[,end:=ifelse(J=="*", floor(str.len/3) *3, str.len)]
+# cdr3.new = ww[,translate.seq(stringr::str_sub(CDR3,start, end))]
+# tt = ww[,{
+#     start = ifelse(V=="*", 1 + ( str.len %%3), 1)
+#     end = ifelse(J=="*", floor(str.len/3) *3, str.len)
+#    translate.seq(stringr::str_sub(CDR3,start, end))
+# }]
+
+# trust4.cdr3.copy = copy(trust4.cdr3)
+# 
+tcell.cdr3.filtered = tcell.cdr3[, .SD[abs.score == max(abs.score)],
+                                 by=.(is.alpha, cellid)][, .SD[which.min(str.len)], 
+                                                         by = .(is.alpha, cellid)]
+tcell.cdr3.filtered[, cellid.short:=sapply(cellid, substr.id)]
+tcell.cdr3.beta = tcell.cdr3.filtered[is.beta==T & aa.len <=20 & (cellid.short %in% tcell.id) ]
+
+
+
+
+```
+
+## one hot encoding
+```{r}
+
+## convert aa sequence to column
+## convert each to the ordered factors
+## get one hot
+
+xx = stringi::stri_pad(tcell.cdr3.beta$aa,  pad = "X", width = 20, side="right")
+xx =do.call(rbind, strsplit(xx, split=""))
+xx[xx=="X"] = NA
+aa.uniq = sort(unique(c(xx)))
+aa.uniq = aa.uniq[!is.na(aa.uniq)]
+xx = data.table(xx)
+xx =xx[, lapply(.SD, factor, levels=aa.uniq)]
+aa.one = mltools::one_hot(xx, sparsifyNAs = T)
+tt = colSums(aa.one)
+aa.one.one = colSums(aa.one) 
+sum(aa.one.one >=10)
+aa.one.sel = aa.one[,aa.one.one >=10, with=F]
+
+```
+
+## Create datasets 
+Dataset is ordered as : 
+1. First column is "fake" cancertype :) 
+1. One hot of AA (400)
+2. 64 embeddings
+3. Immune factors 
+4. Immune genes (deepImmune outputs)
+5. Immune gene (actual expression)
+5. All genes 
+
+```{r}
+
+write.dataset = function(output.dir, sample.name, dataset) {
+  dir.create(output.dir)
+  write.table(file=paste0(output.dir, "/samples_name.txt"),x = sample.name,
+              row.names = F, col.names =T,  sep="\t", quote=F )
+  write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
+              row.names = F, col.names =T,  sep="\t", quote=F )
+  rand_inx = sample(nrow(dataset))
+  dataset_shuffle = dataset[rand_inx,]
+  train.inx = 1:ceiling(.85 * nrow(dataset_shuffle))
+  val.inx = ceiling(.85 * nrow(dataset_shuffle)):nrow(dataset_shuffle)
+  
+  write.table(file=paste0(output.dir, "/dataset_train.txt"),x = dataset_shuffle[train.inx,],
+              row.names = F, col.names =T,  sep="\t", quote=F )
+  write.table(file=paste0(output.dir, "/dataset_val.txt"),x = dataset_shuffle[val.inx,],
+              row.names = F, col.names =T,  sep="\t", quote=F )
+  
+}
+```
+
+
+```{r}
+sample.name  = tcell.cdr3.beta$cellid
+# tcell.id = sapply(colnames(sco.curr),  substr.id) this is for expression from sco.curr
+data.curr.cellid = sapply(data.curr$sample.name,  substr.id)
+tcell.cdr3.beta$cellid.short = sapply(tcell.cdr3.beta$cellid,  substr.id)
+data.curr.match = data.curr[match(tcell.cdr3.beta$cellid.short,data.curr.cellid)]
+exp.match = t(sco.curr[["RNA"]]@scale.data)
+exp.match = exp.match[match(tcell.cdr3.beta$cellid.short, tcell.id),]
+exp.match.genes = colnames(exp.match)
+embedding.inx = grep("embedding", colnames(data.curr.match))
+surv.inx = 70:73
+if.genes.output.inx = 74:402
+if.genes.output= colnames(data.curr.match)[if.genes.output.inx]
+if.factor.inx = 403:537
+if.genes = intersect(gsub(".output", if.genes.output, replacement = ""), exp.match.genes)
+
+dataset.tcr = cbind("SKCM", aa.one.sel,
+data.curr.match[,.(response.bin, UMAP1, UMAP2, G2M.Score, S.Score, diffusionmap1, diffusionmap2, dpt)], 
+data.curr.match[,c(embedding.inx, surv.inx, if.factor.inx, if.genes.output.inx), with=F], exp.match[,if.genes]) 
+# exp.match[,setdiff(exp.match.genes, if.genes)])
+                    
+output.dir = "~/project/deeplearning/icb/data/Getz_scRNA/TCR.AA/"
+write.dataset(output.dir = output.dir, dataset = dataset.tcr, sample.name = sample.name)
+file.copy("~/project/deeplearning/icb/data/tcga/scrna.v4.pcs/params.json", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/scrna.v4.pcs/datasets_tsne_list.txt", output.dir)
+
+dataset.cols = data.table(colnames(dataset.tcr), seq(ncol(dataset.tcr)))
+
+uu = cor(aa.one.sel, dataset.tcr[,253:1119, with=F] )
+
+
+```
+
+CUDA_VISIBLE_DEVICES=0 python evaluate.py  --data_dir  ../data/oxphos/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/epoch-52.pth.tar
+
+
+
+

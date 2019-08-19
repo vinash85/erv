@@ -3,9 +3,7 @@ title: "Greedy immune factors model"
 output: html_notebook
 ---
 
-This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
 
-Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Cmd+Shift+Enter*. 
 
 ```{r}
 library(rjson)
@@ -342,6 +340,7 @@ ww1[1:100] # only 30% of explained variance is captured
 # ref.cancertype = tcga.dataset$cancertype
 
 save(file="~/project/deeplearning/icb/data/tcga/scrna.v4.pcs/ref.expression.RData", ref.expression, ref.cancertype)
+save(file="~/project/deeplearning/icb/data/tcga/scrna.v4.pcs/ref.expression.norm.RData",  ref.expression.norm, ref.cancertype)
 # xx = princomp(mat)
 # ww = (xx$sdev^2)
 # ww1 = cumsum(ww/sum(ww))
@@ -378,6 +377,10 @@ write.dataset(output.dir = output.dir, dataset = dataset.new, sample.name = samp
 
 ```{r}
 tcga.cols = colnames(tcga.dataset)
+save(file="~/project/deeplearning/icb/data/tcga/scrna.v4.pcs/meta.info.RData", tcga.cols, topmost.cors.genes, top.cors.genes)
+```
+
+```{r}
 pc.data = tcga.dataset[,1:51,with=F]
 
 extra.genes.inx = c("TGFB1", "TGFBR2", "KLRC1")

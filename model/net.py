@@ -240,6 +240,41 @@ class outputLayer(nn.Module):
         return out
 
 
+class VariationalEmbeddingNet(nn.Module):
+    '''
+    Variational Encoder
+    adopted from https://github.com/pytorch/examples/blob/master/vae/main.py
+    '''
+
+    def __init__(self, params):
+        super(VariationalEmbeddingNet, self).__init__()
+        self.params = copy.deepcopy(params)
+        # change internal params to adapt to have 2 * embedding_size  ## mu and sigma (first half are mu and other half is logvar)
+        self.mu_size = params.embedding_size
+        self.params.embedding_size = 2 * self.mu_size
+        self.embedding_layers = EmbeddingNet(self.params)
+        self.kld_norm_factor = self.params.batch_size * self.params.input_size
+
+    def reparameterize(self, mu, logvar):
+        if self.training:
+            std = torch.exp(0.5 * logvar)
+            eps = torch.randn_like(std)
+            ret = mu + eps * std
+            kld = -0.5 * torch.sum(1 + logvar - mu.pow(2) - logvar.exp())
+            kld /= self.kld_norm_factor
+        else:
+            ret = mu
+            kld = 0.
+        return ret, kld
+
+    def forward(self, x):
+        # tracer()
+        out = self.embedding_layers(x)
+        mu, logvar = out[:, :self.mu_size], out[:, self.mu_size:]
+        embed, kld = self.reparameterize(mu, logvar)
+        return embed, mu, logvar, kld
+
+
 class AttentionEncoder(nn.Module):
     "Attention Encoder for deepImmune produce a matrix that  could be multiplied with embedding"
 
@@ -936,6 +971,8 @@ def max_na(xx):
 
 
 def mean_na(xx):
+    import ipdb
+    # ipdb.set_trace()
     xx = np.array(xx)
     return np.mean(xx[~np.isnan(xx)])
 
@@ -1061,7 +1098,7 @@ def define_metrics(params):
     return params
 
 
-def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1]):
+def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=0.):
     '''
     define loss function and update parameters
     '''
@@ -1084,7 +1121,7 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         if train_optimizer_mask[1]:
             outputs_optimizer.step()
 
-    total_loss = 0.
+    total_loss = kld
     loss_fns = params.loss_fns
     len_fns = len(loss_fns)
 
@@ -1134,6 +1171,9 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         total_loss = total_loss + loss_curr
 
     # tracer()
+    if is_train and params.pipeline_optimization and kld != 0.:
+        update_parameters(kld, train_optimizer_mask, embedding_model, outputs)
+
     if is_train and not params.pipeline_optimization and total_loss != 0.:
         update_parameters(total_loss, train_optimizer_mask, embedding_model, outputs)
     if total_loss != 0:

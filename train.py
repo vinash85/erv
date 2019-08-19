@@ -110,10 +110,15 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
             # convert to torch Variables
             embedding_input = train_batch[:, params.embedding_indices]
 
-            embedding_batch = embedding_model(embedding_input)
+            if params.VAE:
+                embedding_batch, _, _, kld = embedding_model(embedding_input)
+            else:
+                embedding_batch = embedding_model(embedding_input)
+                kld = 0.
+
             output_batch = outputs(embedding_batch)
 
-            loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask)
+            loss = net.update_loss_parameters(labels_batch, output_batch, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask, kld)
 
             # Evaluate summaries only once in a while
             if i % params.save_summary_steps == 0:
@@ -272,6 +277,11 @@ if __name__ == '__main__':
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params = net.create_lossfns_mask(params)
+    try:
+        params.VAE = params.VAE
+    except:
+        params.VAE = False
+
     # print(params.loss_fns)
     # print(params.mask)
 
@@ -310,7 +320,7 @@ if __name__ == '__main__':
     # if len(params.out_channels_list) > 0:
     # embedding_model = net.EmbeddingNet(
     #     net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-    embedding_model = net.EmbeddingNet(params)
+    embedding_model = net.VariationalEmbeddingNet(params) if params.VAE else net.EmbeddingNet(params)
     outputs = net.outputLayer(params)
 
     if params.cuda:

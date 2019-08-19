@@ -414,3 +414,6 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/oxphos/scrna.v4.g
 
 CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA/. --tensorboard_prefix emb_n_immuneFactors_ 
 
+
+# with  VAE 
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2

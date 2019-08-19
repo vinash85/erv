@@ -71,7 +71,11 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
 
         # compute model output
         embedding_input = data_batch[:, params.embedding_indices]
-        embedding_batch = embedding_model(embedding_input)
+        if params.VAE:
+            embedding_batch, mu_batch, logvar_batch, kld = embedding_model(embedding_input)
+        else:
+            embedding_batch = embedding_model(embedding_input)
+
         output_batch = outputs(embedding_batch)
         loss = net.update_loss_parameters(
             labels_batch, output_batch, embedding_model, outputs, None, None, params, [0, 0])
@@ -151,8 +155,11 @@ if __name__ == '__main__':
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
     params = net.create_lossfns_mask(params)
+    try:
+        params.VAE = params.VAE
+    except:
+        params.VAE = False
     # fetch dataloaders
-    params = net.create_lossfns_mask(params)
     _, _, params.header, _ = datasets[0][0][type_file]
     params.input_size = len(params.embedding_indices)
     params.attention_input_size = len(params.attention_indices)
@@ -160,7 +167,7 @@ if __name__ == '__main__':
     logging.info("- done.")
 
     # Define the model
-    embedding_model = net.EmbeddingNet(params)
+    embedding_model = net.VariationalEmbeddingNet(params) if params.VAE else net.EmbeddingNet(params)
     outputs = net.outputLayer(params)
 
     if params.cuda:

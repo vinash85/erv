@@ -17,6 +17,7 @@
     "metrics": "all",
     "shuffle": true,
     "normalize_input" : true,
+    "VAE" : true,
     // "metrics": "e[['OS', 'c_index', 0, 0],['Response', 'auc', -1, -1]]",
     // "metrics": "e[['OS', 'c_index', 0, 0],['OS', 'correlation', 1, 2],['SNV.Neoantigens', 'correlation', 2, 3],['Nonsilent.Mutation.Rate', 'correlation', 3, 4], ['Response', 'auc', 4, 5]]",
     // Format if metrices ['name of. variable', 'metrics', 'index of predicted data', 'index of real data'. Support multiple metrics.        "l1_regularizer" : 0,

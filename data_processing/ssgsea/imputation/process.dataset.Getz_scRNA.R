@@ -2,10 +2,10 @@
 source("~/project/deeplearning/icb/deepImmune/source.R")
 
 dataset_ssgsea =  "~/project/deeplearning/icb/data/Getz_scRNA/data/GSE120575_Sade_Feldman_melanoma_single_cells_TPM_GEO.txt"
-dataset_phenotype =  "~/project/deeplearning/icb/data/Getz_scRNA/data/cell_label.csv"
+# dataset_phenotype =  "~/project/deeplearning/icb/data/Getz_scRNA/data/cell_label.csv"
 options(error=recover)
 dataset.prefix = "Getz_scRNA"
-dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/getz/cell_label.csv"
+dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/getz/SKCM_ICM_meta.txt"
 phenotype_order = "/liulab/asahu/data/ssgsea/xiaoman/processed/tcga_phenotypes.RData"
 dataset_ssgsea =  "/liulab/asahu/data/ssgsea/xiaoman/getz/GSE120575_Sade_Feldman_melanoma_single_cells_TPM_GEO.txt"
 

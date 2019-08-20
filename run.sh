@@ -386,7 +386,6 @@ python train.py  --data_dir  ../data/tcga//scrna.v2/datasets_tsne_list.txt --mod
 python train.py  --data_dir  ../data/tcga//scrna.v3/datasets_tsne_list.txt --model_dir ../data/tcga//scrna.v3/. 
 python train.py  --data_dir  ../data/tcga/scrna.v4.pcs/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.pcs/. 
 
-python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix no_pipeline_
 
 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix no_pipeline_
 
@@ -416,4 +415,7 @@ CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA/da
 
 
 # with  VAE 
-python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention/datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/
+
+python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix nopipeline_vae_
+

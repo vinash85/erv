@@ -253,10 +253,13 @@ class VariationalEmbeddingNet(nn.Module):
         self.mu_size = params.embedding_size
         self.params.embedding_size = 2 * self.mu_size
         self.embedding_layers = EmbeddingNet(self.params)
-        self.kld_norm_factor = self.params.batch_size * self.params.input_size
+        # weight by input/output size
+        self.kld_norm_factor = self.params.batch_size * self.params.input_size / len(self.params.loss_fns)
 
     def reparameterize(self, mu, logvar):
         if self.training:
+            # import ipdb
+            # ipdb.set_trace()
             std = torch.exp(0.5 * logvar)
             eps = torch.randn_like(std)
             ret = mu + eps * std

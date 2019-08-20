@@ -208,7 +208,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                     writer.add_scalars('val_' + str(index), val_metrics, epoch)
         # net.tracer()
 
-        if params.tensorboardlog[0]:
+        if params.tensorboardlog[1]:
             for name, param1 in outputs.named_parameters():
                 try:
                     writer.add_histogram("outputs/" + name, param1.clone().cpu().data.numpy(), epoch)

@@ -48,7 +48,7 @@ class ConvolutionBlock(nn.Module):
         out = self.conv1(residual)
         out = self.bn1(out)
         out = self.relu(out)
-        out = F.dropout(out, p=self.dropout_rate, training=self.training)
+        # out = F.dropout(out, p=self.dropout_rate, training=self.training)
         out = self.maxpool(out)
         return out
 
@@ -276,6 +276,95 @@ class VariationalEmbeddingNet(nn.Module):
         mu, logvar = out[:, :self.mu_size], out[:, self.mu_size:]
         embed, kld = self.reparameterize(mu, logvar)
         return embed, mu, logvar, kld
+
+
+class CharacterLevelCNN(nn.Module):
+    '''
+    adopted from https://github.com/vietnguyen91/Character-level-cnn-pytorch/blob/master/src/character_level_cnn.py
+    '''
+
+    def __init__(self, n_classes=16, input_length=20, input_dim=20,
+                 n_conv_filters=8,
+                 n_fc_neurons=64):
+        super(CharacterLevelCNN, self).__init__()
+        self.conv1 = nn.Sequential(nn.Conv1d(input_dim, n_conv_filters, kernel_size=7, padding=0), nn.ReLU(),
+                                   nn.MaxPool1d(3, stride=1))
+        self.conv2 = nn.Sequential(nn.Conv1d(n_conv_filters, n_conv_filters, kernel_size=6, padding=0), nn.ReLU(),
+                                   nn.MaxPool1d(3, stride=1))
+        # self.conv3 = nn.Sequential(nn.Conv1d(n_conv_filters, n_conv_filters, kernel_size=3, padding=0), nn.ReLU())
+        # self.conv4 = nn.Sequential(nn.Conv1d(n_conv_filters, n_conv_filters, kernel_size=3, padding=0), nn.ReLU())
+        # self.conv5 = nn.Sequential(nn.Conv1d(n_conv_filters, n_conv_filters, kernel_size=3, padding=0), nn.ReLU())
+        self.conv6 = nn.Sequential(nn.Conv1d(n_conv_filters, n_conv_filters, kernel_size=3, padding=0), nn.ReLU(),
+                                   nn.MaxPool1d(3, stride=1))
+
+        # dimension = int((input_length - 96) / 27 * n_conv_filters)
+        dimension = int((input_length - 19) * n_conv_filters)
+        self.fc1 = nn.Sequential(nn.Linear(dimension, n_fc_neurons), nn.Dropout(0.5))
+        self.fc2 = nn.Sequential(nn.Linear(n_fc_neurons, n_fc_neurons), nn.Dropout(0.5))
+        self.fc3 = nn.Linear(n_fc_neurons, n_classes)
+
+        # if n_conv_filters == 256 and n_fc_neurons == 1024:
+        #     self._create_weights(mean=0.0, std=0.05)
+        # elif n_conv_filters == 1024 and n_fc_neurons == 2048:
+        #     self._create_weights(mean=0.0, std=0.02)
+
+        if n_conv_filters > 256 and n_fc_neurons > 1024:
+            self._create_weights(mean=0.0, std=0.02)
+        else:
+            self._create_weights(mean=0.0, std=0.05)
+
+    def _create_weights(self, mean=0.0, std=0.05):
+        for module in self.modules():
+            if isinstance(module, nn.Conv1d) or isinstance(module, nn.Linear):
+                module.weight.data.normal_(mean, std)
+
+    def forward(self, input):
+        input = input.transpose(1, 2)
+        output = self.conv1(input)
+        output = self.conv2(output)
+        # output = self.conv3(output)
+        # output = self.conv4(output)
+        # output = self.conv5(output)
+        output = self.conv6(output)
+
+        output = output.view(output.size(0), -1)
+        output = self.fc1(output)
+        output = self.fc2(output)
+        output = self.fc3(output)
+
+        return output
+
+
+class CharacterEmbeddingNet(nn.Module):
+    '''
+    Variational Encoder
+    adopted from https://github.com/pytorch/examples/blob/master/vae/main.py
+    '''
+
+    def __init__(self, params):
+        super(CharacterEmbeddingNet, self).__init__()
+        self.params = copy.deepcopy(params)
+        # change internal params to adapt to have 2 * embedding_size  ## mu and sigma (first half are mu and other half is logvar)
+        self.input_dim = self.params.input_dim
+        self.input_length = int(self.params.input_size / self.input_dim)
+        try:
+            self.params.n_char_conv_filters = self.params.n_char_conv_filters
+        except:
+            self.params.n_char_conv_filters = 32
+        try:
+            self.params.n_char_fc_neurons = self.params.n_char_fc_neurons
+        except:
+            self.params.n_char_fc_neurons = 32
+
+        self.embedding_layers = CharacterLevelCNN(n_classes=self.params.embedding_size,
+                                                  input_dim=self.input_dim, input_length=self.input_length,
+                                                  n_conv_filters=self.params.n_char_conv_filters,
+                                                  n_fc_neurons=self.params.n_char_fc_neurons)
+
+    def forward(self, x):
+        out = x.view(x.size(0), self.input_length, self.input_dim)
+        out = self.embedding_layers(out)
+        return out
 
 
 class AttentionEncoder(nn.Module):

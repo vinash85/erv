@@ -413,9 +413,18 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/oxphos/scrna.v4.g
 
 CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA/. --tensorboard_prefix emb_n_immuneFactors_ 
 
+python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA/autoencoder_20190820-140204/. --restore_file ../data/Getz_scRNA/TCR.AA/tensorboardLog/autoencoder_20190820-140204/best.pth.tar
+
 
 # with  VAE 
+# mac 
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/
 
+
 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix nopipeline_vae_
+
+
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/Getz_scRNA/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/epoch-142.pth.tar
+
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/epoch-142.pth.tar
 

@@ -428,3 +428,7 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/Getz_scRNA/scrna.
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/epoch-142.pth.tar
 
+## tcr tcga
+CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/TCR.AA/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA/. 
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/TCR.AA.top100/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100/. 
+CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/. 

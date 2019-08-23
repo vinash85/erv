@@ -155,10 +155,6 @@ if __name__ == '__main__':
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
     params = net.create_lossfns_mask(params)
-    try:
-        params.VAE = params.VAE
-    except:
-        params.VAE = False
     # fetch dataloaders
     _, _, params.header, _ = datasets[0][0][type_file]
     params.input_size = len(params.embedding_indices)
@@ -166,8 +162,11 @@ if __name__ == '__main__':
     params = net.define_metrics(params)
     logging.info("- done.")
 
+    if params.emebedding_model == "net.VariationalEmbeddingNet":
+        params.VAE = True
     # Define the model
-    embedding_model = net.VariationalEmbeddingNet(params) if params.VAE else net.EmbeddingNet(params)
+    embedding_model = eval(params.emebedding_model + "(params)")
+    # embedding_model = net.VariationalEmbeddingNet(params) if params.VAE else net.EmbeddingNet(params)
     outputs = net.outputLayer(params)
 
     if params.cuda:

@@ -277,10 +277,6 @@ if __name__ == '__main__':
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params = net.create_lossfns_mask(params)
-    try:
-        params.VAE = params.VAE
-    except:
-        params.VAE = False
 
     # print(params.loss_fns)
     # print(params.mask)

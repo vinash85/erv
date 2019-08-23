@@ -162,8 +162,8 @@ if __name__ == '__main__':
     params = net.define_metrics(params)
     logging.info("- done.")
 
-    if params.emebedding_model == "net.VariationalEmbeddingNet":
-        params.VAE = True
+    params.VAE = True if params.emebedding_model == "net.VariationalEmbeddingNet" else False
+
     # Define the model
     embedding_model = eval(params.emebedding_model + "(params)")
     # embedding_model = net.VariationalEmbeddingNet(params) if params.VAE else net.EmbeddingNet(params)

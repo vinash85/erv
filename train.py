@@ -316,9 +316,7 @@ if __name__ == '__main__':
     # if len(params.out_channels_list) > 0:
     # embedding_model = net.EmbeddingNet(
     #     net.ConvolutionBlock, input_size, out_channels_list=params.out_channels_list, FC_size_list=params.FC_size_list, embedding_size=params.embedding_size, kernel_sizes=params.kernel_sizes, strides=params.strides, dropout_rate=params.dropout_rate)
-
-    if params.emebedding_model == "net.VariationalEmbeddingNet":
-        params.VAE = True
+    params.VAE = True if params.emebedding_model == "net.VariationalEmbeddingNet" else False
 
     embedding_model = eval(params.emebedding_model + "(params)")
     # embedding_model = net.VariationalEmbeddingNet(params) if params.VAE else net.EmbeddingNet(params)

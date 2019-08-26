@@ -420,6 +420,7 @@ python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_test_list.txt
 # mac 
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/
 
+python evaluate.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_test_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190822-142707/best.pth.tar
 
 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix nopipeline_vae_
 
@@ -432,3 +433,9 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir  ../data/tcga/scrna.v4.gen
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/TCR.AA/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA/. 
 CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/TCR.AA.top100/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100/. 
 CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/. 
+
+## evaluate 
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir   ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/.  --restore_file ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190823-014612/epoch-10.pth.tar
+
+
+CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir   ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/.  --restore_file ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/epoch-5.pth.tar

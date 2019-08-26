@@ -922,11 +922,13 @@ def negative_log_partial_likelihood(survival, risk, debug=False):
     y_true contains the survival time
     risk is the risk output from the neural network
     censor is the vector of inputs that are censored
+    censor data: 1 - dead, 0 - censor
     regularization is the regularization constant (not used currently in model)
 
     Uses the torch backend to perform calculations
 
     Sorts the surv_time by sorted reverse time
+    https://github.com/jaredleekatzman/DeepSurv/blob/master/deepsurv/deep_surv.py
     """
 
     # calculate negative log likelihood from estimated risk\
@@ -1003,14 +1005,19 @@ def c_index(predicted_risk, survival):
     ci = np.nan  # just to know that concordance index cannot be estimated
     # print(r2python.cbind(np.reshape(predicted_risk, (-1, 1)), survival))
 
-    na_inx = ~(np.isnan(survival[:, 0]) | np.isnan(survival[:, 1]) | np.isnan(predicted_risk))
-    predicted_risk, survival = predicted_risk[na_inx], survival[na_inx]
-    if len(predicted_risk) > 0 and sum(survival[:, 1] == 1) > 2:
-        survival_time, censor = survival[:, 0], survival[:, 1]
-        epsilon = 0.001
-        partial_hazard = np.exp(-(predicted_risk + epsilon))
-        censor = censor.astype(int)
-        ci = concordance_index(survival_time, partial_hazard, censor)
+    try:
+        na_inx = ~(np.isnan(survival[:, 0]) | np.isnan(survival[:, 1]) | np.isnan(predicted_risk))
+        predicted_risk, survival = predicted_risk[na_inx], survival[na_inx]
+        if len(predicted_risk) > 0 and sum(survival[:, 1] == 1) > 2:
+            survival_time, censor = survival[:, 0], survival[:, 1]
+            epsilon = 0.001
+            partial_hazard = np.exp(-(predicted_risk + epsilon))
+            censor = censor.astype(int)
+            ci = concordance_index(survival_time, partial_hazard, censor)
+
+    except:
+        ci = np.nan
+
     return ci
 
 

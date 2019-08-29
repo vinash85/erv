@@ -421,6 +421,7 @@ python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_test_list.txt
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/
 
 python evaluate.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_test_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190822-142707/best.pth.tar
+python evaluate.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_test_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/params.json  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190822-142707/best.pth.tar
 
 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix nopipeline_vae_
 
@@ -452,3 +453,13 @@ CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA
 CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.V2/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.V2/. --restore_file  ../data/Getz_scRNA/TCR.AA.V2/tensorboardLog/all_small_20190828-175706/epoch-20.pth.tar
 
 CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.patient.independent/.
+
+
+CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.patient.independent/. --restore_file  ../data/Getz_scRNA/TCR.AA.patient.independent/tensorboardLog/20190829-102554/epoch-28.pth.tar
+
+
+## learn on tcga and test on scRNA 
+
+CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/params.getz.json  --restore_file  ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/epoch-8.pth.tar
+
+

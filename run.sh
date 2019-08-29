@@ -439,3 +439,16 @@ CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir   ../data/tcga/scrna.v4.ge
 
 
 CUDA_VISIBLE_DEVICES=2 python evaluate.py  --data_dir   ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/.  --restore_file ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/epoch-5.pth.tar
+
+
+
+### TCR Amino acid training 
+
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA.V2/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.V2/. --tensorboard_prefix all_
+
+CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.V2/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.V2/. --restore_file  ../data/Getz_scRNA/TCR.AA.V2/tensorboardLog/all_20190827-110811/epoch-332.pth.tar
+
+
+CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.V2/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.V2/. --restore_file  ../data/Getz_scRNA/TCR.AA.V2/tensorboardLog/all_small_20190828-175706/epoch-20.pth.tar
+
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.patient.independent/.

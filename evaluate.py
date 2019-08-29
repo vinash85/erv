@@ -125,7 +125,12 @@ if __name__ == '__main__':
     """
     # Load the parameters
     args = parser.parse_args()
-    json_path = os.path.join(args.model_dir, 'params.json')
+
+    if os.path.isfile(args.model_dir):
+        json_path = args.model_dirs
+    else:
+        json_path = os.path.join(args.model_dir, 'params.json')
+
     assert os.path.isfile(json_path), "No json configuration file found at {}".format(json_path)
     params = utils.Params(json_path)
 

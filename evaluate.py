@@ -114,6 +114,7 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
         all_header = ["sample_name"] + params.header.tolist() + header_outputs + embedding_header
         predictions_df.columns = all_header
+        logging.info("Writing validation output to : " + validation_file)
         predictions_df.to_csv(validation_file, sep='\t', index=False)
 
     return metrics_mean

@@ -459,7 +459,6 @@ CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA
 
 
 ## learn on tcga and test on scRNA 
-
 CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/params.getz.json  --restore_file  ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/epoch-8.pth.tar
 
 

@@ -127,7 +127,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     if os.path.isfile(args.model_dir):
-        json_path = args.model_dirs
+        json_path = args.model_dir
+        args.model_dir = os.path.dirname(args.model_dir)
     else:
         json_path = os.path.join(args.model_dir, 'params.json')
 

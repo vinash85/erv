@@ -383,12 +383,12 @@ immune.genes.exps = all.exp_mat[common.patients, immune.genes.compiled]
 # "TCGA.V4.A9EW.01A" is in following format so need to convert 
 common.patients.subs = substring(common.patients, 1,12)
 library(readxl)
-tcga_clinical = read_excel("/liulab/asahu/data/ssgsea/xiaoman/TCGA_survival_data/TCGA-CDR-SupplementalTableS1.xlsx",sheet=1)
+tcga_clinical = read_excel("/liulab/asahu/data/ssgsea/xiaoman/TCGA_gdc/TCGA-CDR-SupplementalTableS1.xlsx",sheet=1)
 clinical.dt = data.table(tcga_clinical)
 clinical.dt$patient.name = gsub(clinical.dt$bcr_patient_barcode, pattern="-", replacement=".")
 clinical.dt = clinical.dt[match(common.patients.subs, patient.name)]
 
-table3 = fread("/liulab/asahu/data/ssgsea/xiaoman/TCGA_survival_data/TCGA-CDR_tabl3.csv")
+table3 = fread("/liulab/asahu/data/ssgsea/xiaoman/TCGA_gdc/TCGA-CDR_tabl3.csv")
 setnames(table3, c(1,3,6,9,12), c('cancertype', paste0("sel.",c("OS", "PFI", "DFI", "DSS"))))
 selstr="✓"
 

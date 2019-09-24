@@ -202,6 +202,8 @@ for (file1 in files) {
     print(sprintf("%s finished", file1))
 }
 
+
+
 out.all = list()
 for (file1 in files) {
     command = sprintf("tar -xf %s --wildcards --no-anchored \'*.toTranscriptome.sorted.bam\' -C /rna-seq/trust4/dbExtract", file1)

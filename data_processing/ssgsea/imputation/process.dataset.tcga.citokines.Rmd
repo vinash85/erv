@@ -1,28 +1,8 @@
 ---
-title: "Greedy immune factors model"
+title: "TCGA Citokines dataset"
 output: html_notebook
 ---
 
-
-
-```{r}
-library(rjson)
-# because of NaN
-aa = readr::read_file("~/project/deeplearning/icb/data/tcga/scrna.v2/tensorboardLog/20190717-195353/metrics_val_last_weights.json")
-result <- fromJSON(gsub( aa, pattern="NaN", replacement = "null"))
-result = sapply(result, function(tt) ifelse(is.null(tt), NA, tt))
-result.dt = data.table(name=names(result), metric=unlist(result))
-result.dt = result.dt[-seq(nrow(result.dt)-1, nrow(result.dt))]
-result.dt = result.dt[order(metric)]
-result.dt[,feat:=gsub(name, pattern = "_[0-9]+_correlation$",replacement = "")]
-msi.feat = result.dt[grep(name, pattern="MSI")]$feat[-(1:2)]
-neoantigen.feat = result.dt[grep(name, pattern="Neoantigens")]$feat
-extra.feat = c("TIL.Regional.Fraction", "Intratumor.Heterogeneity", "Aneuploidy.Score", "Silent.Mutation.Rate", "Nonsilent.Mutation.Rate")
-rescued.feat = c(msi.feat, neoantigen.feat, extra.feat)
-
-# selected.phenotypes = c()
-
-```
 
 ## expression association 
 
@@ -30,26 +10,9 @@ rescued.feat = c(msi.feat, neoantigen.feat, extra.feat)
 
 ```{r}
 
-write.dataset = function(output.dir, sample.name, dataset) {
-  dir.create(output.dir)
-  write.table(file=paste0(output.dir, "/samples_name.txt"),x = sample.name,
-              row.names = F, col.names =T,  sep="\t", quote=F )
-  write.table(file=paste0(output.dir, "/dataset.txt"),x = dataset,
-              row.names = F, col.names =T,  sep="\t", quote=F )
-  rand_inx = sample(nrow(dataset))
-  dataset_shuffle = dataset[rand_inx,]
-  train.inx = 1:ceiling(.85 * nrow(dataset_shuffle))
-  val.inx = ceiling(.85 * nrow(dataset_shuffle)):nrow(dataset_shuffle)
-  
-  write.table(file=paste0(output.dir, "/dataset_train.txt"),x = dataset_shuffle[train.inx,],
-              row.names = F, col.names =T,  sep="\t", quote=F )
-  write.table(file=paste0(output.dir, "/dataset_val.txt"),x = dataset_shuffle[val.inx,],
-              row.names = F, col.names =T,  sep="\t", quote=F )
-  
-}
 
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"
-# dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_gdc/EBPlusPlusAdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.tsv"
+
 dataset_ssgsea = fread(dataset_ssgsea)
 sample.name = fread("~/project/deeplearning/icb/data/tcga/scrna.v2/samples_name.txt")
 expression_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
@@ -89,22 +52,8 @@ top.expression = expression_match[,top.genes]
 
 
 dataset.new = cbind(tcga.dataset, top.expression)
-output.dir = "~/project/deeplearning/icb/data/tcga/scrna.v3/"
-write.dataset(output.dir = output.dir, dataset = dataset.new, sample.name = sample.name)
 
-which(colnames(dataset.new) %in% rescued.feat)
 
-temp_out = get_sel_pca(top.expression, top.genes, scale=F)
-ev = apply(temp_out$pca_out, 2, sd)^2
-ev = ev/sum(ev)
-cumsum(ev)
-
-pca_sel_obj = temp_out$pca_obj
-pca_sel_obj$len_selected = 10
-aa1  = prcomp(top.expression)
-
-save(file=paste0(output.dir, "/pca_sel_obj.RData"), pca_sel_obj, top.genes)
-pca_top = temp_out$pca_out[,seq(pca_sel_obj$len_selected)]
 
 ```
 
@@ -190,34 +139,18 @@ rrpa[,SampleID:=gsub(substring(SampleID,1,16), pattern="-", replacement = ".")]
 rrpa.match = rrpa[match(sample.name$x, SampleID)]
 rrpa.mat = rrpa.match[,-(1:2),with=F]
 temp = calc.cor(rrpa.mat, nontranscriptome.immune.factors, use = "pairwise.complete.obs")
-# aa = plot.heatmap(temp$estimate[,-(21:22)])
-pdf("~/liulab_home/data/ssgsea/xiaoman/TCGA_gdc/plots/top_if_rrpa.pdf",width=18, height = 7)
-Heatmap(t(temp$estimate[,-(21:22)]), name = "top factors", column_title = "protien", row_title = "immune factors",
-        row_names_gp = gpar(fontsize = 7), # Text size for row names
-        column_names_gp = gpar(fontsize = 5) # Text size for row names
-)
-dev.off()
+
 
 
 temp2 = calc.cor(rrpa.mat, tcga.immune.factors, use = "pairwise.complete.obs")
-pdf("~/liulab_home/data/ssgsea/xiaoman/TCGA_gdc/plots/if_rrpa.pdf",width=18, height = 7)
 aa = temp2$estimate
 aa = aa[which(apply(aa, 1, sd, na.rm=T) > 0), which(apply(aa, 2, sd, na.rm=T) > 0)] 
-Heatmap(t(aa), name = "top factors", column_title = "factors", row_title = "protien",
-        row_names_gp = gpar(fontsize = 7), # Text size for row names
-        column_names_gp = gpar(fontsize = 5) # Text size for row names
-)
-dev.off()
+
 
 temp3 = calc.cor(rrpa.mat, tcga.immune.genes, use = "pairwise.complete.obs")
 aa = temp3$estimate
 aa = aa[which(apply(aa, 1, sd, na.rm=T) > 0), which(apply(aa, 2, sd, na.rm=T) > 0)] 
-pdf("~/liulab_home/data/ssgsea/xiaoman/TCGA_gdc/plots/immune_genes_rrpa.pdf",width=18, height = 7)
-Heatmap(t(aa), name = "Immune genes", column_title = "Protein", row_title = "Immune genes",
-        row_names_gp = gpar(fontsize = 4), # Text size for row names
-        column_names_gp = gpar(fontsize = 5) # Text size for row names
-)
-dev.off()
+
 
 protien.sel1 = which(rowSums(abs(temp$estimate)> 0.3 , na.rm = T) > 0)
 protien.sel2 = which(rowSums(abs(temp2$estimate)> 0.4 , na.rm = T) > 0)

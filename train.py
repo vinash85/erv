@@ -39,6 +39,9 @@ parser.add_argument('--tensorboard_prefix', default='',
                     help="prefix for tensorboard logging")
 parser.add_argument('--hyper_param', default='',
                     help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
+parser.add_argument('--dont_save_every_epoch',
+                    help="Do not save model every epoch and only save best and last",
+                    action='store_true')
 parser.add_argument('--prefix', default='',
                     help="Prefix of dataset files  \n \
                     (e.g. prefix=\"tcga\" implies input files are \n \
@@ -188,7 +191,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         val_metrics_all = []
         for index, dataset in enumerate(datasets):
             # compute number of batches in one epoch (one full pass over the training set)
-            dataloader, train_optimizer_mask, dataset_name = dataset
+            dataloader, train_optimizer_mask, (dataset_name, tsne) = dataset
             if 'train' in dataloader.keys():
                 train_metrics = train(embedding_model, outputs, embedding_optimizer,
                                       outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
@@ -199,7 +202,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
             # Evaluate for one epoch on validation set
             if 'val' in dataloader.keys():
                 validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
-                val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file)
+                val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file, writer=writer, epoch=epoch, index=index, tsne=tsne)
                 val_metrics_all.append(val_metrics)
 
             # tensorboard logging
@@ -234,7 +237,9 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         else:
             is_best = val_acc > best_val_acc
 
-        # Save weights
+        # Save weight
+        save_inx = epoch + 1 if not params.dont_save_every_epoch else None
+
         utils.save_checkpoint({'epoch': epoch + 1,
                                'embedding_state_dict': embedding_model.state_dict(),
                                'outputs_state_dict': outputs.state_dict(),
@@ -242,7 +247,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                                'outputs_optim_dict': outputs_optimizer.state_dict()
                                },
                               is_best=is_best,
-                              checkpoint=tensorboard_dir, epoch=epoch + 1)
+                              checkpoint=tensorboard_dir, epoch=save_inx)
 
         # If best_eval, best_save_path
         if is_best:
@@ -277,6 +282,7 @@ if __name__ == '__main__':
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params = net.create_lossfns_mask(params)
+    params.process_negative_loss_excluded = net.process_negative_loss_excluded(params)
 
     # print(params.loss_fns)
     # print(params.mask)
@@ -296,6 +302,7 @@ if __name__ == '__main__':
     copy(json_path, tensorboard_dir)
     copy(args.data_dir, tensorboard_dir)
     logging.info("Tensorboard logging directory {}".format(tensorboard_dir))
+    params.dont_save_every_epoch = args.dont_save_every_epoch
 
     utils.save_dict_to_json(args.hyper_param, os.path.join(
         tensorboard_dir, "hyper_param.txt"))

@@ -8,6 +8,7 @@ from lifelines.utils import concordance_index
 import math
 from sklearn import metrics as smetrics
 import r2python
+import logging
 from scipy.stats.stats import spearmanr
 from past.builtins import basestring
 import copy
@@ -1195,6 +1196,15 @@ def define_metrics(params):
     # tracer()
 
     return params
+
+
+def process_negative_loss_excluded(params):
+    out = params.loss_excluded_from_training
+    if all(np.array(params.loss_excluded_from_training) < 0):
+        out1 = [-(xx + 1) for xx in params.loss_excluded_from_training]
+        out = list(set(range(len(params.loss_fns))) - set(out1))
+        logging.warning("loss_excluded_from_training {}".format(str(out)))
+    return out
 
 
 def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=0.):

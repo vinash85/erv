@@ -29,7 +29,7 @@ parser.add_argument('--type_file', default="val",
                     help="String for files from dataset for validation list will be executed")
 
 
-def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None):
+def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None, writer=None, epoch=None, index=None, tsne=0):
     """Evaluate the model on `num_steps` batches.
 
     Args:
@@ -83,12 +83,11 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         output_batch = output_batch.data.cpu().numpy()
         embedding_batch = embedding_batch.data.cpu().numpy()
 
-        if validation_file:
-            output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch], 1)
-            if i == 0:
-                predictions = output_and_predictions
-            else:
-                predictions = np.concatenate([predictions, output_and_predictions], 0)
+        output_and_predictions = np.concatenate([labels_san_survival, output_batch, embedding_batch], 1)
+        if i == 0:
+            predictions = output_and_predictions
+        else:
+            predictions = np.concatenate([predictions, output_and_predictions], 0)
         # labels_batch = labels_batch.data.cpu().numpy()
 
         # compute all metrics on this batch
@@ -107,15 +106,42 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
     metrics_string = " ; ".join("{}: {:05.3f}".format(k, v) for k, v in metrics_mean.items())
     logging.info("- Eval metrics : " + metrics_string)
     sample_name = tsne_labels_mat[:, 0]
+    tsne_labels_mat = tsne_labels_mat[:, 1:]
     if validation_file:
-        predictions = np.concatenate([sample_name[:, None], predictions], axis=1)
-        predictions_df = pd.DataFrame(predictions)
+        predictions1 = np.concatenate([sample_name[:, None], predictions], axis=1)
+        predictions_df = pd.DataFrame(predictions1)
         header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]
         embedding_header = ["embedding" + str(inx) for inx in range(params.embedding_size)]
         all_header = ["sample_name"] + params.header.tolist() + header_outputs + embedding_header
         predictions_df.columns = all_header
         logging.info("Writing validation output to : " + validation_file)
         predictions_df.to_csv(validation_file, sep='\t', index=False)
+
+    if tsne:
+        # import ipdb
+        # ipdb.set_trace()
+        # will work with epoch
+        if params.save_tsne_figs:
+            savedir = os.path.join(writer.log_dir, "umap_val_" + str(index))
+            if epoch == 0:
+                os.makedirs(savedir, exist_ok=True)
+
+            if epoch % params.embedding_log == 0:
+                logging.info("Creating umap : " + savedir)
+
+                split_indices = np.cumsum([labels_san_survival.shape[1], output_batch.shape[1],
+                                           embedding_batch.shape[1]])
+                _, output_mat, embedding_mat, transformed_mat = \
+                    np.split(predictions, split_indices, axis=1)
+
+                for cols in range(tsne_labels_mat.shape[1]):
+                    title = params.metadata_header[cols]
+                    fig = utils.create_save_umap(embedding_mat, color=tsne_labels_mat[:, cols], epoch=epoch, savedir=savedir, title=title)
+                    writer.add_figure(
+                        tag='val_' + title + str(index),
+                        figure=fig,
+                        global_step=epoch
+                    )
 
     return metrics_mean
 

@@ -1140,4 +1140,3 @@ indexes = colnames(gsva.mat.matched.dt)
 out = plot.aucs(cwd=cwd, indexes =indexes, curr.dt=gsva.mat.matched.dt)
 
 ```
-

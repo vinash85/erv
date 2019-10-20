@@ -5,7 +5,6 @@ output: html_notebook
 
 ## Identify CDR3 regions in T-cells 
 
-<<<<<<< HEAD
 ```{r}
 # list all the files in tar
 system("echo $HOME", intern = TRUE)
@@ -42,7 +41,6 @@ Run in Kraken
 Run in Kraken 
 ```{r}
 
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 library(data.table)
 require(doMC)
 require(foreach)
@@ -59,7 +57,6 @@ annot.all = foreach( file1=files) %dopar%  fread(file1, header=F)
 names(annot.all) = filenames 
 
 trust4.out = list(cdr3.all, annot.all)
-<<<<<<< HEAD
 save(file="/liulab/asahu/data/ssgsea/xiaoman/getz/trust4.out.V2.RData", trust4.out)
 
 ```
@@ -80,28 +77,22 @@ icb.expression.matched = icb.expression[match(phenotype_sel.mod$sample.name, row
 # identical(phenotype_sel.mod$sample.name, dataset.sample.name)
 rm(dataset_ssgsea_temp, icb.expression)
 ```
-=======
 save(file="/liulab/asahu/data/ssgsea/xiaoman/getz/trust4.out.RData", trust4.out)
 
 ```
 
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 
 ## Create the features for embedding prediction 
 
 ```{r}
-<<<<<<< HEAD
 load("/liulab/asahu/data/ssgsea/xiaoman/getz/trust4.out.V2.RData")
-=======
 load("/liulab/asahu/data/ssgsea/xiaoman/getz/trust4.out.RData")
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 names(trust4.out) = c("cdr3", "annot")
 substr.id = function(tt){
     paste(strsplit(tt, split="_")[[1]][1:3], collapse = "_")
 }
 
 trust4.cellid = sapply(names(trust4.out[[1]]), substr.id)
-<<<<<<< HEAD
 tcell.id = sapply(rownames(icb.expression.matched),  substr.id)
 sum(trust4.cellid %in% tcell.id) ## only 3196 
 only.tcells = setdiff(tcell.id, trust4.cellid)
@@ -117,7 +108,6 @@ sample.name.map$trust.id = names(trust4.out[[1]])[match(common.cellids, trust4.c
 # })
 # xx = unlist(sapply(cdr3.tcell, nrow))
 # yy = unlist(sapply(cdr3.tcell1, nrow))
-=======
 tcell.id = sapply(colnames(sco.curr),  substr.id)
 sum(trust4.cellid %in% tcell.id) ## only 3196 
 only.tcells = setdiff(tcell.id, trust4.cellid)
@@ -133,7 +123,6 @@ cdr3.tcell1 = lapply(cdr3.tcell, function(tt) {
 })
 xx = unlist(sapply(cdr3.tcell, nrow))
 yy = unlist(sapply(cdr3.tcell1, nrow))
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 # translate 
 
 # Biostrings::translate(Biostrings::DNAStringSet(trust4.out[[1]][[2]]$V8))
@@ -145,11 +134,8 @@ yy = unlist(sapply(cdr3.tcell1, nrow))
 
 
 ```
-<<<<<<< HEAD
 
 
-=======
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 ```{r}
 library(stringr)
 library(stringi)
@@ -204,7 +190,6 @@ my.translate = function(dt, name=NULL, min.len= 6, max.len = 25){
 
 ```
 
-<<<<<<< HEAD
 # ```{r}
 # # trust4.filtered = for(dt in trust4.out$cdr3)
 #     # uu = my.translate(dt)
@@ -216,7 +201,6 @@ my.translate = function(dt, name=NULL, min.len= 6, max.len = 25){
 # # }
 # ## convert to unicode 
 # ```
-=======
 ```{r}
 
 # trust4.filtered = for(dt in trust4.out$cdr3)
@@ -231,7 +215,6 @@ trust4.filtered = foreach(dt=trust4.out$cdr3) %dopar%{
 ## convert to unicode 
 
 ```
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 
 ## run in data table to make it faster 
 ```{r}
@@ -249,19 +232,13 @@ min.len = 7*3
 max.len =25*3
 cols = c("consesus_id", "the_index_of_CDR3_in_that_consensus", "V", "J", "C", "CDR1", "CDR2", "CDR3", "score_of_CDR3", "abundance")
 setnames(trust4.cdr3,1:10, cols)
-<<<<<<< HEAD
 trust4.cdr3$sample.name.short = sample.name.map[match(trust4.cdr3$cellid,trust.id)]$sample.name.short
 trust4.cdr3$sample.name = sample.name.map[match(trust4.cdr3$cellid,trust.id)]$sample.name
-=======
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 trust4.cdr3[,str.len:=stringr::str_length(CDR3)]
 trust4.cdr3[,is.alpha:=ifelse(grepl("TRA", V)|grepl("TRA", J)| grepl("TRA", C), T, F)]
 trust4.cdr3[,is.beta:=ifelse(grepl("TRB", V)|grepl("TRB", J)| grepl("TRB", C), T, F)]
 trust4.cdr3[,abs.score:= abundance * (score_of_CDR3+.001)]
-<<<<<<< HEAD
 # trust4.cdr3[, cellid.short:=sapply(cellid, substr.id)]
-=======
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 if(!is.na(min.len)) trust4.cdr3 = trust4.cdr3[str.len>= min.len]
 if(!is.na(max.len)) trust4.cdr3 = trust4.cdr3[str.len<= max.len]
 
@@ -277,11 +254,7 @@ tcell.cdr3$aa = tcell.cdr3[,{
 tcell.cdr3[,aa.len:=stringr::str_length(aa)]
 tcell.cdr3 = tcell.cdr3[!is.na(aa.len)]
 tcell.cdr3 = tcell.cdr3[!grepl(pattern="\\*", tcell.cdr3$aa)]
-<<<<<<< HEAD
 tcell.cdr3 = tcell.cdr3[aa.len <=22]
-=======
-tcell.cdr3 = tcell.cdr3[aa.len <=20]
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 # ww = tcell.cdr3[1:100]
 # ww[,aa:=mapply(get.aminoacid,CDR3, V , J)]
 # 
@@ -299,7 +272,6 @@ tcell.cdr3 = tcell.cdr3[aa.len <=20]
 tcell.cdr3.filtered = tcell.cdr3[, .SD[abs.score == max(abs.score)],
                                  by=.(is.alpha, cellid)][, .SD[which.min(str.len)], 
                                                          by = .(is.alpha, cellid)]
-<<<<<<< HEAD
 tcell.cdr3.beta = tcell.cdr3.filtered[is.beta==T & aa.len <=20 ][sample.name.short %in% tcell.id ][abs.score>=1]
 
 # tcell.cdr3.beta[,aa.short]
@@ -329,7 +301,6 @@ tcell.cdr3.beta = tcell.cdr3.filtered[is.beta==T & aa.len <=20 & (cellid.short %
 
 ```
 
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 ## one hot encoding
 ```{r}
 
@@ -337,7 +308,6 @@ tcell.cdr3.beta = tcell.cdr3.filtered[is.beta==T & aa.len <=20 & (cellid.short %
 ## convert each to the ordered factors
 ## get one hot
 
-<<<<<<< HEAD
 # xx = stringi::stri_pad(tcell.cdr3.beta$aa,  pad = "X", width = 20, side="right")
 # xx =do.call(rbind, strsplit(xx, split=""))
 # xx[xx=="X"] = NA
@@ -351,21 +321,8 @@ tcell.cdr3.beta = tcell.cdr3.filtered[is.beta==T & aa.len <=20 & (cellid.short %
 # sum(aa.one.one >=10)
 # aa.one.sel = aa.one[,aa.one.one >=10, with=F]
 aa.one.sel = get_one_hot_aa(tcell.cdr3.beta$aa, width = 20)
-=======
-xx = stringi::stri_pad(tcell.cdr3.beta$aa,  pad = "X", width = 20, side="right")
-xx =do.call(rbind, strsplit(xx, split=""))
-xx[xx=="X"] = NA
-aa.uniq = sort(unique(c(xx)))
-aa.uniq = aa.uniq[!is.na(aa.uniq)]
-xx = data.table(xx)
-xx =xx[, lapply(.SD, factor, levels=aa.uniq)]
-aa.one = mltools::one_hot(xx, sparsifyNAs = T)
-tt = colSums(aa.one)
-aa.one.one = colSums(aa.one) 
-sum(aa.one.one >=10)
-aa.one.sel = aa.one[,aa.one.one >=10, with=F]
 
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
+
 ```
 
 ## Create datasets 
@@ -380,7 +337,6 @@ Dataset is ordered as :
 
 ```{r}
 
-<<<<<<< HEAD
 cwd1= "/homes6/asahu/project/deeplearning/icb/data/tcga/scrna.v4.genes/tensorboardLog/nopipeline_vae_20190819-161104/epoch-142/"
 dataset.sample.name = fread("/homes6/asahu/project/deeplearning/icb/data/Getz_scRNA//scrna.v4.genes/samples_name.txt")$x
 icb.phenotype = fread(sprintf("%s/val_prediction.csv", cwd1))
@@ -452,7 +408,6 @@ save(file = sprintf("%s/tcell.cdr3.beta.RData", output.dir), tcell.cdr3.beta)
 dataset.cols = data.table(colnames(dataset.tcr), seq(ncol(dataset.tcr)))
 
 # uu = cor(aa.one.sel, dataset.tcr[,253:1119, with=F] )
-=======
 write.dataset = function(output.dir, sample.name, dataset) {
   dir.create(output.dir)
   write.table(file=paste0(output.dir, "/samples_name.txt"),x = sample.name,
@@ -502,14 +457,12 @@ file.copy("~/project/deeplearning/icb/data/tcga/scrna.v4.pcs/datasets_tsne_list.
 dataset.cols = data.table(colnames(dataset.tcr), seq(ncol(dataset.tcr)))
 
 uu = cor(aa.one.sel, dataset.tcr[,253:1119, with=F] )
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 
 
 ```
 
 CUDA_VISIBLE_DEVICES=0 python evaluate.py  --data_dir  ../data/oxphos/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/. --restore_file  ../data/tcga/scrna.v4.genes/tensorboardLog/no_pipeline_20190724-201216/epoch-52.pth.tar
 
-<<<<<<< HEAD
 ## unsupervised clustering of TCRs from it autoencoder ouput
 ```{r}
 tcr.emb = fread("~/project/deeplearning/icb/data/Getz_scRNA/TCR.AA/tensorboardLog/autoencoder_20190820-140204/best.csv")
@@ -567,8 +520,4 @@ write.table(file="/liulab/asahu/cd8t.files.txt", x=cd8t.files, sep="\t", row.nam
 ```{r}
 
 ```
-=======
-
-
->>>>>>> e11a50b592485b4d1b2a8337dffcf608ce843ac8
 

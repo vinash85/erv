@@ -57,6 +57,27 @@ length(input.output.genes) + 4
 length(input.output.genes) + 4 + dim(if.data)[2] + dim(protien.data)[2]  + length(monitored.mutation)
 ```
 
+```{r}
+dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/TCGA_ALLTPM.txt"
+
+dataset_ssgsea = fread(dataset_ssgsea)
+expression_mat= t(as.matrix(dataset_ssgsea[,seq(2,ncol(dataset_ssgsea)),with=F]))
+head(rownames(expression_mat))
+
+colnames(expression_mat) = dataset_ssgsea$gene_name
+patient.name = colnames(dataset_ssgsea)[-1]
+patient.name = gsub(patient.name, pattern="-", replacement=".")
+patient.name = substring(patient.name, 1, 16)
+rownames(expression_mat) = patient.name
+head(patient.name)
+head(sample.name$x)
+expression_match = expression_mat[sample.name$x,]
+expression_match_norm = avinash::normalize.expression(expression_match)
+
+all.genes = colnames(expression_match_norm)
+```
+
+
 
 ## For Xiaoman
 ```{r}
@@ -83,10 +104,11 @@ hr = hclust(as.dist(1 - abs(xx)), method = "complete")
 library(corrplot)
 corrplot(M, method = "circle", tl.cex=.4)
 
-
-xx = cor(dat, method = "spearman", use = "pairwise.complete.obs"); xx[is.na(xx)] = 0
-M = xx[order.dendrogram(as.dendrogram(hc)), order.dendrogram(as.dendrogram(hc))]
-
+dat.out= deepimmune.out[,paste0(inp.col,".output"), with=F]
+setnames(dat.out, seq_along(inp.col), inp.col)
+xx = cor(dat.out, method = "spearman", use = "pairwise.complete.obs"); xx[is.na(xx)] = 0
+M1 = xx[order.dendrogram(as.dendrogram(hc)), order.dendrogram(as.dendrogram(hc))]
+corrplot(M1, method = "circle", tl.cex=.4)
 
     library(ComplexHeatmap)
     Heatmap(dat, name = name, column_title = "Variables", row_title = "Samples", 

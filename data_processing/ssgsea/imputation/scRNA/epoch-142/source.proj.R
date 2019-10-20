@@ -1,3 +1,5 @@
+recompile_avinash = function() 
+    install.packages("~/softwares/avinash", repos=NULL, clean = TRUE, INSTALL_opts = "--no-lock ")
 recompile_r_avinash = function()
     recompile_r(lib.name ="avinash", path="~/shortcuts/avinash", lib = "/homes6/asahu/R/x86_64-pc-linux-gnu-library/3.6")
 recompile_r = function(path, lib.name, reload=T, ...){
@@ -866,4 +868,31 @@ trust4.cdr3[,abs.score:= abundance * (score_of_CDR3+.001)]
 if(!is.na(min.len)) trust4.cdr3 = trust4.cdr3[str.len>= min.len]
 if(!is.na(max.len)) trust4.cdr3 = trust4.cdr3[str.len<= max.len]
 trust4.cdr3
+}
+
+qnorm.array <- function(mat)
+{
+    mat.back = mat
+    mat = mat.back[!is.na(mat.back)]
+    mat = rank(mat,  rank, ties.method = "average");
+    mat = qnorm(mat / (length(mat)+1));
+    mat.back[!is.na(mat.back)] = mat
+    mat.back
+}
+
+
+read.deepImmune.output = function(deepImmune.dir, cwd, copy.deepImmune.output=F)
+{
+    source("/homes6/asahu/project/deeplearning/icb/deepImmune/source.R")
+    dir.create(cwd)
+    if(copy.deepImmune.output) 
+        system(sprintf("cp %s/val_prediction.csv %s", deepImmune.dir, cwd))
+    dataset.sample.name = fread(sprintf("%s/samples_name.txt", deepImmune.dir))$x
+    icb.phenotype= fread(sprintf("%s/val_prediction.csv", cwd))
+    icb.phenotype = icb.phenotype[unlist(icb.phenotype$sample_name) +1]
+    ## correct the headers 
+    header = fread(sprintf("%s/best_val_0.csv", dirname(cwd)),nrows = 1)
+    colnames(icb.phenotype) = colnames(header)
+    icb.phenotype.col.dt = data.table(colnames(icb.phenotype), seq(ncol(icb.phenotype)))
+    list(icb.phenotype=icb.phenotype, icb.phenotype.col.dt=icb.phenotype.col.dt)
 }

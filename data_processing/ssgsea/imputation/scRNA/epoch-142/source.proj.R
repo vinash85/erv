@@ -894,5 +894,5 @@ read.deepImmune.output = function(deepImmune.dir, cwd, copy.deepImmune.output=F)
     header = fread(sprintf("%s/best_val_0.csv", dirname(cwd)),nrows = 1)
     colnames(icb.phenotype) = colnames(header)
     icb.phenotype.col.dt = data.table(colnames(icb.phenotype), seq(ncol(icb.phenotype)))
-    list(icb.phenotype=icb.phenotype, icb.phenotype.col.dt=icb.phenotype.col.dt)
+    list(icb.phenotype=icb.phenotype, icb.phenotype.col.dt=icb.phenotype.col.dt, dataset.sample.name = dataset.sample.name)
 }

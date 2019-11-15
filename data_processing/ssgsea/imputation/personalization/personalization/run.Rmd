@@ -138,12 +138,14 @@ length(input.output.genes) + 4 + dim(if.data)[2] + dim(protien.data)[2]  + lengt
 
 ```{r}
 source("/homes6/asahu/project/deeplearning/icb/deepImmune/source.R")
+source('~/project/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/scRNA/epoch-142/source.proj.R')
 cwd= "~/project/deeplearning/icb/data/tcga/citokines.v1/tensorboardLog/20190924-011458/best_model/"
 # heatmap 
 icb.data = read.deepImmune.output(deepImmune.dir = "~/project/deeplearning/icb/data/genentech.tpm/citokines.v1", 
                        cwd =cwd, 
                        copy.deepImmune.output=T
                        )
+
 
 ```
 
@@ -162,6 +164,7 @@ cal.aucs <- function(resp, signature.mat) {
 ## on specific subtypes run auc of signatures 
 ```{r}
 signatures =  icb.data$icb.phenotype[match(rownames(genentech.pheno), icb.data$dataset.sample.name),c(49:50,145:347),with=F]
+response = genentech.pheno$binaryResponse
 index.pheno = c(3:6, 10, 11, 13, 15, 16, 23:25)
 
 pheno.out = list()
@@ -169,13 +172,34 @@ for (ii in index.pheno) {
     pheno.curr = genentech.pheno[[ii]]
     tab = table(pheno.curr)
     tab = tab[tab > 10]
+    if(length(tab) > 0)
     for(tt in seq_along(tab)){
         name.curr = sprintf("%s.%s", colnames(genentech.pheno)[ii], names(tab)[tt])
         inx.curr = which( pheno.curr == names(tab)[tt])
-        pheno.list[[name.curr]] = cal.aucs(response[inx.curr], signatures[inx.curr,])
+        if(length(inx.curr) > 10)
+            pheno.out[[name.curr]] = cal.aucs(response[inx.curr], signatures[inx.curr,])
     }
     
 }
+
+pheno.out.mat = do.call(rbind, pheno.out)
+
+colnames(pheno.out.mat)[which(pheno.out.mat > 0.9,arr.ind = T)[,2]]
+pheno.out.mat[is.na(pheno.out.mat)] = 0.5
+pheno.out.mat = abs(pheno.out.mat - 0.5) + 0.5 
+
+library(ComplexHeatmap)
+Heatmap(pheno.out.mat, 
+        name = "Predictive Power", #title of legend
+        column_title = "Subtype", row_title = "Signature",
+        row_order = NULL,
+         show_column_dend = FALSE,
+         show_row_dend = FALSE,
+        row_names_gp = gpar(fontsize = 6), # Text size for row names
+        column_names_gp = gpar(fontsize = 5) # Text size for row names
+)
+
+# dev.off()
 ```
 
 

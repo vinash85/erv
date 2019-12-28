@@ -8,6 +8,7 @@ from lifelines.utils import concordance_index
 import math
 from sklearn import metrics as smetrics
 import r2python
+import logging
 from scipy.stats.stats import spearmanr
 from past.builtins import basestring
 import copy
@@ -1076,16 +1077,35 @@ def mean_na(xx):
     return np.mean(xx[~np.isnan(xx)])
 
 
+class MSELossClip(nn.Module):
+    """MSELoss with loss clipped between {-clip, clip}
+    """
+
+    def __init__(self, clip=1.0):
+        super(MSELossClip, self).__init__()
+        self.clip = clip
+
+    def forward(self, outputs, labels):
+        error = outputs - labels
+        error = torch.clamp(error, min=-self.clip, max=self.clip)**2
+        error = error.sum()
+        return error
+
+
 def create_lossfns_mask(params):
+    continuous_loss = nn.MSELoss()
+    if hasattr(params, 'continuous_loss'):
+        continuous_loss = eval(params.continuous_loss)
 
     survival_output_size = int(len(params.survival_indices) / 2)
     linear_output_size = survival_output_size + len(params.continuous_phenotype_indices)
     binary_output_size = len(params.binary_phenotype_indices)
     params.loss_fns = [negative_log_partial_likelihood_loss] * survival_output_size + \
-        [nn.MSELoss()] * len(params.continuous_phenotype_indices) + \
+        [continuous_loss] * len(params.continuous_phenotype_indices) + \
         [nn.BCELoss()] * len(params.binary_phenotype_indices)
 
     params.mask = np.concatenate([params.survival_indices, params.continuous_phenotype_indices, params.binary_phenotype_indices])
+    # print(params.loss_fns)
 
     return params
 
@@ -1195,6 +1215,15 @@ def define_metrics(params):
     # tracer()
 
     return params
+
+
+def process_negative_loss_excluded(params):
+    out = params.loss_excluded_from_training
+    if all(np.array(params.loss_excluded_from_training) < 0):
+        out1 = [-(xx + 1) for xx in params.loss_excluded_from_training]
+        out = list(set(range(len(params.loss_fns))) - set(out1))
+        logging.warning("loss_excluded_from_training {}".format(str(out)))
+    return out
 
 
 def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=0.):

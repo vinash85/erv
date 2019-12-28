@@ -7,6 +7,11 @@ import jstyleson
 import numpy as np
 import math
 from past.builtins import basestring
+import umap
+from sklearn.datasets import fetch_openml
+import matplotlib.pyplot as plt
+import seaborn as sns
+import pandas as pd
 
 
 class Params():
@@ -202,3 +207,34 @@ def reshape_toimage(mat, dim1=None):
     mat = np.pad(mat, (0, dim1 * dim2 - size1), "constant", constant_values=(0, 0))
     mat = 1 - mat.reshape(1, dim1, dim2)
     return mat
+
+
+def create_save_umap(mat, color, epoch, savedir=None, title=None):
+    '''
+    Create umap and save figure
+    '''
+
+    embedding = umap.UMAP(n_neighbors=15,
+                          min_dist=0.1,
+                          metric='correlation').fit_transform(mat)
+    # col = color.astype(int)
+    df = pd.DataFrame(dict(color=color))
+    fig = plt.figure()
+    # plt.scatter(embedding[:, 0], embedding[:, 1])
+    # sns.lmplot('dim1', 'dim2', hue='color', data=df, fit_reg=False)
+    # Unique category labels: 'D', 'F', 'G', ...
+    color_labels = df['color'].unique()
+
+    # List of RGB triplets
+    rgb_values = sns.color_palette("Set2", len(color_labels))
+
+    # Map label to RGB
+    color_map = dict(zip(color_labels, rgb_values))
+
+    # Finally use the mapped values
+    plt.scatter(embedding[:, 0], embedding[:, 1], c=df['color'].map(color_map))
+    if title is not None:
+        plt.title(title)
+    if savedir is not None:
+        plt.savefig('{}/epoch-{}.png'.format(savedir, epoch), format='png', dpi=100)
+    return fig

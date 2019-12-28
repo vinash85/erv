@@ -629,12 +629,12 @@ def fetch_dataloader(data_dir_params, params, types, shuffle):
             else:
                 features_phenotypes, header = readFile(dataset_file, header=True)
                 # phenotypes_type = readFile(path + "phenotype_" + split + ".txt")
-                cancertype = features_phenotypes[:, 0]  # first column in cancertype in the file
                 if tsne:
                     params.metadata_header = [header[inx] if inx < len(header) else str(inx) for inx in params.label_index]
                 tsne_labels_mat = np_take(features_phenotypes, params.label_index, axis=1)
                 sample_name = np.array(list(range(len(features_phenotypes))))
                 tsne_labels_mat = np.concatenate([sample_name[:, None], tsne_labels_mat], axis=1)
+                cancertype = features_phenotypes[:, 0]  # first column in cancertype in the file
                 features_phenotypes = features_phenotypes[:, 1:]
                 data_augmentation_curr = data_augmentation if split in ['train'] else False
                 dl = generator_survival(

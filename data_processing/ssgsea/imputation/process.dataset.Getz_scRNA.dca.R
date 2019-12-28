@@ -1025,7 +1025,7 @@ map = map[!duplicated(V3)]
 tpm.mat = 2^dataset_ssgsea_mat -1 
 setkey(map, V3)
 temp$gene_name = map[temp$gene_id]$V4
-sum(colnames(tpm.mat) %in% temp$gene_name)
+sum(colnames(tpm.mat) %in% temp$gene_name) ## sample x genes are column 
 effective_length = temp[match(colnames(tpm.mat), gene_name)]$effective_length
 effective_length[effective_length==0] =1
 xx = rowSums(tpm.mat)

@@ -111,8 +111,8 @@ def evaluate_attention(models, dataloader, metrics, params, validation_file=None
     sample_name = tsne_labels_mat[:, 0]
     tsne_labels_mat = tsne_labels_mat[:, 1:]
     if validation_file:
-        predictions = np.concatenate([sample_name[:, None], predictions], axis=1)
-        predictions_df = pd.DataFrame(predictions)
+        predictions1 = np.concatenate([sample_name[:, None], predictions], axis=1)
+        predictions_df = pd.DataFrame(predictions1)
         # import ipdb
         # ipdb.set_trace()
         header_outputs = [params.header[ii] + ".output" for ii in list(range(0, len(params.survival_indices), 2)) + list(range(len(params.survival_indices), len(params.header)))]

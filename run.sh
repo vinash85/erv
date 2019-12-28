@@ -366,6 +366,9 @@ python evaluate.py   --data_dir ../data/Getz_scRNA/datasets_list.txt --model_dir
 dca /homes6/asahu/project/deeplearning/icb/data/Getz_scRNA/data/count.mat.txt /homes6/asahu/project/deeplearning/icb/data/Getz_scRNA/data/dca_impute/
 
 
+dca ~/project/deeplearning/icb/data/sc/GSE123814_human_aPD1/dca/count.mat.txt ~/project/deeplearning/icb/data/sc/GSE123814_human_aPD1/dca/dca_impute
+
+
 # tar -xf /rna-seq/dbGAP_tar/Post_P16_CD45+.tar --wildcards --no-anchored '*.tab'  -C /rna-seq/counts/.  
 
 # scRNA version deepImmune 
@@ -455,10 +458,82 @@ CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA
 CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_tsne_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.patient.independent/.
 
 
-CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.patient.independent/. --restore_file  ../data/Getz_scRNA/TCR.AA.patient.independent/tensorboardLog/20190829-102554/epoch-28.pth.tar
+CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/Getz_scRNA/TCR.AA.patient.independent/tensorboardLog/20190829-102554/params.json --restore_file  ../data/Getz_scRNA/TCR.AA.patient.independent/tensorboardLog/20190829-102554/epoch-28.pth.tar
 
 
 ## learn on tcga and test on scRNA 
-CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/params.getz.json  --restore_file  ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/epoch-8.pth.tar
+CUDA_VISIBLE_DEVICES=3 python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA.patient.independent/datasets_test_list.txt --model_dir ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/params.getz.json  --restore_file  ../data/tcga/scrna.v4.genes/TCR.AA.top100.nonintersect/tensorboardLog/20190826-152330/epoch-497.pth.tar
 
 
+
+## runnning protien encoder 
+
+CUDA_VISIBLE_DEVICES=2  python  train_similarity.py --lm /liulab/asahu/projects/icb/data/pretrained/pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav --batch-size 16 -d -1
+CUDA_VISIBLE_DEVICES=3  python  eval_transmembrane.py  /liulab/asahu/projects/icb/data/pretrained/pretrained_models/ssa_L1_100d_lstm3x512_lm_i512_mb64_tau0.5_lambda0.1_p0.05_epoch100.sav 
+
+
+CUDA_VISIBLE_DEVICES=3  python -m ipdb train_similarity100_temp.py --lm /liulab/asahu/projects/icb/data/pretrained/pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav -d -1
+
+python -m ipdb mytrain_lm_pfam.py --lm /liulab/asahu/projects/icb/data/pretrained/pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav --hidden-dim 1024 -d -1 
+
+# b /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/mytrain_lm_pfam.py:162
+# c
+# CUDA_VISIBLE_DEVICES=3  python eval_pfam.py --lm /liulab/asahu/projects/icb/data/pretrained/pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav  -f /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/data/Getz/getz.cdr3.fa
+
+CUDA_VISIBLE_DEVICES=3  python eval_pfam.py --models_dir /liulab/asahu/projects/icb/data/pretrained/pretrained_models/ -f /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/data/Getz/getz.cdr3.fa
+
+python -m ipdb eval_pfam.py --models_dir /liulab/asahu/projects/icb/data/pretrained/pretrained_models/ -f /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/data/Getz/getz.cdr3.100.fa
+
+python -m ipdb train_lm_cdr3b.py --lm /liulab/asahu/projects/icb/data/pretrained/pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav --train  /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/data/Getz/getz.cdr3.100.fa --test /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/data/Getz/getz.cdr3.100.fa -d -1
+
+
+python  train_lm_cdr3b.py  --train    ../protein-sequence-embedding-iclr2019/data/pfam/Pfam-A100.train.fasta --test  ../protein-sequence-embedding-iclr2019/data/pfam/Pfam-A100.train.fasta --lm ../protein-sequence-embedding-iclr2019/pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav
+
+
+python train_lm_cdr3b.py  --train data/tcga/tcga.train.cdr3.fa --test  data/tcga/tcga.train.cdr3.fa --lm pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav
+
+python train_lm_cdr3b.py  --train data/tcga/tcga.train.cdr3.fa --test  data/tcga/tcga.train.cdr3.fa --lm pretrained_models/pfam_lm_lstm2x1024_tied_mb64.sav -d -1 --hidden-dim 32 --save-prefix pretrained_models/tcga/cdr3b --num-epochs 100
+
+python train_lm_cdr3b.py  --train data/tcga/tcga.train.cdr3.fa --test  data/tcga/tcga.train.cdr3.fa --lm pretrained_models/me_L1_100d_lstm3x512_lm_i512_mb64_tau0.5_p0.05_epoch100.sav -d 2 --hidden-dim 32 --save-prefix pretrained_models/tcga/cdr3b_me_L1_100d_lstm3x512 --num-epochs 100
+
+
+python train_lm_cdr3b.py  --train data/tcga/tcga.train.cdr3.fa --test  data/tcga/tcga.train.cdr3.fa -d 2 --hidden-dim 32 --save-prefix pretrained_models/tcga/cdr3b_no_pretrain --num-epochs 100
+
+python mytrain_lm_pfam.py  --train data/tcga/tcga.train.cdr3.fa --test  data/tcga/tcga.train.cdr3.fa -d 1 --hidden-dim 512 --save-prefix pretrained_models/tcga/mypfam_no_pretrain --num-epochs 100
+
+
+python  eval_pfam.py --models_dir pretrained_models/runs/ -f  data/Getz/getz.cdr3.fa -d -1
+	
+
+#citokines
+
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/citokines.v1/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/citokines.v1/.
+
+CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/citokines.v1/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/citokines.v1/. --dont_save_every_epoch --hyper_param "params.loss_excluded_from_training=[-1,-2]; params.save_tsne_figs=False; params.learning_rate=1e-5; params.num_epochs=10" --restore_file ~/project/deeplearning/icb/data/tcga/citokines.v1/tensorboardLog/20190924-011458/best.pth.tar --tensorboard_prefix 20190924-011458/personalization/surv12_
+
+python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/ --dont_save_every_epoch --hyper_param "params.loss_excluded_from_training=[-1,-2,-3]"
+
+
+
+## cytokines genentech data. 
+python evaluate.py  --data_dir  ../data/genentech.tpm/citokines.v1/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/citokines.v1/tensorboardLog/20190924-011458/params.json  --restore_file ~/project/deeplearning/icb/data/tcga/citokines.v1/tensorboardLog/20190924-011458/best.pth.tar 
+
+
+
+# all genes  
+python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/all.genes.v2/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/all.genes.v2/.
+python evaluate.py  --data_dir  ../data/genentech.tpm/all.genes.v2/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/all.genes.v2/tensorboardLog/20191116-183310/params.json  --restore_file  ~/project/deeplearning/icb/data/tcga/all.genes.v2/tensorboardLog/20191116-183310/epoch-108.pth.tar 
+
+# deepimmune out of all genes to train genentech   
+
+python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/deepImmune.out/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/deepImmune.out/.
+
+
+
+## deepEss 
+
+CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/debug/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/debug/.
+
+CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/.
+
+CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/.

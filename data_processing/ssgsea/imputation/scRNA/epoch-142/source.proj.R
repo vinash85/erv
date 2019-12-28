@@ -1,5 +1,5 @@
 recompile_avinash = function() 
-    install.packages("~/softwares/avinash", repos=NULL, clean = TRUE, INSTALL_opts = "--no-lock ")
+    install.packages("~/shortcuts/avinash", repos=NULL, clean = TRUE, INSTALL_opts = "--no-lock", type="source")
 recompile_r_avinash = function()
     recompile_r(lib.name ="avinash", path="~/shortcuts/avinash", lib = "/homes6/asahu/R/x86_64-pc-linux-gnu-library/3.6")
 recompile_r = function(path, lib.name, reload=T, ...){
@@ -584,7 +584,7 @@ plot.tcr.embedding <- function(trust.curr, save.dir, title, mode="last") {
     # require(avinash)
     trust.curr.agg = aggregate.embedding(trust.curr, trust4.filtered, mode=mode)
     trust.curr.agg.filtered = trust.curr.agg[trust4.cdr3.filtered$currid,]
-
+plot.sequence.and.clustering
     n_neighbors =15; learning_rate =1; min_dist = .01; pca = 50
     umap.all.p = plotUMAP(data = trust.curr.agg.filtered,  
                           # umap.model = umap.all.p[[1]],
@@ -594,7 +594,7 @@ plot.tcr.embedding <- function(trust.curr, save.dir, title, mode="last") {
                           filename=NULL , n_epochs = 100, metric = "euclidean")
     
     data.umap = data.table(umap.all.p[[1]]$embedding)
-    p1 = plot.sequence.and.clustering(data.clust=data.umap, text = trust4.cdr3.filtered$aa, color.col = as.factor(trust4.cdr3.filtered$cdr3.type), num.plot.seq =100, text.size =2) 
+    p1 = (data.clust=data.umap, text = trust4.cdr3.filtered$aa, color.col = as.factor(trust4.cdr3.filtered$cdr3.type), num.plot.seq =100, text.size =2) 
     ggsave(filename = sprintf("%s/cdr3_seq.pdf",save.dir), p1, width = 16, height = 16)
     print(p1)
     library(RColorBrewer)
@@ -895,4 +895,26 @@ read.deepImmune.output = function(deepImmune.dir, cwd, copy.deepImmune.output=F)
     colnames(icb.phenotype) = colnames(header)
     icb.phenotype.col.dt = data.table(colnames(icb.phenotype), seq(ncol(icb.phenotype)))
     list(icb.phenotype=icb.phenotype, icb.phenotype.col.dt=icb.phenotype.col.dt, dataset.sample.name = dataset.sample.name)
+}
+
+impute.closest.gene.simple = function(common.genes, dataset_ssgsea_mat, exp2){
+    genes.imputed = setdiff(common.genes, colnames(dataset_ssgsea_mat))
+    if(length(genes.imputed) > 0) {
+        gene1 = colnames(dataset_ssgsea_mat)
+        impute = exp2[,genes.imputed, drop=F]
+        only.genes = intersect(gene1, colnames(exp2))
+        dataset_ssgsea_mat = dataset_ssgsea_mat[,only.genes]
+        exp.present = exp2[,only.genes,drop=F]
+        cors = cor(impute, exp.present)
+        genes.inx = apply(cors,1, 
+                          function(tt) ifelse(sum(!is.na(tt)), which.max(tt), NA)
+        )
+        
+        imputed = dataset_ssgsea_mat[,genes.inx, drop=F]
+        imputed[is.na(imputed)] = 0
+        colnames(imputed) = genes.imputed
+        merged = cbind(dataset_ssgsea_mat, imputed) 
+        dataset_ssgsea_mat = merged
+    }
+    dataset_ssgsea_mat[,common.genes]
 }

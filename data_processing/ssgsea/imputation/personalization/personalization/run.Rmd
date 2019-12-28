@@ -149,6 +149,47 @@ icb.data = read.deepImmune.output(deepImmune.dir = "~/project/deeplearning/icb/d
 
 ```
 
+
+## All genes 
+```{r}
+
+source('~/project/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/scRNA/epoch-142/source.proj.R')
+datasets.tcga = fread("~/project/deeplearning/icb/data/tcga/all.genes.v2/dataset.txt") 
+last.gene.inx = which(colnames(datasets.tcga)=="B_cells_naive") -1
+ref.expression.cancertype = as.matrix(datasets.tcga[cancertype=="BLCA",2:last.gene.inx,with=F] )
+genetech.tpm.impute = impute.closest.gene.simple(common.genes = colnames(ref.expression.cancertype), genetech.tpm.mat, ref.expression.cancertype)
+dataset_ssgsea_matched = match.expression.distribution(genetech.tpm.impute, ref.expression.cancertype)
+
+# neoantigen.pheno
+neoantigen.pheno.inx = colnames(datasets.tcga)[(last.gene.inx +1):ncol(datasets.tcga)]
+neoantigen.pheno = matrix(NA, nrow=nrow(dataset_ssgsea_matched), ncol = length(neoantigen.pheno.inx))
+colnames(neoantigen.pheno) = neoantigen.pheno.inx
+neoantigen.pheno[,"Silent.Mutation.Rate"] = genentech.pheno$`FMOne mutation burden per`
+neoantigen.pheno[,"SNV.Neoantigens"] = genentech.pheno$`Neoantigen burden per MB`
+neoantigen.pheno[,"OS.time"] = genentech.pheno$`os`
+neoantigen.pheno[,"OS.filtered"] = genentech.pheno$`censOS`
+genetech.dataset = cbind(cancertype="BLCA", dataset_ssgsea_matched, neoantigen.pheno)
+
+output.dir = "~/project/deeplearning/icb/data/genentech.tpm/all.genes.v2/"
+write.dataset(output.dir = output.dir, dataset = genetech.dataset, sample.name = rownames(genetech.dataset))
+file.copy("~/project/deeplearning/icb/data/tcga/all.genes.v2/params.json", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/all.genes.v2/datasets_tsne_list.txt", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/all.genes.v2/datasets_test_list.txt", output.dir)
+file.edit(paste0(output.dir,"datasets_tsne_list.txt"))
+file.edit(paste0(output.dir,"datasets_test_list.txt"))
+
+# source("/homes6/asahu/project/deeplearning/icb/deepImmune/source.R")
+cwd= "~/project/deeplearning/icb/data/tcga/all.genes.v2/tensorboardLog/20191116-183310/epoch-108/"
+# heatmap 
+icb.data = read.deepImmune.output(deepImmune.dir = "~/project/deeplearning/icb/data/genentech.tpm/all.genes.v2/", 
+                       cwd =cwd, 
+                       copy.deepImmune.output=T
+                       )
+
+```
+
+
+
 ```{r, echo=F}
 cal.aucs <- function(resp, signature.mat) {
     require()
@@ -159,6 +200,65 @@ cal.aucs <- function(resp, signature.mat) {
     unlist(temp)
 }
 
+```
+
+## on specific subtypes run auc of signatures 
+```{r}
+signatures =  icb.data$icb.phenotype[match(rownames(genentech.pheno), icb.data$dataset.sample.name),c(49:50,145:347),with=F]
+response = genentech.pheno$binaryResponse
+index.pheno = c(3:6, 10, 11, 13, 15, 16, 23:25)
+
+pheno.out = list()
+
+require(doMC);require(foreach);registerDoMC(cores = 64)
+	
+for (ii in index.pheno) {
+    pheno.curr = genentech.pheno[[ii]]
+    tab = table(pheno.curr)
+    tab = tab[tab > 10]
+    if(length(tab) > 0)
+    for(tt in seq_along(tab)){
+        name.curr = sprintf("%s.%s", colnames(genentech.pheno)[ii], names(tab)[tt])
+        inx.curr = which( pheno.curr == names(tab)[tt])
+        if(length(inx.curr) > 10)
+            pheno.out[[name.curr]] = cal.aucs(response[inx.curr], signatures[inx.curr,])
+    }
+    
+}
+
+pheno.out.mat = do.call(rbind, pheno.out)
+
+colnames(pheno.out.mat)[which(pheno.out.mat > 0.9,arr.ind = T)[,2]]
+pheno.out.mat[is.na(pheno.out.mat)] = 0.5
+pheno.out.mat = abs(pheno.out.mat - 0.5) + 0.5 
+
+library(ComplexHeatmap)
+Heatmap(pheno.out.mat, 
+        name = "Predictive Power", #title of legend
+        column_title = "Subtype", row_title = "Signature",
+        row_order = NULL,
+         show_column_dend = FALSE,
+         show_row_dend = FALSE,
+        row_names_gp = gpar(fontsize = 6), # Text size for row names
+        column_names_gp = gpar(fontsize = 5) # Text size for row names
+)
+
+
+## top threshold 
+pheno.out.mat.thr = pheno.out.mat 
+pheno.out.mat.thr[pheno.out.mat<0.8 ] = 0
+Heatmap(pheno.out.mat.thr, 
+        name = "Predictive Power", #title of legend
+        column_title = "Signature" , row_title = "Subtype",
+        row_order = NULL,
+         show_column_dend = FALSE,
+         show_row_dend = FALSE,
+        row_names_gp = gpar(fontsize = 6), # Text size for row names
+        column_names_gp = gpar(fontsize = 5) # Text size for row names
+)
+
+
+# dev.off()
 ```
 
 ## on specific subtypes run auc of signatures 
@@ -201,6 +301,32 @@ Heatmap(pheno.out.mat,
 
 # dev.off()
 ```
+
+
+
+## Use deepImmune output to predict response
+
+
+```{r}
+source('~/project/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/scRNA/epoch-142/source.proj.R')
+deepImmune.mat = signatures[,142:205,with=F] 
+resp.mat = mltools::one_hot(data.table(genentech.pheno[, c(1:6, 10, 11, 13, 15, 16, 23:25)] ), sparsifyNAs = T)
+cont.mat = genentech.pheno[,c(7:18)]
+surv.mat = genentech.pheno[,21:22]
+# xx = mltools::one_hot(data.table(genentech.pheno[,1:2]))
+deepimmune.genentech.dataset = cbind(cancertype="BLCA", deepImmune.mat, cont.mat, resp.mat, surv.mat)
+output.dir = "~/project/deeplearning/icb/data/genentech.tpm/deepImmune.out/"
+write.dataset(output.dir = output.dir, dataset = deepimmune.genentech.dataset, sample.name = rownames(genentech.pheno))
+file.copy("~/project/deeplearning/icb/data/genentech.tpm/all.genes.v2/params.json", output.dir)
+file.copy("~/project/deeplearning/icb/data/genentech.tpm/all.genes.v2/datasets_tsne_list.txt", output.dir)
+file.copy("~/project/deeplearning/icb/data/genentech.tpm/all.genes.v2/datasets_test_list.txt", output.dir)
+file.edit(paste0(output.dir,"datasets_tsne_list.txt"))
+file.edit(paste0(output.dir,"datasets_test_list.txt"))
+file.edit(paste0(output.dir,"params.json"))
+
+```
+
+
 
 
 ## Don't know what this does

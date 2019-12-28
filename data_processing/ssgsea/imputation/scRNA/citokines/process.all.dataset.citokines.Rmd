@@ -21,9 +21,11 @@ patient.name = gsub(patient.name, pattern="-", replacement=".")
 patient.name = substring(patient.name, 1, 16)
 rownames(expression_mat) = patient.name
 head(patient.name)
+sample.name = fread("~/project/deeplearning/icb/data/tcga/scrna.v4.allgenes.nopcs/samples_name.txt")
 head(sample.name$x)
 expression_match = expression_mat[sample.name$x,]
-expression_match_norm = avinash::normalize.expression(expression_match)
+library(avinash)
+expression_match_norm = normalize.expression(expression_match)
 
 all.genes = colnames(expression_match_norm)
 ```
@@ -56,9 +58,9 @@ which( dataset.new.col %in%  paste0(monitored.mutation, ".mut")) -2
 length(input.output.genes) + 4
 length(input.output.genes) + 4 + dim(if.data)[2] + dim(protien.data)[2]  + length(monitored.mutation)
 ```
-
+## All genes 
 ```{r}
-source("../epoch-142/source.proj.R")
+source('~/project/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/scRNA/epoch-142/source.proj.R')
 tcga.dataset = fread("~/project/deeplearning/icb/data/tcga/scrna.v4.allgenes.nopcs/dataset.txt")
 sample.name = fread("~/project/deeplearning/icb/data/tcga/scrna.v4.allgenes.nopcs/samples_name.txt")
 tcga.dataset.match = tcga.dataset[match(rownames(expression_match_norm), sample.name$x),]
@@ -69,6 +71,11 @@ write.dataset(output.dir = output.dir, dataset = dataset.new, sample.name = rown
 file.copy("~/project/deeplearning/icb/data/tcga/citokines.v1//params.json", output.dir)
 file.copy("~/project/deeplearning/icb/data/tcga/citokines.v1//datasets_tsne_list.txt", output.dir)
 file.copy("~/project/deeplearning/icb/data/tcga/citokines.v1/datasets_test_list.txt", output.dir)
+dataset.new.col = colnames(dataset.new)
+monitored.mutation = c("ARID1A", "ARID1B", "SMARCA4",  "STK11", "B2M", "PTEN", "PTPN2", "APLNR")
+which( dataset.new.col %in%  paste0(monitored.mutation, ".mut")) -2 
+length(input.output.genes) + 4
+length(monitored.mutation)
 ```
 
 ```{r}

@@ -534,6 +534,6 @@ python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/deepI
 
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/debug/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/debug/.
 
-CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/.
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/.
 
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/.

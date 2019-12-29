@@ -13,6 +13,8 @@ from scipy.stats.stats import spearmanr
 from past.builtins import basestring
 import copy
 import ipdb
+from torch.autograd.function import Function
+from torch.autograd import Variable
 # 3x3 convolution
 
 
@@ -70,7 +72,7 @@ class FullConnectedBlock(nn.Module):
         if norm_layer is None:
             norm_layer = nn.BatchNorm1d
 
-        #self.norm1 = nn.LayerNorm(in_channels)
+        # self.norm1 = nn.LayerNorm(in_channels)
         self.fc1 = nn.Linear(in_channels, out_channels)
         self.relu = nn.ReLU(inplace=True)
         self.norm2 = norm_layer(out_channels)
@@ -79,7 +81,7 @@ class FullConnectedBlock(nn.Module):
     def forward(self, x):
         residual = x
         out = x
-        #out = self.norm1(out)
+        # out = self.norm1(out)
         out = self.fc1(out)
         out = self.relu(out)
         out = F.dropout(out, p=self.dropout_rate, training=self.training)
@@ -1077,17 +1079,61 @@ def mean_na(xx):
     return np.mean(xx[~np.isnan(xx)])
 
 
+class Clamp(Function):
+    """
+    clipped outside (-clip, clip)
+    https://github.com/pytorch/pytorch/blob/53fe804322640653d2dddaed394838b868ce9a26/torch/autograd/_functions/pointwise.py#L95
+    """
+
+    @staticmethod
+    def forward(ctx, i, min_val, max_val):
+        ctx._mask = (i.ge(min_val) * i.le(max_val))
+        return i.clamp(min_val, max_val)
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        mask = Variable(ctx._mask.type_as(grad_output.data))
+        return grad_output * mask, None, None
+
+
+class Clip(Function):
+    """
+    clipped inside (-clip, clip)
+    https://github.com/pytorch/pytorch/blob/53fe804322640653d2dddaed394838b868ce9a26/torch/autograd/_functions/pointwise.py#L95
+    """
+
+    @staticmethod
+    def forward(ctx, i, min_val, max_val):
+        ctx._mask = (i.le(min_val) + i.ge(max_val))
+        return torch.mul(i, ctx._mask.float())
+
+    @staticmethod
+    def backward(ctx, grad_output):
+        mask = Variable(ctx._mask.type_as(grad_output.data))
+        return grad_output * mask, None, None
+
+
 class MSELossClip(nn.Module):
     """MSELoss with loss clipped between {-clip, clip}
+    this way clip and clamp are not evaluated at every foward but only evaluated.
     """
 
     def __init__(self, clip=1.0):
         super(MSELossClip, self).__init__()
         self.clip = clip
+        if clip < 0:
+            self.min_val = self.clip
+            self.max_val = -self.clip
+            self.ClipFn = Clip.apply
+        else:
+            self.min_val = -self.clip
+            self.max_val = self.clip
+            self.ClipFn = Clamp.apply
 
     def forward(self, outputs, labels):
         error = outputs - labels
-        error = torch.clamp(error, min=-self.clip, max=self.clip)**2
+        error = (self.ClipFn(error, self.min_val, self.max_val))**2
+        # error = torch.clamp(error, min=-self.clip, max=self.clip)**2
         error = error.sum()
         return error
 

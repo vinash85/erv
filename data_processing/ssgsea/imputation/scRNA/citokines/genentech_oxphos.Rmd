@@ -6,6 +6,7 @@ output: html_document
 ## 
 
 ```{r}
+library(data.table)
 options(error=recover)
 dataset_ssgsea = "/liulab/asahu/data/ssgsea/xiaoman/Genetech_expression_TPM.txt"
 dataset_phenotype = "/liulab/asahu/data/ssgsea/xiaoman/Avin/clinical_ICB_oxphos.txt"
@@ -55,10 +56,12 @@ surface.genes = setdiff(intersect(surface.genes$ApprovedSymGbol, all.genes), cit
 
 
 ```{r}
-source("../epoch-142/source.proj.R")
+source("~/project/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/scRNA/epoch-142/source.proj.R")
 # library(avinash)
 # data.curr =  dataset_ssgsea_mat[,surface.genes]
-
+library(uwot)
+library(ggplot2)
+library(ggthemes)
 data.cytokines =  dataset_ssgsea_mat[,citokines]
 
 
@@ -82,7 +85,7 @@ n_neighbors =40; learning_rate =.1; min_dist = 0.001; pca = 10
  print(p)
  cwd  = "~/project/oxphos/genetech-figs/"
  dir.create(cwd, recursive = T)
- ggsave("~/project/oxphos/cytokines_clustering.pdf", p)
+ # ggsave("~/project/oxphos/cytokines_clustering.pdf", p)
  
 tsne.dir = sprintf("%s/tnse", cwd)
  dir.create(tsne.dir, recursive = T)
@@ -342,7 +345,7 @@ library(Seurat)
 library(dplyr)
 all.genes = colnames(dataset_ssgsea_mat)
 all.genes = gsub("-", all.genes, replacement = "." )
-sco = CreateSeuratObject(counts =t(dataset_ssgsea_mat), project = "cytokine", min.cells = 2, min.features = 10)
+sco = CreateSeuratObject(counts =t(dataset_ssgsea_mat), project = "cytokine", min.cells = 1, min.features = 1)
 # sco[["percent.mt"]] <- PercentageFeatureSet(sco, pattern = "^MT-")
 # VlnPlot(sco, features = c("nFeature_RNA", "nCount_RNA", "percent.mt"), ncol = 3)
 # 
@@ -350,7 +353,7 @@ sco = CreateSeuratObject(counts =t(dataset_ssgsea_mat), project = "cytokine", mi
  sco[["RNA"]]@data = xx
 #  
 #  # Identification of highly variable features 
- sco <- FindVariableFeatures(sco, selection.method = "vst", nfeatures = 150)
+ # sco <- FindVariableFeatures(sco, selection.method = "vst", nfeatures = 150)
 # 
 sco <- ScaleData(sco, features = all.genes)
 
@@ -373,7 +376,7 @@ top1x <- sco.curr.markers %>% group_by(cluster) %>% top_n(n = 20, wt = -log(p_va
 hla.top = sco.curr.markers %>% group_by(cluster) %>% 
   subset(grepl("HLA", gene))
 
-top10 = rbind(top1x, hla.top)
+top10 = rbind(hla.top, top1x)
 p = DoHeatmap(sco.curr, features = top10$gene) + NoLegend()
 curr.dir = paste0(tsne.dir, "/markers/")
 dir.create(curr.dir)
@@ -398,7 +401,7 @@ ggsave(file=filename, p1, width=16, height=16)
 umap.mat = as.matrix(data.curr[,.(UMAP_1=UMAP1, UMAP_2=UMAP2)])
 rownames(umap.mat) = data.curr$sample.name
 sco.curr[["dim"]] <- CreateDimReducObject(embeddings = umap.mat, key = "UMAP_", assay = DefaultAssay(sco.curr))
-DimPlot(sco.curr, reduction = "dim", pt.size = 5)
+# DimPlot(sco.curr, reduction = "dim", pt.size = 5)
 
 feat.p = FeaturePlot(sco.curr,  reduction = "dim",features = top5$gene)
 print(feat.p)

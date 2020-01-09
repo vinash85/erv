@@ -594,7 +594,7 @@ plot.sequence.and.clustering
                           filename=NULL , n_epochs = 100, metric = "euclidean")
     
     data.umap = data.table(umap.all.p[[1]]$embedding)
-    p1 = (data.clust=data.umap, text = trust4.cdr3.filtered$aa, color.col = as.factor(trust4.cdr3.filtered$cdr3.type), num.plot.seq =100, text.size =2) 
+    p1 = ggplot(data.clust=data.umap, text = trust4.cdr3.filtered$aa, color.col = as.factor(trust4.cdr3.filtered$cdr3.type), num.plot.seq =100, text.size =2) 
     ggsave(filename = sprintf("%s/cdr3_seq.pdf",save.dir), p1, width = 16, height = 16)
     print(p1)
     library(RColorBrewer)

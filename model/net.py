@@ -1326,7 +1326,7 @@ class MultiTaskLoss(torch.nn.Module):
         return multi_task_losses
 
 
-def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=torch.tensor(0.)):
+def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=0.):
     '''
     define loss function and update parameters
     '''
@@ -1349,11 +1349,12 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         if train_optimizer_mask[1]:
             outputs_optimizer.step()
 
+    device = net_outputs.device
     if params.mtl:
         total_loss = []
-        total_loss.append(kld)
+        total_loss.append(torch.tensor(kld, device=device))
         mtlmask = []
-        mtlmask.append(torch.tensor(0.) if kld == 0 else torch.tensor(1.))
+        mtlmask.append(torch.tensor(0., device=device) if kld == 0 else torch.tensor(1., device=device))
     else:
         total_loss = kld
 
@@ -1404,7 +1405,7 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             update_parameters(loss_curr, train_optimizer_mask, embedding_model, outputs)
 
         if params.mtl:
-            mtlmask.append(torch.tensor(0.) if loss_curr == 0. else torch.tensor(1.))
+            mtlmask.append(torch.tensor(0., device=device) if loss_curr == 0. else torch.tensor(1., device=device))
             total_loss.append(loss_curr)
         else:
             total_loss = total_loss + loss_curr

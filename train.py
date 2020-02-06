@@ -117,7 +117,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 embedding_batch, _, _, kld = embedding_model(embedding_input)
             else:
                 embedding_batch = embedding_model(embedding_input)
-                kld = torch.tensor(0.)
+                kld = 0.
 
             output_batch = outputs(embedding_batch)
 

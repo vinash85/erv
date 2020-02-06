@@ -117,7 +117,7 @@ def train(embedding_model, outputs, embedding_optimizer, outputs_optimizer, data
                 embedding_batch, _, _, kld = embedding_model(embedding_input)
             else:
                 embedding_batch = embedding_model(embedding_input)
-                kld = 0.
+                kld = torch.tensor(0.)
 
             output_batch = outputs(embedding_batch)
 
@@ -282,6 +282,7 @@ if __name__ == '__main__':
     params.cuda = torch.cuda.is_available()
     exec(args.hyper_param)
     params = net.create_lossfns_mask(params)
+    params = net.initializeMTL(params)
     params.process_negative_loss_excluded = net.process_negative_loss_excluded(params)
 
     # print(params.loss_fns)

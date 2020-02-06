@@ -21,3 +21,12 @@ log \prod_{i=n:event=death}^1 \frac{p_i}{\sum_{j\ge i} p_j} \\
 
 The above assume $$Event(i) =1 $$ is death and  0 is censor.
 
+## Calculation of uncertainity 
+
+Similar to:  https://arxiv.org/abs/1705.07115
+Here we make intuitive argument that 
+
+Because the log likelihood is very similar form to softmax function, we use same constant i.e. (refer to equation 10)
+\begin{align}
+\Lambda(W, \sigma) = 1/\sigma^2 \Lambda(W) + log \sigma
+\end{align}

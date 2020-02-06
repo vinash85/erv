@@ -534,6 +534,17 @@ python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/deepI
 
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/debug/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/debug/.
 
-CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/.
+CUDA_VISIBLE_DEVICES=4 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/small/.
 
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/deepEss/exp.go.coexp/.
+
+
+
+
+#citokines
+
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/scrna.v4.genes/simple/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/scrna.v4.genes/simple/.
+
+#TF
+CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/tf/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/.  --tensorboard_prefix bottleneck
+

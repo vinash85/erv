@@ -154,6 +154,17 @@ class BasicLayers(nn.Module):
             print(self.fc_output_size)
         return nn.Sequential(*layers)
 
+    def make_layers_LSTM(self, block, LSTM_size_list, dropout_rate):
+        layers = []
+        num_layers = len(LSTM_size_list)
+        for i in range(0, num_layers):
+            layers.append(block(self.fc_output_size, FC_size_list[
+                          i], dropout_rate,
+                norm_layer=self.params.norm_layer))
+            self.fc_output_size = FC_size_list[i]
+            print(self.fc_output_size)
+        return nn.Sequential(*layers)
+
     def make_layers(self, block, out_channels_list, kernel_sizes, strides, dropout_rate):
         layers = []
         num_layers = len(out_channels_list)
@@ -1272,7 +1283,50 @@ def process_negative_loss_excluded(params):
     return out
 
 
-def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=0.):
+def initializeMTL(params):
+    '''
+    initialize MTL specific parameters
+    '''
+    if not hasattr(params, 'mtl'):
+        params.mtl = False
+    else:
+        is_regression = [torch.tensor(True)]
+        is_regression += [torch.tensor(True) if isinstance(xx, nn.MSELoss) else torch.tensor(False) for xx in params.loss_fns]
+        is_regression = torch.stack(is_regression)  # True: Regression/MeanSquaredErrorLoss, False: Classification/CrossEntropyLoss/Cox-hazard model
+        params.mtlloss = MultiTaskLoss(is_regression=is_regression, reduction='sum')
+
+    return params
+
+
+class MultiTaskLoss(torch.nn.Module):
+    '''https://arxiv.org/abs/1705.07115
+    https://github.com/ywatanabe1989/custom_losses_pytorch/blob/master/multi_task_loss.py
+    '''
+
+    def __init__(self, is_regression, reduction='none'):
+        super(MultiTaskLoss, self).__init__()
+        self.is_regression = is_regression
+        self.n_tasks = len(is_regression)
+        self.log_vars = torch.nn.Parameter(torch.zeros(self.n_tasks))
+        self.reduction = reduction
+
+    def forward(self, losses, mask):
+        dtype = losses.dtype
+        device = losses.device
+        stds = (torch.exp(self.log_vars)**(1 / 2)).to(device).to(dtype)
+        self.is_regression = self.is_regression.to(device).to(dtype)
+        coeffs = 1 / ((self.is_regression + 1) * (stds**2))
+        multi_task_losses = (coeffs * losses + torch.log(stds)) * mask
+
+        if self.reduction == 'sum':
+            multi_task_losses = multi_task_losses.sum()
+        if self.reduction == 'mean':
+            multi_task_losses = multi_task_losses.mean()
+
+        return multi_task_losses
+
+
+def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedding_optimizer, outputs_optimizer, params, train_optimizer_mask=[1, 1], kld=torch.tensor(0.)):
     '''
     define loss function and update parameters
     '''
@@ -1295,7 +1349,14 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         if train_optimizer_mask[1]:
             outputs_optimizer.step()
 
-    total_loss = kld
+    if params.mtl:
+        total_loss = []
+        total_loss.append(kld)
+        mtlmask = []
+        mtlmask.append(torch.tensor(0.) if kld == 0 else torch.tensor(1.))
+    else:
+        total_loss = kld
+
     loss_fns = params.loss_fns
     len_fns = len(loss_fns)
 
@@ -1330,10 +1391,10 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             loss_curr = loss_curr + regularized_loss(outputs, params, i)
         else:
             # loss_curr = torch.zeros(1)
-            loss_curr = 0.
+            loss_curr = torch.tensor(0.)
 
         if isnan(loss_curr):
-            loss_curr = 0.
+            loss_curr = torch.tensor(0.)
 
         # print(net_output)
         # print(loss_curr)
@@ -1342,14 +1403,22 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
         if is_train and params.pipeline_optimization and loss_curr != 0.:
             update_parameters(loss_curr, train_optimizer_mask, embedding_model, outputs)
 
-        total_loss = total_loss + loss_curr
+        if params.mtl:
+            mtlmask.append(torch.tensor(0.) if loss_curr == 0. else torch.tensor(1.))
+            total_loss.append(loss_curr)
+        else:
+            total_loss = total_loss + loss_curr
 
     # tracer()
     if is_train and params.pipeline_optimization and kld != 0.:
         update_parameters(kld, train_optimizer_mask, embedding_model, outputs)
 
-    if is_train and not params.pipeline_optimization and total_loss != 0.:
+    if params.mtl:
+        total_loss = params.mtlloss(torch.stack(total_loss), torch.stack(mtlmask))
+
+    if is_train and not params.pipeline_optimization:
         update_parameters(total_loss, train_optimizer_mask, embedding_model, outputs)
+
     if total_loss != 0:
         loss_val = total_loss.item()
     else:

@@ -1392,10 +1392,10 @@ def update_loss_parameters(labels, net_outputs, embedding_model, outputs, embedd
             loss_curr = loss_curr + regularized_loss(outputs, params, i)
         else:
             # loss_curr = torch.zeros(1)
-            loss_curr = torch.tensor(0.)
+            loss_curr = torch.tensor(0., device=device)
 
         if isnan(loss_curr):
-            loss_curr = torch.tensor(0.)
+            loss_curr = torch.tensor(0., device=device)
 
         # print(net_output)
         # print(loss_curr)

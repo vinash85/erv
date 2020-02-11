@@ -192,7 +192,6 @@ if __name__ == '__main__':
     # fetch dataloaders
     _, _, params.header, _ = datasets[0][0][type_file]
     params.input_size = len(params.embedding_indices)
-    params.attention_input_size = len(params.attention_indices)
     params = net.define_metrics(params)
     logging.info("- done.")
 

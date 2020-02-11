@@ -188,6 +188,7 @@ if __name__ == '__main__':
     datasets = data_generator.fetch_dataloader_list(args.prefix,
                                                     [type_file], args.data_dir, params, shuffle=False)
     params = net.create_lossfns_mask(params)
+    params = net.initializeMTL(params)
     # fetch dataloaders
     _, _, params.header, _ = datasets[0][0][type_file]
     params.input_size = len(params.embedding_indices)

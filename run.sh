@@ -550,3 +550,6 @@ CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/d
 
 # finetune 
 CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/.  --tensorboard_prefix fine_tune --restore_file ~/project/deeplearning/icb/data/tcga/tf/tensorboardLog/bottleneck20200206-101221/best.pth.tar
+
+
+CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_test_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/genentech.tpm/tf/./tensorboardLog/fine_tune20200210-231730/params.json  --restore_file /homes6/asahu/project/deeplearning/icb/data/genentech.tpm/tf/./tensorboardLog/fine_tune20200210-231730/best.pth.tar

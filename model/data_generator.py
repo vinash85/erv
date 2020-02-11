@@ -249,6 +249,7 @@ def generator_survival(features, labels, params, cancertype=None,
         lab = np.concatenate([lab_survival, lab_continuous, lab_binary], 1).astype(float)
         # tracer()
 #         ipdb.set_trace()
+        feat = feat + np.random.normal(0, 0.1, feat.shape)
         if data_augmentation and len(params.binary_phenotype_indices) > 0:
 
             labels_aug = lab_binary[:, 0]

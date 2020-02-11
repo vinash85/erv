@@ -548,3 +548,5 @@ CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/d
 #TF
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/tf/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/.  --tensorboard_prefix bottleneck
 
+# finetune 
+CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/.  --tensorboard_prefix fine_tune --restore_file ~/project/deeplearning/icb/data/tcga/tf/tensorboardLog/bottleneck20200206-101221/best.pth.tar

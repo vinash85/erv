@@ -318,6 +318,7 @@ if __name__ == '__main__':
     _, _, params.header, _ = datasets[0][0]['train']
     params.input_size = len(params.embedding_indices)
     params = net.define_metrics(params)
+    logging.info("best model chosen using maximum {}".format(params.best_model_metric))
     logging.info("- done.")
 
     # Define the model and optimizer

@@ -547,9 +547,24 @@ CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/d
 
 #TF
 CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/tf/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/.  --tensorboard_prefix bottleneck
+# predicion without fine-tunning 
+CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/tensorboardLog/bottleneck20200206-101221/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf/tensorboardLog/bottleneck20200206-101221/best.pth.tar --hyper_param "params.add_noise=0"
 
 # finetune 
 CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/.  --tensorboard_prefix fine_tune --restore_file ~/project/deeplearning/icb/data/tcga/tf/tensorboardLog/bottleneck20200206-101221/best.pth.tar
 
 
-CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_test_list.txt --model_dir /homes6/asahu/project/deeplearning/icb/data/genentech.tpm/tf/./tensorboardLog/fine_tune20200210-231730/params.json  --restore_file /homes6/asahu/project/deeplearning/icb/data/genentech.tpm/tf/./tensorboardLog/fine_tune20200210-231730/best.pth.tar
+CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/tensorboardLog/fine_tune20200213-061915/params.json  --restore_file ~/project/deeplearning/icb/data/genentech.tpm/tf/tensorboardLog/fine_tune20200213-061915/best.pth.tar --hyper_param "params.add_noise=0"
+
+
+# test normalizations
+CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/binarize/.  --tensorboard_prefix surv_noaug_bin_
+
+CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/surv_noaug_20200218-011346/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/surv_noaug_20200218-011346/epoch-70.pth.tar 
+
+cp  ../data/genentech.tpm/tf/binarize//val_prediction.csv ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/surv_noaug_20200218-011346/genentech_70.csv
+
+CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Neo_20200217-233533/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Neo_20200217-233533/last.pth.tar 
+
+mv  ../data/genentech.tpm/tf/binarize//val_prediction.csv ~/project/deeplearning/icb/data/tcga/tf/binarize/tensorboardLog/Neo_20200217-233533/genentech_100.csv
+ 

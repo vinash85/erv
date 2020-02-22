@@ -1269,6 +1269,11 @@ def define_metrics(params):
             else:
                 label_inx = label_inx + 1
         params.metrics = [metrics[tt] for tt in params.metrics]
+
+    if isinstance(params.best_model_metric, int):
+        metrics_curr = params.metrics[params.best_model_metric]
+        params.best_model_metric = metrics_curr[0] + "_" + metrics_curr[1]
+
     # tracer()
 
     return params

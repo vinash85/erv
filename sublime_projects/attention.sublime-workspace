@@ -4,6 +4,10 @@
 		"selected_items":
 		[
 			[
+				"initial",
+				"initializeMTL\t(net.py)"
+			],
+			[
 				"Varia",
 				"Variable"
 			],
@@ -99,16 +103,7 @@
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/train.py",
 			"settings":
 			{
-				"buffer_size": 16140,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
-			"settings":
-			{
-				"buffer_size": 39155,
+				"buffer_size": 16179,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -117,7 +112,7 @@
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
 			"settings":
 			{
-				"buffer_size": 10277,
+				"buffer_size": 10252,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -126,24 +121,7 @@
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py",
 			"settings":
 			{
-				"buffer_size": 52289,
-				"encoding": "UTF-8",
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/utils.py",
-			"settings":
-			{
-				"buffer_size": 7714,
-				"line_ending": "Unix"
-			}
-		},
-		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
-			"settings":
-			{
-				"buffer_size": 26898,
+				"buffer_size": 54548,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
@@ -178,16 +156,26 @@
 			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/params.json",
 			"settings":
 			{
-				"buffer_size": 2768,
+				"buffer_size": 2786,
 				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
 		{
-			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/pytorch/cs230-code-examples/pytorch/nlp/model/net.py",
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
 			"settings":
 			{
-				"buffer_size": 6589,
+				"buffer_size": 40087,
+				"encoding": "UTF-8",
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
+			"settings":
+			{
+				"buffer_size": 27015,
+				"encoding": "UTF-8",
 				"line_ending": "Unix"
 			}
 		},
@@ -570,6 +558,10 @@
 	],
 	"file_history":
 	[
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/pytorch/cs230-code-examples/pytorch/nlp/model/net.py",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/utils.py",
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
+		"/Users/avi/kill_turkey.sh",
 		"/Users/avi/Downloads/driver.R",
 		"/Users/avi/.bashrc",
 		"/Users/avi/illustrator.config.xml",
@@ -580,7 +572,6 @@
 		"/Users/avi/envs/pytorch3/lib/python3.7/site-packages/torch/onnx/symbolic.py",
 		"/Users/avi/envs/pytorch3/lib/python3.7/site-packages/torch/autograd/_functions/utils.py",
 		"/Users/avi/Dropbox/runESRRA/runESRRA.R",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/utils.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/protein-sequence-embedding-iclr2019/train_similarity_and_contact.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/cdr3LSTM/eval_pfam.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/immunotherapy/cidc/ssgsea-validation/ssgsea_validation.R",
@@ -634,7 +625,6 @@
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/train.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/protein-sequence-embedding-iclr2019/data/pfam/Pfam-A100.train.fasta",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
 		"/Users/avi/Downloads/temp1x.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/datasets_test_list.txt",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.imputation.tcga.R",
@@ -650,7 +640,6 @@
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/avinash/R/misc.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/dataset.txt",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/run_hyper.R",
-		"/Users/avi/kill_turkey.sh",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/shrutii.celltypes.R",
 		"/Users/avi/Downloads/temp1.r",
 		"/Users/avi/Downloads/SKCM_ICM_meta.txt",
@@ -696,8 +685,7 @@
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.RCC_PD1_Miao.R",
 		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.genentech.R",
 		"/Users/avi/Downloads/table123.html",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/_config.yml",
-		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/.train_attention.py.swp"
+		"/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/_config.yml"
 	],
 	"find":
 	{
@@ -715,6 +703,8 @@
 		"case_sensitive": false,
 		"find_history":
 		[
+			"random",
+			"augme",
 			"loss",
 			"enrichDE",
 			"accountsd",
@@ -788,7 +778,7 @@
 	"groups":
 	[
 		{
-			"selected": 8,
+			"selected": 1,
 			"sheets":
 			[
 				{
@@ -797,15 +787,15 @@
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 16140,
+						"buffer_size": 16179,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								4764,
-								4764
+								11709,
+								11709
 							]
 						],
 						"settings":
@@ -831,6 +821,9 @@
 							"SL.41.region_keys":
 							[
 							],
+							"SL.45.region_keys":
+							[
+							],
 							"SL.68.region_keys":
 							[
 							],
@@ -853,75 +846,31 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 41
+								"xpos": 71
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 4458.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 4,
+					"stack_index": 2,
 					"type": "text"
 				},
 				{
 					"buffer": 1,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 39155,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								39155,
-								39155
-							]
-						],
-						"settings":
-						{
-							"git_gutter_is_enabled": true,
-							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
-							"vintage":
-							{
-								"_vintageous_glue_until_normal_mode": true,
-								"action": null,
-								"action_count": "",
-								"mode": "mode_insert",
-								"motion": null,
-								"motion_count": "",
-								"must_capture_register_name": false,
-								"normal_insert_count": "1",
-								"partial_sequence": "",
-								"register": "\"",
-								"sequence": "",
-								"xpos": 201
-							}
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 3,
-					"type": "text"
-				},
-				{
-					"buffer": 2,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10277,
+						"buffer_size": 10252,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								156,
-								156
+								7469,
+								7469
 							]
 						],
 						"settings":
@@ -962,6 +911,9 @@
 							"SL.46.region_keys":
 							[
 							],
+							"SL.47.region_keys":
+							[
+							],
 							"SL.49.region_keys":
 							[
 							],
@@ -994,31 +946,31 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 6
+								"xpos": 14
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 1459.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 16,
+					"stack_index": 1,
 					"type": "text"
 				},
 				{
-					"buffer": 3,
+					"buffer": 2,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 52289,
+						"buffer_size": 54548,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								13697,
-								13697
+								45185,
+								45185
 							]
 						],
 						"settings":
@@ -1039,6 +991,9 @@
 							[
 							],
 							"SL.38.region_keys":
+							[
+							],
+							"SL.48.region_keys":
 							[
 							],
 							"SL.67.region_keys":
@@ -1065,115 +1020,18 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 65
-							}
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 5,
-					"type": "text"
-				},
-				{
-					"buffer": 4,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/utils.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 7714,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								3136,
-								3136
-							]
-						],
-						"settings":
-						{
-							"SL.102.region_keys":
-							[
-							],
-							"SL.33.region_keys":
-							[
-							],
-							"git_gutter_is_enabled": true,
-							"syntax": "Packages/Djaneiro/Syntaxes/Python Django.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true,
-							"vintage":
-							{
-								"action": null,
-								"action_count": "",
-								"mode": "mode_normal",
-								"motion": null,
-								"motion_count": "",
-								"must_capture_register_name": false,
-								"partial_sequence": "",
-								"register": "\"",
-								"sequence": "",
-								"xpos": 8
-							}
-						},
-						"translation.x": 0.0,
-						"translation.y": 0.0,
-						"zoom_level": 1.0
-					},
-					"stack_index": 15,
-					"type": "text"
-				},
-				{
-					"buffer": 5,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
-					"semi_transient": false,
-					"settings":
-					{
-						"buffer_size": 26898,
-						"regions":
-						{
-						},
-						"selection":
-						[
-							[
-								22549,
-								22549
-							]
-						],
-						"settings":
-						{
-							"SL.85.region_keys":
-							[
-							],
-							"git_gutter_is_enabled": true,
-							"syntax": "Packages/Djaneiro/Syntaxes/Python Django.tmLanguage",
-							"tab_size": 4,
-							"translate_tabs_to_spaces": true,
-							"vintage":
-							{
-								"action": null,
-								"action_count": "",
-								"mode": "mode_normal",
-								"motion": null,
-								"motion_count": "",
-								"must_capture_register_name": false,
-								"partial_sequence": "",
-								"register": "\"",
-								"sequence": "",
 								"xpos": 16
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 22031.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 20,
+					"stack_index": 3,
 					"type": "text"
 				},
 				{
-					"buffer": 6,
+					"buffer": 3,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/plots/run.personalized.model.R",
 					"semi_transient": false,
 					"settings":
@@ -1185,8 +1043,8 @@
 						"selection":
 						[
 							[
-								546,
-								546
+								544,
+								544
 							]
 						],
 						"settings":
@@ -1225,11 +1083,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 6,
+					"stack_index": 9,
 					"type": "text"
 				},
 				{
-					"buffer": 7,
+					"buffer": 4,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/source.goldenset.R",
 					"semi_transient": false,
 					"settings":
@@ -1275,11 +1133,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 7,
+					"stack_index": 10,
 					"type": "text"
 				},
 				{
-					"buffer": 8,
+					"buffer": 5,
 					"file": "/Users/avi/Downloads/lmer.R",
 					"semi_transient": false,
 					"settings":
@@ -1291,8 +1149,8 @@
 						"selection":
 						[
 							[
-								551,
-								551
+								328,
+								328
 							]
 						],
 						"settings":
@@ -1308,7 +1166,7 @@
 								"_vintageous_processing_notation": false,
 								"action": null,
 								"action_count": "",
-								"mode": "mode_visual",
+								"mode": "mode_normal",
 								"motion": null,
 								"motion_count": "",
 								"must_capture_register_name": false,
@@ -1316,37 +1174,37 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 20
+								"xpos": 0
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 2,
+					"stack_index": 8,
 					"type": "text"
 				}
 			]
 		},
 		{
-			"selected": 4,
+			"selected": 1,
 			"sheets":
 			[
 				{
-					"buffer": 9,
+					"buffer": 6,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/data/tcga/neoantigen.v2/attention/params.json",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 2768,
+						"buffer_size": 2786,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								780,
-								780
+								724,
+								724
 							]
 						],
 						"settings":
@@ -1377,31 +1235,80 @@
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 35
+								"xpos": 27
 							}
 						},
 						"translation.x": 0.0,
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 14,
+					"stack_index": 5,
 					"type": "text"
 				},
 				{
-					"buffer": 10,
-					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/pytorch/cs230-code-examples/pytorch/nlp/model/net.py",
+					"buffer": 7,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/run.sh",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 6589,
+						"buffer_size": 40087,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								2915,
-								2915
+								37219,
+								37219
+							]
+						],
+						"settings":
+						{
+							"SL.15.region_keys":
+							[
+							],
+							"git_gutter_is_enabled": true,
+							"syntax": "Packages/ShellScript/Bash.sublime-syntax",
+							"vintage":
+							{
+								"_vintageous_glue_until_normal_mode": true,
+								"_vintageous_non_interactive": false,
+								"_vintageous_processing_notation": false,
+								"action": null,
+								"action_count": "",
+								"mode": "mode_insert",
+								"motion": null,
+								"motion_count": "",
+								"must_capture_register_name": false,
+								"normal_insert_count": "1",
+								"partial_sequence": "",
+								"register": "\"",
+								"sequence": "",
+								"xpos": 399
+							}
+						},
+						"translation.x": 0.0,
+						"translation.y": 16189.0,
+						"zoom_level": 1.0
+					},
+					"stack_index": 0,
+					"type": "text"
+				},
+				{
+					"buffer": 8,
+					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/data_generator.py",
+					"semi_transient": false,
+					"settings":
+					{
+						"buffer_size": 27015,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								7412,
+								7412
 							]
 						],
 						"settings":
@@ -1409,7 +1316,10 @@
 							"SL.22.region_keys":
 							[
 							],
-							"SL.41.region_keys":
+							"SL.37.region_keys":
+							[
+							],
+							"SL.85.region_keys":
 							[
 							],
 							"git_gutter_is_enabled": true,
@@ -1427,21 +1337,22 @@
 								"motion": null,
 								"motion_count": "",
 								"must_capture_register_name": false,
+								"normal_insert_count": "1",
 								"partial_sequence": "",
 								"register": "\"",
 								"sequence": "",
-								"xpos": 10
+								"xpos": 37
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 0.0,
+						"translation.y": 4100.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 9,
+					"stack_index": 4,
 					"type": "text"
 				},
 				{
-					"buffer": 11,
+					"buffer": 9,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/oxphos/src/mechanism.R",
 					"semi_transient": false,
 					"settings":
@@ -1482,11 +1393,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 11,
+					"stack_index": 13,
 					"type": "text"
 				},
 				{
-					"buffer": 12,
+					"buffer": 10,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/srescues/liu/dejan/src/crispr.sl.R",
 					"semi_transient": false,
 					"settings":
@@ -1498,8 +1409,8 @@
 						"selection":
 						[
 							[
-								5313,
-								5313
+								5311,
+								5311
 							]
 						],
 						"settings":
@@ -1529,11 +1440,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 1,
+					"stack_index": 7,
 					"type": "text"
 				},
 				{
-					"buffer": 13,
+					"buffer": 11,
 					"file": "/Users/avi/illustrator.config.xml",
 					"semi_transient": false,
 					"settings":
@@ -1573,14 +1484,14 @@
 							}
 						},
 						"translation.x": 0.0,
-						"translation.y": 27.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 0,
+					"stack_index": 6,
 					"type": "text"
 				},
 				{
-					"buffer": 14,
+					"buffer": 12,
 					"semi_transient": false,
 					"settings":
 					{
@@ -1618,11 +1529,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 8,
+					"stack_index": 11,
 					"type": "text"
 				},
 				{
-					"buffer": 15,
+					"buffer": 13,
 					"semi_transient": false,
 					"settings":
 					{
@@ -1661,11 +1572,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 10,
+					"stack_index": 12,
 					"type": "text"
 				},
 				{
-					"buffer": 16,
+					"buffer": 14,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/pytorch/cs230-code-examples/pytorch/vision/model/net.py",
 					"semi_transient": false,
 					"settings":
@@ -1708,11 +1619,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 13,
+					"stack_index": 15,
 					"type": "text"
 				},
 				{
-					"buffer": 17,
+					"buffer": 15,
 					"file": "/Users/avi/envs/pytorch3/lib/python3.7/site-packages/torch/autograd/function.py",
 					"semi_transient": false,
 					"settings":
@@ -1758,11 +1669,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 18,
+					"stack_index": 17,
 					"type": "text"
 				},
 				{
-					"buffer": 18,
+					"buffer": 16,
 					"file": "/Users/avi/envs/pytorch3/lib/python3.7/site-packages/torch/autograd/_functions/tensor.py",
 					"semi_transient": false,
 					"settings":
@@ -1811,16 +1722,16 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 12,
+					"stack_index": 14,
 					"type": "text"
 				},
 				{
-					"buffer": 2,
+					"buffer": 1,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/evaluate.py",
 					"semi_transient": false,
 					"settings":
 					{
-						"buffer_size": 10277,
+						"buffer_size": 10252,
 						"regions":
 						{
 						},
@@ -1863,6 +1774,9 @@
 							"SL.32.region_keys":
 							[
 							],
+							"SL.33.region_keys":
+							[
+							],
 							"SL.47.region_keys":
 							[
 							],
@@ -1870,6 +1784,9 @@
 							[
 							],
 							"SL.54.region_keys":
+							[
+							],
+							"SL.64.region_keys":
 							[
 							],
 							"SL.76.region_keys":
@@ -1905,11 +1822,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 19,
+					"stack_index": 18,
 					"type": "text"
 				},
 				{
-					"buffer": 19,
+					"buffer": 17,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/data_processing/ssgsea/imputation/process.dataset.Getz_scRNA.dca.R",
 					"semi_transient": false,
 					"settings":
@@ -1921,8 +1838,8 @@
 						"selection":
 						[
 							[
-								42389,
-								42389
+								42387,
+								42387
 							]
 						],
 						"settings":
@@ -1955,11 +1872,11 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 21,
+					"stack_index": 19,
 					"type": "text"
 				},
 				{
-					"buffer": 20,
+					"buffer": 18,
 					"file": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/protein-sequence-embedding-iclr2019/src/utils.py",
 					"semi_transient": false,
 					"settings":
@@ -1971,8 +1888,8 @@
 						"selection":
 						[
 							[
-								3332,
-								3332
+								3330,
+								3330
 							]
 						],
 						"settings":
@@ -2012,7 +1929,7 @@
 						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
-					"stack_index": 17,
+					"stack_index": 16,
 					"type": "text"
 				}
 			]
@@ -2046,7 +1963,7 @@
 		"cols":
 		[
 			0.0,
-			0.225115748494,
+			0.388055197644,
 			1.0
 		],
 		"rows":
@@ -2086,8 +2003,20 @@
 		"selected_items":
 		[
 			[
+				"data",
+				"model/data_generator.py"
+			],
+			[
 				"run",
 				"run.sh"
+			],
+			[
+				"net.p",
+				"model/net.py"
+			],
+			[
+				"ne",
+				"model/net.py"
 			],
 			[
 				"net",
@@ -2150,10 +2079,6 @@
 				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/protein-sequence-embedding-iclr2019/train_lm_cdr3b.py"
 			],
 			[
-				"data",
-				"model/data_generator.py"
-			],
-			[
 				"eva",
 				"evaluate.py"
 			],
@@ -2171,10 +2096,6 @@
 			],
 			[
 				"net.",
-				"model/net.py"
-			],
-			[
-				"ne",
 				"model/net.py"
 			],
 			[
@@ -2324,10 +2245,6 @@
 			[
 				"temp1",
 				"~/Downloads/temp1.py"
-			],
-			[
-				"net.p",
-				"~/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model/net.py"
 			],
 			[
 				"train_atte",
@@ -2601,8 +2518,8 @@
 	"selected_group": 1,
 	"settings":
 	{
-		"_vintageous_last_buffer_search": "VAE",
-		"_vintageous_last_buffer_search_command": "vi_slash",
+		"_vintageous_last_buffer_search": "hyper_param",
+		"_vintageous_last_buffer_search_command": "vi_star",
 		"_vintageous_last_char_search_command": "vi_f",
 		"_vintageous_last_character_search": "o",
 		"_vintageous_reset_during_init": true,
@@ -2623,7 +2540,7 @@
 		],
 		"vintage":
 		{
-			"_cmdline_cd": "/Users/avi"
+			"_cmdline_cd": "/Users/avi/Dropbox (Partners HealthCare)/project/code/deeplearning/icb/deepImmune/model"
 		}
 	},
 	"show_minimap": false,

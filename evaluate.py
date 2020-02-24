@@ -26,7 +26,9 @@ parser.add_argument('--prefix', default='',
 parser.add_argument('--hyper_param', default='',
                     help="support string for setting parameter from command line e.g.\"params.input_indices=range(50)\"")
 parser.add_argument('--type_file', default="val",
-                    help="String for files from dataset for validation list will be executed")
+                    help="(no longer supported) String for files from dataset for validation list will be executed")
+parser.add_argument('--output_dir', default="",
+                    help="Define the output directory to write out csv files, if not defined output will be written in model directory.")
 
 
 def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_file=None, writer=None, epoch=None, index=None, tsne=0):
@@ -226,8 +228,8 @@ if __name__ == '__main__':
     # Evaluate for one epoch on validation set
 
     data_dirs = pd.read_csv(args.data_dir, sep="\t")
-    data_dirs = [row['data_dir'] for index, row in data_dirs.iterrows()]
-    val_metrics_all = [evaluate(embedding_model, outputs, dataset[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_prediction.csv") for data_dir, dataset in zip(data_dirs, datasets)]
+    data_dirs = [row['data_dir'] if args.output_dir == "" else args.output_dir for index, row in data_dirs.iterrows()]
+    val_metrics_all = [evaluate(embedding_model, outputs, dataset[0][type_file], metrics, params, validation_file=data_dir + "/" + type_file + "_" + str(inx) + "_prediction.csv") for inx, data_dir, dataset in zip(range(len(data_dirs)), data_dirs, datasets)]
     val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
     save_path = os.path.join("{}.json".format(restore_path))
     utils.save_dict_to_json(val_metrics, save_path)

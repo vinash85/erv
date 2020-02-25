@@ -117,6 +117,9 @@ def evaluate(embedding_model, outputs, dataloader, metrics, params, validation_f
         all_header = ["sample_name"] + params.header.tolist() + header_outputs + embedding_header
         predictions_df.columns = all_header
         logging.info("Writing validation output to : " + validation_file)
+        output_dir = os.path.dirname(validation_file)
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
         predictions_df.to_csv(validation_file, sep='\t', index=False)
 
     if tsne:

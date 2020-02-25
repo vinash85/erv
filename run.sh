@@ -423,7 +423,8 @@ python evaluate.py  --data_dir  ../data/Getz_scRNA/TCR.AA/datasets_test_list.txt
 # mac 
 python train.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_tsne_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/
 
-python evaluate.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_test_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190822-142707/best.pth.tar
+python evaluate.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_test_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20200222-154343/best.pth.tar
+
 python evaluate.py  --data_dir  ../data/tcga/neoantigen.v2/attention//datasets_test_list.txt --model_dir ../data/tcga/neoantigen.v2/attention/params.json  --restore_file ../data/tcga/neoantigen.v2/attention/tensorboardLog/20190822-142707/best.pth.tar
 
 python train.py  --data_dir  ../data/tcga/scrna.v4.genes/datasets_tsne_list.txt --model_dir ../data/tcga/scrna.v4.genes/.  --tensorboard_prefix nopipeline_vae_

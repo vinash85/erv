@@ -914,6 +914,8 @@ def isfinite(x):
     not_nan = (x == x)
     return not_inf & not_nan
 
+firstelem = lambda x: x[0]
+
 
 def isfinite_list(x):
     """

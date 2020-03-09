@@ -189,17 +189,19 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
         train_metrics_all = []
         val_metrics_all = []
+        val_string = {}
+        train_string = {}
         for index, dataset in enumerate(datasets):
             # compute number of batches in one epoch (one full pass over the training set)
-            val_string = {}
-            train_string = {}
             dataloader, train_optimizer_mask, (dataset_name, tsne) = dataset
             if 'train' in dataloader.keys():
                 train_metrics = train(embedding_model, outputs, embedding_optimizer,
                                       outputs_optimizer, dataloader['train'], metrics, params, train_optimizer_mask)
                 train_metrics_all.append(train_metrics)
                 for k, v in train_metrics.items():
-                    train_string["train_" + str(index) + dataset_name + k] = v
+                    string_curr = (dataset_name + "_") if len(dataset_name) > 0 else ""
+                    string_curr = string_curr + str(index) + "_" + k
+                    train_string[string_curr] = v
                 # train_string.update(train_metrics)
 
             # Evaluate for one epoch on validation set
@@ -209,12 +211,12 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                 val_metrics_all.append(val_metrics)
                 # val_string['val_' + str(index) + dataset_name] = val_metrics
                 for k, v in val_metrics.items():
-                    val_string["val_" + str(index) + dataset_name + k] = v
+                    string_curr = (dataset_name + "_") if len(dataset_name) > 0 else ""
+                    string_curr = string_curr + str(index) + "_" + k
+                    val_string[string_curr] = v
                 # val_metric_named = {("val_" + str(index) + dataset_name + k): v for k, v in val_metrics.items()}
                 # val_string.update(val_metrics)
-
-            # tensorboard logging
-
+        # tensorboard logging
         # net.tracer()
         if params.tensorboardlog[0]:
             writer.add_scalars('train', train_string, epoch)

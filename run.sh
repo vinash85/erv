@@ -569,3 +569,9 @@ CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/ic
 
 mv  ../data/genentech.tpm/tf/binarize//val_prediction.csv ~/project/deeplearning/icb/data/tcga/tf/binarize/tensorboardLog/Neo_20200217-233533/genentech_100.csv
  
+
+ ## finetune neoantigen genentech data. 
+ 
+CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Neo_20200217-233533/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Neo_20200217-233533/last.pth.tar 
+ ## finetune OS 
+

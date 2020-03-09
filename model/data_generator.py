@@ -685,7 +685,7 @@ def fetch_dataloader_list(prefix, types, data_dir_list, params, shuffle=True):
         datasets: list of (dict) contains the DataLoader object for each type in types
     """
 
-    data_dirs = pd.read_csv(data_dir_list, sep="\t")
+    data_dirs = pd.read_csv(data_dir_list, sep="\t").fillna('')
     logging.info("Found {} datasets".format(len(data_dirs)))
     # tracer()
     datasets = []

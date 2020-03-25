@@ -1,0 +1,1565 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+
+## Running individual phenotype. 
+
+```{r}
+# CUDA_VISIBLE_DEVICES=3 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/binarize/.  --tensorboard_prefix surv_noaug_bin_ --hyper_param "params.add_noise=0"
+# 
+# 
+col.names = colnames(fread("~/project/deeplearning/icb/data/tcga/tf/binarize/dataset_val.txt",nrows = 1))
+start = 4001 + 244 -2
+pheno.all.inx = 4001 + 244:438
+pheno.type = c(rep("continuous", 400-244 +1), rep("binary",430-401+1), rep( "survival",438-431+1))
+pheno.next = start+1
+pheno.last.index = pheno.all.inx[length(pheno.all.inx)]
+commands = list()
+cuda.id = 0
+while(pheno.next < pheno.last.index){
+    label.curr = paste0("Pheno_",pheno.next, "_", col.names[pheno.next], "_")
+    if (pheno.type[pheno.next - start] == "continuous"){
+        pheno.str=sprintf("continuous_phenotype_indices=[%d]", pheno.next-2)
+        pheno.next = pheno.next + 1
+    }else if (pheno.type[pheno.next - start] == "binary"){
+        pheno.str=sprintf("binary_phenotype_indices=[%d]", pheno.next-2)
+        pheno.next = pheno.next + 1
+    }else if(pheno.type[pheno.next - start]=="survival"){
+        pheno.str=sprintf("survival_indices=[%d, %d]", pheno.next-2, pheno.next-2+1)
+        pheno.next = pheno.next + 2
+    }
+    commands[[label.curr]] = sprintf("CUDA_VISIBLE_DEVICES=%d python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf/binarize/.  --tensorboard_prefix %s --hyper_param \"params.%s\"",cuda.id, label.curr, pheno.str)
+    cuda.id = (cuda.id +1) %% 4
+    
+}
+
+
+library(parallel)
+# Using fork()
+mc.cores = 16 
+out = list()
+for (ii in seq(ceiling(length(commands)/mc.cores))) {
+    last.task.in.itr = min(length(commands), mc.cores * (ii))
+    tasks.curr = commands[(mc.cores * (ii-1) +1 ): last.task.in.itr] 
+    print(sprintf("running commands %d", last.task.in.itr))
+    # print(tasks.curr)
+    out[[ii]] <- mclapply(tasks.curr, function(tt) system(c(unlist(tt)),intern =  T),
+                          mc.cores = mc.cores)
+    # out <- mclapply(tasks.curr, function(tt) c(unlist(tt)),
+    # mc.cores = mc.cores, mc.cleanup=TRUE)
+}
+```
+
+```{r}
+create.deepImmune.dataset <- function( expression.file, followup.file, genes.curr) {
+    aa = fread(expression.file)
+    bb = fread(followup.file)
+    genes.inx = match(genes.curr, aa$Symbol)
+    patient.curr = intersect(bb$Patient, colnames(aa))
+    patient.inx = match(patient.curr, colnames(aa))
+    exp.mat = t(aa[genes.inx, patient.inx, with=F]) 
+    pheno.mat =  bb[match(patient.curr, Patient), -1,with=F]
+    list(sample=patient.curr, exp=exp.mat, pheno=pheno.mat)
+}
+
+create.deepImmune.input <- function(output.dir, expression.file,  genes.curr) {
+    aa = fread(expression.file)
+    genes.inx = match(genes.curr, aa$Symbol)
+    exp.mat = as.matrix(t(aa[genes.inx,-1,with=F]) )
+    colnames(exp.mat) = genes.curr
+    exp.mat
+}
+```
+
+
+```{r, eval=FALSE}
+expression.file="~/liulab_home/data/ssgsea/xiaoman/icb/expression/Gide2019_PD1+CTLA4_Melanoma_RNASeq"
+followup.file="~/liulab_home/data/ssgsea/xiaoman/icb/follow_up/Gide2019_PD1+CTLA4_Melanoma_RNASeq"
+dataset.curr = create.deepImmune.dataset(expression.file = expression.file, followup.file = followup.file, genes.curr=genes.analyzed)
+```
+
+
+```{r}
+expression.files = list.files(path = "~/liulab_home/data/ssgsea/xiaoman/icb/expression/", full.names = T)
+load("~/project/deeplearning/icb/data/tcga/tf/genes.analyzed.RData")
+dataset.exp.only =  sapply( expression.files, function(expression.file) create.deepImmune.input(expression.file = expression.file,  genes.curr=genes.analyzed), USE.NAMES = T)
+dataset.name = sapply(expression.files, basename)
+expression.dataset.patinet.name = lapply(dataset.exp.only, rownames)
+names(expression.dataset.patinet.name) = dataset.name
+all.expression = do.call(rbind, dataset.exp.only)
+dataset.label = sapply(seq(length(dataset.exp.only)), function(tt) rep(tt, nrow(dataset.exp.only[[tt]])))
+```
+
+
+```{r}
+cancertype = unlist(dataset.label)
+all.icb.dataset = data.table(cbind(cancertype, all.expression))
+output.dir = "~/project/deeplearning/icb/data/icb/tf"
+write.dataset(output.dir = output.dir, dataset = all.icb.dataset, sample.name = rownames(all.expression))
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/params.json", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_tsne_list.txt", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_test_list.txt", output.dir)
+
+```
+## running the icb data for each phenotype
+
+```{r}
+# python evaluate.py  --data_dir  %s/datasets_test_list.txt --model_dir %s/.  --restore_file %s/last.pth.tar  --output_dir $PATH/all.icb/
+# 
+# 
+model_dirs =list.files(path = "/homes6/asahu/project/deeplearning/icb/data/tcga/tf/binarize/./tensorboardLog/", full.names = T, pattern = "^Pheno_")
+data_dir = "/homes6/asahu/project/deeplearning/icb/data/icb/tf/"
+for (model_dir in model_dirs) {
+    label = basename(model_dir)
+    hyper.params = readLines(paste0(model_dir,"/","hyper_param.txt"),warn=F)
+    command = sprintf("python evaluate.py  --data_dir  %s/datasets_test_list.txt --model_dir %s/.  --restore_file %s/best.pth.tar  --output_dir %s/all.icb/ --hyper_param %s", data_dir, model_dir, model_dir, model_dir, hyper.params)
+    system(command,intern =  T)
+}
+```
+
+
+```{r}
+## reading result for each phenotype
+icb.predicted = list()
+for (model_dir in model_dirs) {
+    label = basename(model_dir)
+    outp = fread(sprintf("%s/all.icb/val_0_prediction.csv", model_dir))
+    icb.predicted[[label]] = outp[,seq(ncol(outp)-4, ncol(outp)),with=F]
+}
+phenotypes.predicted = do.call( cbind, lapply(icb.predicted, function(tt) tt[[1]]))
+embedding.predicted = do.call( cbind, lapply(icb.predicted, function(tt) as.matrix(tt[,2:5,with=F])))
+
+```
+
+
+## evaluate ICB response 
+```{r}
+## First only using immune phenotypes 
+## Then use emebedding 
+## both response information and survival info. 
+
+
+## match ICB patients for which response information is there
+## 
+followups = sapply(list.files(path = "~/liulab_home/data/ssgsea/xiaoman/icb/follow_up/", full.names = T), fread, USE.NAMES = TRUE)
+dataset.name = sapply(list.files(path = "~/liulab_home/data/ssgsea/xiaoman/icb/expression/", full.names = T), basename)
+meta.info.dt = do.call(rbind, lapply(dataset.name, function(tt) data.table(Patient=expression.dataset.patinet.name[[tt]], names=tt)))
+meta.info.dt$inx = seq(nrow(meta.info.dt))
+meta.info.dt[,label:=paste(Patient, names)]
+names(followups) = sapply(names(followups), basename)
+sapply(followups, function(tt) setnames(tt, 1, "Patient"))
+```
+
+
+## calculate AUC matrix
+```{r}
+icb.phenotypes.aucs = sapply(dataset.name, function(tt){
+    meta.info.curr = meta.info.dt[names==tt]
+    followups.curr = followups[[tt]]
+    setnames(followups.curr,1, "Patient")
+    intersect.patient = intersect(meta.info.curr$Patient, followups.curr$Patient)
+    meta.info.matched = meta.info.curr[match(intersect.patient,Patient)]
+    phenotype.matched = phenotypes.predicted[meta.info.matched$inx,]
+    response.curr = followups.curr[match(intersect.patient,Patient)]$Response
+    apply(phenotype.matched, 2, function(uu) tryCatch(pROC::auc(response.curr, uu, quiet=T), error = function(e) NA))
+})
+
+phenotype.name = sapply(rownames(icb.phenotypes.aucs), function(tt) {
+    strlen = nchar(tt)
+    end = 12 + min(c(12, strlen-28))
+    substring(tt,12, end)
+})
+colnames(icb.phenotypes.aucs) = dataset.name
+rownames(icb.phenotypes.aucs) = phenotype.name
+
+
+dat = icb.phenotypes.aucs
+xx = cor(dat, method = "spearman", use = "pairwise.complete.obs"); xx[is.na(xx)] = 0
+hc = hclust(as.dist(1 - abs(xx)), method = "complete")
+M = xx[order.dendrogram(as.dendrogram(hc)), order.dendrogram(as.dendrogram(hc))]
+xx = cor(t(dat), method = "spearman", use = "pairwise.complete.obs"); xx[is.na(xx)] = 0
+hr = hclust(as.dist(1 - abs(xx)), method = "complete")
+
+# require(heatmap3)
+# pdf("~/temp.pdf")
+# heatmap(dat, Rowv = as.dendrogram(hr), Colv = as.dendrogram(hc), 
+#         scale = "col", balanceColor = T, showRowDendro = F, showColDendro = F, 
+#         cexRow = 0.5, cexCol = 0.5)
+# dev.off()
+# pheatmap(dat[,-ncol(dat)],show_rownames = F)
+out =  t(dat[,-ncol(dat)])
+out = out[, apply(out,2,max) > 0.81]
+out = out[,order(apply(out, 2, median))]
+library(pheatmap)
+pheatmap(out, cluster_cols = F,fontsize_col = 5, filename="~/Rplot1.pdf", width = 10, height = 10)
+out[,grep("SMARCC2", colnames(out))]
+out[,grep("time", colnames(out))]
+
+out.dt = data.table(melt(out))
+
+label.sel = which((apply(out, 2, median)> 0.625))
+library(scales)
+p = ggplot(out.dt[Var2 %in% names(label.sel)],aes(y=value, x=as.factor(Var2))) + geom_bar(aes(fill=as.factor(Var1)),stat = "identity", position=position_dodge()) +
+    scale_y_continuous(limits=c(0.4,1),oob = rescale_none)  + coord_flip()
+ggsave(filename = "~/Rplot.pdf", p,  width=7, height=10)
+```
+## finetune neoantigen genentech data. 
+
+```{r}
+# --model_dir ~/project/deeplearning/icb/data/tcga/tf/binarize/.  --tensorboard_prefix %s --hyper_param \"params.%s\"",cuda.id, label.curr, pheno.str)
+## finetune neoantigen
+python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Pheno_4283_SNV.Neoantigens_20200223-030456/best.pth.tar --hyper_param "params.continuous_phenotype_indices=[4281]" --tensorboard_prefix "Pheno_4283_SNV.Neoantigens_20200223-030456_"
+
+
+python evaluate.py  --data_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_eval_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Pheno_4283_SNV.Neoantigens_20200223-030456/best.pth.tar --hyper_param "params.continuous_phenotype_indices=[4281]"   --output_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/val
+
+python evaluate.py  --data_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Pheno_4283_SNV.Neoantigens_20200223-030456/best.pth.tar --hyper_param "params.continuous_phenotype_indices=[4281]"   --output_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/all
+
+
+## survival 
+python train.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Pheno_4433_PFI.time_20200224-123843/best.pth.tar --hyper_param "params.survival_indices=[4429, 4430]; params.learning_rate=1e-7" --tensorboard_prefix "Pheno_4433_PFI.time_20200224-123843_"
+
+
+```
+
+```{r}
+val = fread("~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/val/val_0_prediction.csv")
+val1 = fread("/homes6/asahu/project/deeplearning/icb/data/genentech.tpm/tf/binarize/tensorboardLog/Pheno_4283_SNV.Neoantigens_20200223-030456_20200228-114655/best_val_0.csv")
+
+val12 = fread("~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/all/val_0_prediction.csv")
+
+create.plot = function(val){
+    aa = cor.test(val$SNV.Neoantigens, val$SNV.Neoantigens.output, method="spearman")
+    library(ggplot2)
+    library(ggpubr)
+    p1  = ggplot(val, aes(x=rank(SNV.Neoantigens), y=rank(SNV.Neoantigens.output))) + geom_point() + ggtitle(sprintf("Coef=%f, P=%f", aa$estimate, aa$p.value))
+    p1
+}
+
+p2 = create.plot(val1)
+p3 = create.plot(val12)
+
+## genentech.pheno.matched is from process.all.dataset.Rmd
+pp3  = ggplot(val12, aes(x=rank(SNV.Neoantigens), y=rank(SNV.Neoantigens.output))) + geom_point(aes(color=as.factor(genentech.pheno.matched$Met.Disease.Status))) + ggtitle(sprintf("Coef=%f, P=%f", aa$estimate, aa$p.value))
+pp3
+```
+
+
+
+I think the single cell data could be leverage to train a deep learning model. Tumor immune micro-envrionment composed of different immune cells and cancer cells. This composisition decides whether patient responds to immunotherapy. A key question is if a tumor is immune-supressive then i) if immune composition makes the TIME immune-suppressive, or (ii) cancer cells explicitly modulately TIME, e.g. making TIME hypoxic, or (iii) certain immune cells dysregulated.
+
+Remind yourself : (a) certain cancer-type does not respond to immunotherapy at all. (b) In responding cancer-type only a subset respond. 
+(a) implies if (ii) and (iii) are true, then cancer cell needs to modulate TIME in all tumors. Certain immune cells are dysregulated in tumors.  (a) implies that (ii) and (iii) is unlikely. 
+
+Both (a) and (b) suggests that (i) is most likely plausible explanation. 
+
+
+In the following analysis, I plan to identify genes associated with ICB response. Then identify if they are markers of certain immune cells. Then in scRNA data, check between responders and non-responders among what immune cells this are differntially expressed. This need to be run in hierarchical manner to zeroin to that specific cell type.
+
+## Evaluate association of genes with ICB resposne and survival with mixed model
+```{r}
+# Patient Response
+icb.response.dt =  do.call(rbind, sapply(names(followups), function(tt) {
+    followups[[tt]][,list(Patient, Response, dataset=tt)]
+}, simplify = F))
+
+pfs.dt =  do.call(rbind, sapply(names(followups), function(tt) {
+    tryCatch(followups[[tt]][,list(Patient,  PFS, PFS.Event, dataset=tt)],
+             error = function(e) NULL)
+}, simplify = F))
+
+os.dt =  do.call(rbind, sapply(names(followups), function(tt) {
+    tryCatch(followups[[tt]][,list(Patient,  OS, OS.Event, dataset=tt)],
+             error = function(e) NULL)
+}, simplify = F))
+
+
+
+```
+
+
+## create big expression mat with NAN 
+```{r}
+create.deepImmune.input <- function(output.dir, expression.file,  genes.curr) {
+    aa = fread(expression.file)
+    genes.inx = match(genes.curr, aa$Symbol)
+    exp.mat = as.matrix(t(aa[genes.inx,-1,with=F]) )
+    colnames(exp.mat) = genes.curr
+    exp.mat
+}
+expression.mat.list  = sapply(expression.files, function(expression.file) {
+    aa = fread(expression.file)
+    genes.curr= aa$Symbol
+    exp.mat = as.matrix(t(aa[,-1,with=F]) )
+    colnames(exp.mat) = genes.curr
+    exp.mat = apply(exp.mat,2,avinash::znorm)
+    exp.mat
+}
+)
+all.genes  = unique(unlist(sapply(expression.mat.list, colnames)))
+dataset.name  = sapply(expression.files, basename)
+names(expression.mat.list) = dataset.name
+expression.merge = do.call(rbind, sapply(expression.mat.list, function(tt) tt[,match(all.genes, colnames(tt))], simplify = F))
+nan.inx = apply(expression.merge,2,function(tt) sum(!is.na(tt)))
+expression.merge = expression.merge[,nan.inx > 200]
+all.genes.sel = all.genes[nan.inx > 200]
+colnames(expression.merge) = all.genes.sel
+icb.response.dt = icb.response.dt[!is.na(Response)]
+icb.response.dt[,Response1:=as.integer(ifelse(Response> 0, 1,0))]
+```
+
+
+
+## ICB response 
+
+```{r}
+library(parallel)
+expression.merge.match = expression.merge[match(icb.response.dt[,paste(Patient, dataset), ],meta.info.dt$label),]
+
+extract_nmle_table <- function (m1){
+    mod = summary(m1)
+    beta <- m1$coefficients$fixed[2] #$fixed is not needed
+    se <- m1$varFix[2]
+    t <- beta/se
+    p<- anova(m1)[2,4]
+    table=data.frame(cbind(beta,se,t,p))
+    return(table)
+}
+library(nlme)
+eval.nlme = function(gene.expression, data.dt){
+    # data.dt = data.table with colums  Response1 and dataset (factor to control)
+    tryCatch(
+        {
+            data.dt$col = gene.expression
+            data.dt = data.dt[!is.na(col)]
+            data.dt = data.dt[dataset %in% names(which(table(data.dt$dataset) > 10))]  # only choose those with at least 10 obervations 
+            m1 <- lme(col~ Response1, random=~1|dataset, data=data.dt)
+            extract_nmle_table(m1)
+        },error=  function(e) rep(NA,4))
+}
+icb.response.genes = mclapply(seq(ncol(expression.merge.match)), function(tt) eval.nlme(expression.merge.match[,tt], data.dt=icb.response.dt), mc.cores=45)
+icb.response.genes.dt =  data.table(do.call(rbind, icb.response.genes))[,genes:=all.genes.sel]
+setnames(icb.response.genes.dt, 1:4, c("estimate","se", "z", "P"))
+library(magrittr)
+icb.response.genes.dt = icb.response.genes.dt %>%
+    .[!is.na(estimate)] %>%
+    .[order(P)]  %>% 
+    .[,effect:=sign(estimate)*ifelse(abs(estimate)-se < 0, 0, abs(estimate)-se)]
+
+library(EnhancedVolcano)
+p.response = EnhancedVolcano(icb.response.genes.dt,
+                             lab = icb.response.genes.dt$genes,
+                             x = 'estimate',
+                             y = 'P',
+                             pCutoff = 5e-5,
+                             FCcutoff = .2,
+                             ylim = c(0,5.2),
+                             xlim = c(-1, 1),
+                             # pointSize = 4.0,
+                             pointSize = c(ifelse(icb.response.genes.dt$P< 5E-5, 2, 0.5)),
+                             labSize = 4.0,
+                             legend=c('NS','Log (base 2) fold-change','P value',
+                                      'P value & Log (base 2) fold-change'),
+                             legendPosition = 'right',
+                             legendLabSize = 8,
+                             legendIconSize = 4.0,
+                             drawConnectors = TRUE,
+                             widthConnectors = 0.2,
+                             colAlpha = 0.8,
+                             colConnectors = 'grey30'
+)
+
+ggsave(filename="~/p.response.pdf", width=10, height=10)
+
+```
+
+
+## PFS survival 
+
+```{r, echo=FALSE}
+library(coxme)
+expression.merge.match = expression.merge[match(pfs.dt[,paste(Patient, dataset), ],meta.info.dt$label),]
+pfs.response.dt = pfs.dt
+
+setnames(pfs.response.dt, 2:3, c("Surival", "Event"))
+
+extract_coxme_table <- function (mod){
+    beta <- mod$coefficients #$fixed is not needed
+    nvar <- length(beta)
+    nfrail <- nrow(mod$var) - nvar
+    se <- sqrt(diag(mod$var)[nfrail + 1:nvar])
+    z<- round(beta/se, 2)
+    p<- signif(1 - pchisq((beta/se)^2, 1), 2)
+    table=data.frame(cbind(beta,se,z,p))
+    return(table)
+}
+eval.coxme = function(dat, dtx){
+    tryCatch(
+        {
+            dtx$col = dat
+            dtx = dtx[!is.na(col)]
+            dtx = dtx[dataset %in% names(which(table(dtx$dataset) > 10))] 
+            aa =  coxme(Surv(Surival, Event) ~ col + (1|dataset), dtx)
+            extract_coxme_table(aa)
+        },error=  function(e) rep(NA,4))
+}
+pfs.response.genes = mclapply(seq(ncol(expression.merge.match)), function(tt) eval.coxme(expression.merge.match[,tt], dtx=pfs.response.dt), mc.cores=30)
+pfs.response.genes.dt =  data.table(do.call(rbind, pfs.response.genes))[,genes:=all.genes.sel]
+setnames(pfs.response.genes.dt, 1:4, c("estimate","se", "z", "P"))
+library(magrittr)
+pfs.response.genes.dt = pfs.response.genes.dt %>%
+    .[!is.na(estimate)] %>%
+    .[order(P)]  %>% 
+    .[,effect:=sign(estimate)*ifelse(abs(estimate)-se < 0, 0, abs(estimate)-se)]
+
+library(EnhancedVolcano)
+p.pfs = EnhancedVolcano(pfs.response.genes.dt,
+                        lab = pfs.response.genes.dt$genes,
+                        x = 'estimate',
+                        y = 'P',
+                        pCutoff = 1e-5,
+                        FCcutoff = .3,
+                        # ylim = c(0,5.2),
+                        xlim = c(-1, 1),
+                        # pointSize = 4.0,
+                        # pointSize = c(ifelse(pfs.response.genes.dt$P< 3E-4, 1, 0.5)),
+                        labSize = 4.0,
+                        legend=c('NS','Log (base 2) fold-change','P value',
+                                 'P value & Log (base 2) fold-change'),
+                        legendPosition = 'right',
+                        legendLabSize = 8,
+                        legendIconSize = 4.0,
+                        drawConnectors = TRUE,
+                        widthConnectors = 0.2,
+                        colAlpha = 0.8,
+                        colConnectors = 'grey30'
+)
+ggsave(filename="~/p.pfs.pdf", width=10, height=5)
+```
+
+
+
+## OS survival 
+
+```{r}
+expression.merge.match = expression.merge[match(os.dt[,paste(Patient, dataset), ],meta.info.dt$label),]
+os.response.dt = os.dt
+
+setnames(os.response.dt, 2:3, c("Surival", "Event"))
+
+os.response.genes = mclapply(seq(ncol(expression.merge.match)), function(tt) eval.coxme(expression.merge.match[,tt], dtx=os.response.dt), mc.cores=30)
+os.response.genes.dt =  data.table(do.call(rbind, os.response.genes))[,genes:=all.genes.sel]
+setnames(os.response.genes.dt, 1:4, c("estimate","se", "z", "P"))
+library(magrittr)
+os.response.genes.dt = os.response.genes.dt %>%
+    .[!is.infinite(z)] %>%
+    .[!is.na(estimate)] %>%
+    .[order(P)]  %>% 
+    .[,effect:=sign(estimate)*ifelse(abs(estimate)-se < 0, 0, abs(estimate)-se)]
+
+library(EnhancedVolcano)
+p.os = EnhancedVolcano(os.response.genes.dt,
+                       lab = os.response.genes.dt$genes,
+                       x = 'estimate',
+                       y = 'P',
+                       pCutoff = 1e-4,
+                       FCcutoff = .3,
+                       # ylim = c(0,5.2),
+                       xlim = c(-1, 1),
+                       # pointSize = 4.0,
+                       # pointSize = c(ifelse(os.response.genes.dt$P< 3E-4, 1, 0.5)),
+                       labSize = 4.0,
+                       legend=c('NS','Log (base 2) fold-change','P value',
+                                'P value & Log (base 2) fold-change'),
+                       legendPosition = 'right',
+                       legendLabSize = 8,
+                       legendIconSize = 4.0,
+                       drawConnectors = TRUE,
+                       widthConnectors = 0.2,
+                       colAlpha = 0.8,
+                       colConnectors = 'grey30'
+)
+
+
+```
+## Plot survival in TCGA 
+# 1. control for T-cell infiltration. 
+# 2. do not control 
+```{r}
+library(readxl)
+library(magrittr)
+bcc = readRDS("~/project/deeplearning/icb/data/sc/GSE123814_human_aPD1/GSE123813_bcc_scRNA_counts.rds")
+colnames(bcc) = paste(colnames(bcc), seq(ncol(bcc)), sep="_")
+metadata.dca = fread("~/project/deeplearning/icb/data/sc/GSE123814_human_aPD1//GSE123813_bcc_metadata.txt")
+bcc.response = data.table(read_excel("/liulab/asahu/data/MAESTRO/41591_2019_522_MOESM2_ESM.xlsx", sheet = 1, skip = 3))
+bcc.response = bcc.response[1:15,]
+nonresponders = bcc.response[Response == "No"]$Patient 
+responders = bcc.response[Response != "No"]$Patient 
+metadata.dca[,response:=ifelse(patient %in% responders, 1, ifelse(patient %in% nonresponders, 0, NA))]
+
+# bcc.sco = preprocessing.scRNA(bcc, project.name = "bcc",  meta.data=NULL)
+bcc.sco = preprocessing.scRNA(bcc, project.name = "bcc",  meta.data=as.data.frame(metadata.dca) %>%set_rownames(colnames(bcc)))
+variablegenes<- Seurat::VariableFeatures(Seurat::FindVariableFeatures(bcc.sco, selection.method = "vst", nfeatures = 2500))
+rm(bcc); gc()
+```
+
+## 
+1. Among differentiall expressed genes, find what cell-types they are differntially expressed between responders and non-responders
+2. 
+
+```{r}
+
+
+celltype.icbgene.plot <- function(icb.genes) {
+    exp.sel.mat = bcc[rownames(bcc) %in% icb.genes,]
+    metadata.dca$inx = seq(nrow(metadata.dca))
+    cell.types = unique(metadata.dca$cluster)
+    pre.stat = list()
+    for (grp in cell.types) {
+        responder.grp = metadata.dca[(patient%in% responders) & (treatment == "pre") & (cluster == grp)]$inx
+        nonresponder.grp = metadata.dca[(patient%in% nonresponders) & (treatment == "pre") & (cluster == grp)]$inx
+        out1 = apply(exp.sel.mat, 1, function(tt) {
+            tryCatch({
+                aa = wilcox.test(tt[responder.grp], tt[nonresponder.grp])
+                bb = log2(mean(tt[responder.grp])+.01) - log2( mean(tt[nonresponder.grp]) +.01)
+                c(P=aa$p.value, logFC=bb)
+            }, 
+            error = function(e) c(P=NA, logFC=NA))
+        })
+        out = data.table(t(out1))[,type:=grp][,gene:=colnames(out1)] 
+        pre.stat[[grp]] = out
+    }
+    
+    pre.stat.dt = do.call(rbind, pre.stat)
+    library(ggrepel)
+    library(ggplot2)
+    pre.stat.dt = pre.stat.dt[!is.na(P)][!is.nan(P)]
+    pre.stat.dt = pre.stat.dt[,logp:=-log10(P)]
+    pre.stat.dt[,lfc:=sign(logFC)*ifelse(abs(logFC)> 1,1,abs(logFC))]
+    pre.stat.dt[,color:=ifelse(lfc>0,"up", "down")]
+    p.sc.volcano = ggplot(data=pre.stat.dt, aes(y=logp, x= lfc))  +
+        geom_text(aes(label=gene, color=color), size=2, alpha=0.8) +
+        facet_wrap(~type, scales = "free_y") +
+        theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                           panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+        xlim(c(-1.2, 1.2)) + 
+        theme(legend.position = "none")
+    p.sc.volcano
+}
+
+# icb.genes =  icb.response.genes.dt[estimate>0][1:50]$genes
+p = icb.response.genes.dt[estimate<0][1:100]$genes %>%
+    celltype.icbgene.plot(.)
+ggsave("~/p.100.neg.sc.volcano.pdf", p, width=10, height=7)
+
+
+post.stat = list()
+for (grp in cell.types) {
+    responder.grp = metadata.dca[(patient%in% responders) & (treatment == "post") & (cluster == grp)]$inx
+    nonresponder.grp = metadata.dca[(patient%in% nonresponders) & (treatment == "post") & (cluster == grp)]$inx
+    out1 = apply(exp.sel.mat, 1, function(tt) {
+        tryCatch({
+            aa = wilcox.test(tt[responder.grp], tt[nonresponder.grp])
+            bb = log2(mean(tt[responder.grp])+.01) - log2( mean(tt[nonresponder.grp]) +.01)
+            c(P=aa$p.value, logFC=bb)
+        }, 
+        error = function(e) c(P=NA, logFC=NA))
+    })
+    out = data.table(t(out1))[,type:=grp][,gene:=colnames(out1)] 
+    post.stat[[grp]] = out
+}
+
+post.stat.dt = do.call(rbind, post.stat)
+library(ggrepel)
+library(ggplot2)
+post.stat.dt = post.stat.dt[!is.na(P)][!is.nan(P)]
+post.stat.dt = post.stat.dt[,logp:=-log10(P)]
+post.stat.dt[,lfc:=sign(logFC)*ifelse(abs(logFC)> 1,1,abs(logFC))]
+post.stat.dt[,color:=ifelse(lfc>0,"up", "down")]
+p.post.sc.volcano = ggplot(data=post.stat.dt, aes(y=logp, x= lfc))  +
+    geom_text(aes(label=gene, color=color), size=2, alpha=0.8) +
+    facet_wrap(~type, scales = "free_y") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+    xlim(c(-1.2, 1.2)) + 
+    theme(legend.position = "none")
+
+ggsave("~/p.post.sc.volcano.pdf", p.post.sc.volcano, width=10, height=7)
+## post therapy 
+```
+
+
+
+## Controlling for cell-type, perform differntial expresion analysis betweene responders and non-responders 
+```{r}
+
+# as.formula("y ~ x1 + x2")
+## 4000 differentially expressed icb.genes + 2500 most variable genes. 
+require(parallel)
+differential.expression <- function(expression.mat) {
+    cell.types = unique(meta.data.curr$cluster)
+    icb.genes = rownames(expression.mat)
+    pre.stat = list()
+    for (grp in cell.types) {
+        responder.grp = meta.data.curr[(response==1) & (treatment == "pre") & (cluster == grp)]$inx
+        nonresponder.grp = meta.data.curr[(response==0) & (treatment == "pre") & (cluster == grp)]$inx
+        out1 = mclapply(seq(nrow(expression.mat)), function(uu) {
+            tt = expression.mat[uu,]
+            tryCatch({
+                aa = wilcox.test(tt[responder.grp], tt[nonresponder.grp])
+                bb = log2(mean(tt[responder.grp])+.01) - log2( mean(tt[nonresponder.grp]) +.01)
+                c(P=aa$p.value, logFC=bb)
+            }, 
+            error = function(e) c(P=NA, logFC=NA))
+        }, mc.cores = 32)
+        out1  = do.call(rbind, out1)
+        out = data.table(out1)[,type:=grp][,gene:=icb.genes] 
+        pre.stat[[grp]] = out
+    }
+    
+    pre.stat.dt = data.table(do.call(rbind, pre.stat))
+    # pre.stat.dt = pre.stat.dt[!is.na(P)][!is.nan(P)]
+    # pre.stat.dt = pre.stat.dt[,logp:=-log10(P)]
+    pre.stat.dt
+}
+
+genes.sel = unique(c(icb.response.genes.dt[estimate>0][1:1000]$genes, icb.response.genes.dt[estimate<0][1:1000]$genes, variablegenes))
+genes.sel = intersect(genes.sel, rownames(bcc.sco))
+
+bcc.sco.subset = bcc.sco[genes.sel,]
+expression.curr = bcc.sco.subset[["RNA"]]@data
+meta.data.curr = data.table(bcc.sco.subset@meta.data)
+meta.data.curr$inx = seq(nrow(meta.data.curr))
+diff.exp.dt = differential.expression(expression.curr)
+
+diff.exp.dt$bulk.icb.deg=icb.response.genes.dt[match(diff.exp.dt$gene, genes)]$estimate
+
+avi.dt = diff.exp.dt[!is.na(P)][,logP:=-log10(P+1E-35)]
+avi.dt = avi.dt[order(P)]
+avi.dt$label = ""
+for (var in unique(avi.dt$type)) {
+     avi.dt[type==var][1:20]$label = avi.dt[type==var][1:20]$gene
+    
+}
+# avi.top.dt = do.call(rbind, lapply(unique(avi.dt$type), function(tt) avi.dt[type==tt][1:10] ))
+library(ggrepel)
+p.scrna.volcano = ggplot(data=avi.dt, aes(y=logP, x= logFC))  +
+    geom_point(alpha=0.4,size=0.5) + 
+      geom_text_repel(aes(label=label), size=2, alpha=0.8) +
+    facet_wrap(~type, scales = "free") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+    # xlim(c(-1.2, 1.2)) + 
+    theme(legend.position = "none")
+
+ggsave("~/p.scrna.volcano.pdf", p.scrna.volcano, width=10, height=7)
+
+
+p.bulk.scrna = ggplot(data=avi.dt, aes(y=bulk.icb.deg, x= logFC))  +
+    geom_point(alpha=0.5,size=0.5) + 
+      geom_text(aes(label=label), size=2, alpha=0.8) +
+    facet_wrap(~type, scales = "free") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+    # xlim(c(-1.2, 1.2)) + 
+    theme(legend.position = "none")
+
+ggsave("~/p.bulk.scrna.pdf", p.bulk.scrna, width=10, height=7)
+
+
+for (cell.type.sel in unique(meta.data.curr$cluster)) {
+    metadata.dca.sel = meta.data.curr %>%
+        .[,inx:=seq(nrow(meta.data.curr))] %>% 
+        .[treatment=="pre"] %>%
+        .[cluster %in% cell.type.sel]%>%
+        .[!is.na(response)] 
+    
+}
+        
+
+library(lme4)
+eval.glmer1 = function(dat, dtx, Formula, family= "binomial"){
+    if( !class(Formula)=="formula") Formula = as.formula(Formula)
+    tryCatch(
+        {
+            dtx$col = dat
+            dtx = dtx[!is.na(col)]
+            aa = glmer(data= dtx, formula=Formula, family = family)
+            summary(aa)$coefficient[2,]
+        },error=  function(e) rep(NA,4))
+}
+
+metadata.dca.curr = metadata.dca[(treatment=="pre") & (patient %in% c(responders, nonresponders))]
+bcc.pretreatment = bcc[,metadata.dca.curr$inx]
+lmm.dt =  metadata.dca.curr %>% 
+    .[,response:=ifelse(patient %in% responders,1,0)] %>%
+    .[,.(response, cluster)]
+deg.resp.lmm = mclapply(seq(nrow(bcc.pretreatment)), function(tt){
+    eval.glmer1(dat=bcc.pretreatment[tt,], dtx=lmm.dt, Formula="response ~ col + (1|cluster)")
+}, mc.cores=28)
+
+
+lmm.dt =  metadata.dca.curr %>% 
+    .[,response:=ifelse(patient %in% responders,1,0)] %>%
+    .[,.(response, cluster)]
+deg.resp.lmm = mclapply(seq(nrow(bcc.pretreatment)), function(tt){
+    eval.glmer1(dat=log2(bcc.pretreatment[tt,], dtx=lmm.dt, Formula="col ~ response  + (1|cluster)")
+}, mc.cores=28)
+    
+    scrna.response.genes.dt =  data.table(do.call(rbind, deg.resp.lmm))[,genes:=rownames(bcc.pretreatment)]
+    setnames(scrna.response.genes.dt, 1:4, c("estimate","se", "z", "P"))
+    scrna.response.genes.dt = scrna.response.genes.dt %>%
+        .[!is.infinite(z)] %>%
+        .[!is.na(estimate)] %>%
+        .[order(abs(z), decreasing = T)]  %>% 
+        .[,effect:=sign(estimate)*ifelse(abs(estimate)-abs(se) < 0, 0, abs(estimate)-abs(se))]
+    
+    library(EnhancedVolcano)
+    p.scrna = EnhancedVolcano(scrna.response.genes.dt,
+                              lab = scrna.response.genes.dt$genes,
+                              x = 'estimate',
+                              y = 'P',
+                              pCutoff = 1e-4,
+                              FCcutoff = .3,
+                              # ylim = c(0,5.2),
+                              # xlim = c(-1, 1),
+                              # pointSize = 4.0,
+                              # pointSize = c(ifelse(scrna.response.genes.dt$P< 3E-4, 1, 0.5)),
+                              labSize = 4.0,
+                              legend=c('NS','Log (base 2) fold-change','P value',
+                                       'P value & Log (base 2) fold-change'),
+                              legendPscrnaition = 'right',
+                              legendLabSize = 8,
+                              legendIconSize = 4.0,
+                              drawConnectors = TRUE,
+                              widthConnectors = 0.2,
+                              colAlpha = 0.8,
+                              colConnectors = 'grey30'
+    )
+    
+    ```
+    
+    
+    ## Test transfer learning from scRNA to bulk
+    1. find differentially expressed, and cell types
+    2. Write datasets
+    ```{r}
+    library(avinash)
+    icb.genes = icb.response.genes.dt[1:100]$genes
+    # icb.genes.common 
+    icb.genes.common = intersect(icb.genes, rownames(bcc.sco))
+    # CD8_ex_T_cells, CD8_mem_T_cells, Tcell_prolif, Tregs, Tumor_1
+    
+    dir.create("~/project/deeplearning/icb/data/icb/scrna_transer/")
+    output.dir = "~/project/deeplearning/icb/data/icb/scrna_transer/howard"
+    
+    
+    cell.type.sel = c("CD8_ex_T_cells", "CD8_mem_T_cells", "Tcell_prolif", "Tregs", "Plasma_cells")  ## not adding the cancer cells 
+    cell.type.sel = "CD8_ex_T_cells"
+    
+    
+    
+    metadata.dca.sel = data.table(bcc.sco@meta.data) %>%
+        .[,inx:=seq(ncol(bcc.sco))] %>% 
+        .[treatment=="pre"] %>%
+        .[cluster %in% cell.type.sel]%>%
+        .[!is.na(response)] 
+    bcc.exp.sel = t(apply(bcc.sco[["RNA"]]@data[icb.genes.common, metadata.dca.sel$inx], 1, avinash::qnorm.array))
+    bcc.exp.sel[is.na(bcc.exp.sel)] = 0
+    scrna.datset = data.table(cbind(cancertype=metadata.dca.sel$cluster, t(bcc.exp.sel), response=as.numeric(metadata.dca.sel$response)))
+    
+    write.dataset(output.dir = "~/project/deeplearning/icb/data/icb/scrna_transer/howard", dataset = scrna.datset, sample.name = colnames(bcc.exp.sel))
+    # write.dataset(output.dir = output.dir, dataset = all.icb.dataset, sample.name = rownames(all.expression))
+    # file.copy("~/project/deeplearning/icb/data/icb/tf/params.json", output.dir)
+    # file.copy("~/project/deeplearning/icb/data/icb/tf/datasets_tsne_list.txt", output.dir)
+    # file.copy("~/project/deeplearning/icb/data/icb/tf/datasets_test_list.txt", output.dir)
+    icb.response.dt$label = icb.response.dt[,paste(Patient, dataset)]
+    
+    for (dataset.curr in unique(icb.response.dt$dataset)) {
+        icb.response.dt.curr = icb.response.dt[dataset==dataset.curr][label %in% meta.info.dt$label]
+        expression.icb.sel = apply(expression.merge[match(icb.response.dt.curr$label, meta.info.dt$label),  icb.genes.common], 2, avinash::qnorm.array)
+        expression.icb.sel[is.na(expression.icb.sel)] = 0
+        
+        icb.dataset.curr = data.table(cbind(cancertype=dataset.curr, expression.icb.sel, response=icb.response.dt.curr$Response1))
+        dataset.dir = sprintf("~/project/deeplearning/icb/data/icb/scrna_transer/%s", dataset.curr)
+        write.dataset(output.dir = dataset.dir, dataset = icb.dataset.curr, sample.name = icb.response.dt.curr[,paste(Patient, dataset)])
+        out = sprintf("\"%s\"	\"icb\"	\"[1,1,1]\"	\"../data/icb/scrna_transer/%s\"	1	['all']	[0,0]", dataset.curr, dataset.curr)
+        message(out)
+    }
+    # hist(bcc.exp.sel[1,],100)
+    # hist(expression.icb.sel[,1],100)
+    
+    
+    ```
+    
+    ## train scRNA and test bulk
+    ```{r}
+    CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/icb/scrna_transer/howard/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/icb/scrna_transer/howard/.
+    
+    CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/icb/scrna_transer/howard/datasets_test_list.txt --model_dir --model_dir ~/project/deeplearning/icb/data/icb/scrna_transer/howard/.   --restore_file --model_dir ~/project/deeplearning/icb/data/icb/scrna_transer/howard/. /epoch-22.pth.tar 
+    ```
+    
+    ## Run for each cell types 
+```{r}
+temp1 = data.table(bcc.sco@meta.data)
+temp2 = as.matrix(bcc.sco[["RNA"]]@data)
+save(file="~/temp.RData", temp1, temp2,icb.genes.common)
+library(Seurat)
+for (cell.type.sel in unique(temp1$cluster)) {
+  
+  metadata.dca.sel = temp1 %>%
+    .[,inx:=seq(nrow(temp1))] %>% 
+    .[treatment=="pre"] %>%
+    .[cluster %in% cell.type.sel]%>%
+    .[!is.na(response)] 
+  bcc.exp.sel = t(apply(temp2[icb.genes.common, metadata.dca.sel$inx], 1, avinash::qnorm.array))
+  bcc.exp.sel[is.na(bcc.exp.sel)] = 0
+  scrna.datset = data.table(cbind(cancertype=metadata.dca.sel$cluster, t(bcc.exp.sel), response=as.numeric(metadata.dca.sel$response)))
+  
+  avinash::write.dataset(output.dir = "~/project/deeplearning/icb/data/icb/scrna_transer/howard", dataset = scrna.datset, sample.name = colnames(bcc.exp.sel))
+  
+  command = sprintf("CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/icb/scrna_transer/howard/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/icb/scrna_transer/howard/.  --tensorboard_prefix %s_", cell.type.sel)
+  system(command = command, wait = T,ignore.stdout = F)
+}
+
+## read the output files 
+
+library(Seurat)
+predictor_celltype_dir= list.files(path="~/project/deeplearning/icb/data/icb/scrna_transer/howard/tensorboardLog/", pattern = "^avi", full.names=T)
+
+out = list() 
+for (ct.dir in predictor_celltype_dir) {
+  temp = basename(ct.dir)
+  cell.type = substring(temp, 5, nchar(temp) - 16)
+  out[[cell.type]] = sapply(list.files(path=ct.dir, pattern="^best_val", full.names = T), function(tt) {
+    aa = fread(tt)
+    tryCatch(
+      pROC::auc(aa$response, aa$response.output, quiet=T, direction = "<"),
+      error = function(e) NA)
+  })
+}
+
+out.mat = do.call(rbind, out)
+colnames(out.mat) = c("Howard",  unique(icb.response.dt$dataset))
+
+predictor.dt = data.table(melt(out.mat))
+predictor.dt = predictor.dt[!is.na(value)]
+p.predictor = ggplot(data=predictor.dt, aes(y = value, x = as.factor(Var1)))  +
+  geom_bar(aes(fill = as.factor(Var2)), stat="identity", position = position_dodge(preserve = 'single')) + 
+  coord_flip() + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+  theme(legend.position = "none")
+print(p.predictor)
+
+```
+    
+## Evaluate the difference of ICB cohort and other cohort. 
+1. 
+```{r}
+  
+        
+
+out = list() 
+for (ct.dir in predictor_celltype_dir) {
+  temp = basename(ct.dir)
+  cell.type = substring(temp, 5, nchar(temp) - 16)
+  out[[cell.type]] = do.call(rbind, lapply(list.files(path=ct.dir, pattern="^best_val", full.names = T), function(tt) 
+    {
+    aa = fread(tt)
+    aa[,dataset:=basename(tt)]
+    }))
+}
+
+
+
+
+require(uwot)
+require(ggthemes)
+require(ggplot2)
+umap.mat = as.matrix(out[[2]][,grep("^embedding", colnames(out[[1]])), with=F])
+umap.model <- umap(umap.mat, pca = NULL, ret_model = T)
+d_umap = cbind(out[[2]], data.table(umap.model$embedding))
+create.text = function(tt) gsub(".csv", gsub("best_val_", tt, replacement=""),replacement="")
+d_umap$text=create.text(d_umap$dataset)
+p = ggplot(d_umap, aes(x = V1, y = V2)) + 
+  geom_point(aes(color = dataset), alpha = 0.8) +
+  guides(colour = guide_legend(override.aes = list(size = 2))) + 
+  xlab("umap_1") + ylab("umap_2")  +
+  theme_classic() 
+print(p)
+p = ggplot(d_umap[V1 > -10], aes(x = V1, y = V2)) + 
+  geom_text(aes(label = text), alpha = 0.8, size=2) +
+  xlab("umap_1") + ylab("umap_2")  +
+  theme_classic() 
+print(p)
+
+```
+
+
+## Use variable genes      
+## Read ICB read count data. 
+```{r}
+clinical.files = list.files(path = "~/liulab_home/data/immunotherapy-trials/ICB_for_Jingxin/", pattern = ".clinical", full.names = T, recursive = T)
+clinical.data = lapply(clinical.files, fread)
+names(clinical.data) = sapply(clinical.files, basename)
+
+count.files = list.files(path = "~/liulab_home/data/immunotherapy-trials/immunotherapy-trials/htseq/", pattern = ".htseq", full.names = T)
+
+icb.counts.list = lapply(count.files, fread) 
+names(icb.counts.list) = gsub(".htseq", sapply(count.files, basename), replacement = "")
+dataset.map = data.table(name=names(icb.counts.list)) %>% 
+  .[,lastauthor:=sapply(name, 
+                                function(tt){
+                                  aa=unlist(strsplit(tt, split="_"))
+                                  aa[length(aa)]
+                                  })]
+
+emsembl2hgnc.dt = avinash::ensembl2hgnc()
+genes.dt = data.table(icb.counts.list[[1]]$ENSEMBL_GeneID) %>%
+  .[,V2:=sapply(V1, function(tt) strsplit(tt, split="\\.")[[1]][1])] %>% 
+  .[,inx:=seq(.N)] %>% 
+  .[,gene:=emsembl2hgnc.dt$hgnc_symbol[match(V2, emsembl2hgnc.dt$ensembl_gene_id)]] %>%
+    .[!is.na(gene)] %>% 
+  .[which(gene %in%  genentech.env$bb$Symbol)] %>% 
+  .[which(gene %in% rownames(bcc))] 
+genentech.env = local({load("/liulab/asahu/data/ssgsea/xiaoman/genentech.phenotype.RData");environment()})
+genes.sel = intersect(intersect(genentech.env$bb$Symbol, genes.dt$gene)
+
+dataset.map[,inx:=sapply(lastauthor, function(tt) grep(tt, dataset.name))]
+dataset.sel = unlist(dataset.map$inx)
+# dataset.sel.list = sapply(dataset.sel, function(tt){
+#   followup = followups[[tt]]
+#   inx.sel = which(sapply(dataset.map$inx, function(uu)  tt %in% uu))
+#   exp.curr = icb.counts.list[[inx.sel]][genes.dt$inx, ]
+#   patient.sel = intersect(colnames(exp.curr), followup$Patient)
+#   patient.sel.inx = which(colnames(exp.curr) %in% patient.sel)
+#   list(name=names(followups)[[tt]], expression=exp.curr[,pateint.sel.inx,with=F], followup = followup[Patient%in% patient.sel])
+# })
+
+obj.sel = c("BMS064", "Mel_PD1_Riaz")
+icb.obj.list = list()
+for (obj in obj.sel) {
+  raw.read1 =icb.counts.list[[obj]]
+  raw.read = as.matrix(raw.read1[genes.dt$inx, -1,with=F])
+  rownames(raw.read) = genes.dt$gene
+  icb.obj.list[[obj]] = CreateSeuratObject(counts=raw.read)
+}
+
+raw.read = genentech.env$cc[match(genes.dt$gene, genentech.env$bb$Symbol),]
+rownames(raw.read) = genes.dt$gene
+icb.obj.list$Mariathasan2018 = CreateSeuratObject(count=raw.read)
+
+library(Seurat)
+for (i in 1:length(icb.obj.list)) {
+    icb.obj.list[[i]] <- NormalizeData(icb.obj.list[[i]], verbose = FALSE)
+    icb.obj.list[[i]] <- FindVariableFeatures(icb.obj.list[[i]], selection.method = "vst", 
+        nfeatures = 2000, verbose = FALSE)
+}
+
+intersected.genes = intersect(colnames(expression.merge), variablegenes)
+variable.genes.list = lapply(icb.obj.list, VariableFeatures)
+variable.genes.union = unique(unlist(variable.genes.list))
+variable.gene.mat = sapply( variable.genes.list, function(tt) (variable.genes.union %in% intersect(tt, intersected.genes) + 0 ))
+
+variable.genes.sel = variable.genes.union[rowSums(variable.gene.mat) > 1]
+```
+
+
+
+
+## Write dataset and run deepImmune
+
+```{r}
+library(avinash)
+genes.curr = variable.genes.sel
+icb.response.dt$label = icb.response.dt[,paste(Patient, dataset)]
+
+for (dataset.curr in unique(icb.response.dt$dataset)) {
+  icb.response.dt.curr = icb.response.dt[dataset==dataset.curr][label %in% meta.info.dt$label]
+  
+  expression.icb.sel = apply(expression.merge[match(icb.response.dt.curr$label, meta.info.dt$label),  genes.curr], 2, avinash::qnorm.array)
+  expression.icb.sel[is.na(expression.icb.sel)] = 0
+  
+  icb.dataset.curr = data.table(cbind(cancertype=dataset.curr, expression.icb.sel, response=icb.response.dt.curr$Response1))
+  dataset.dir = sprintf("~/project/deeplearning/icb/data/icb/scrna_transer/%s", dataset.curr)
+  write.dataset(output.dir = dataset.dir, dataset = icb.dataset.curr, sample.name = icb.response.dt.curr[,paste(Patient, dataset)])
+  out = sprintf("\"%s\"	\"icb\"	\"[1,1,1]\"	\"../data/icb/scrna_transer/%s\"	1	['all']	[0,0]", dataset.curr, dataset.curr)
+  message(out)
+}
+
+```
+
+
+```{r}
+
+temp1 = data.table(bcc.sco@meta.data)
+temp2 = as.matrix(bcc.sco[["RNA"]]@data)
+save(file="~/temp.RData", temp1, temp2,variable.genes.sel)
+library(Seurat)
+
+for (cell.type.sel in unique(temp1$cluster)) {
+  
+  metadata.dca.sel = temp1 %>%
+    .[,inx:=seq(nrow(temp1))] %>% 
+    .[treatment=="pre"] %>%
+    .[cluster %in% cell.type.sel]%>%
+    .[!is.na(response)] 
+  bcc.exp.sel = t(apply(temp2[variable.genes.sel, metadata.dca.sel$inx], 1, avinash::qnorm.array))
+  bcc.exp.sel[is.na(bcc.exp.sel)] = 0
+  scrna.datset = data.table(cbind(cancertype=metadata.dca.sel$cluster, t(bcc.exp.sel), response=as.numeric(metadata.dca.sel$response)))
+  
+  avinash::write.dataset(output.dir = "~/project/deeplearning/icb/data/icb/scrna_transer/howard", dataset = scrna.datset, sample.name = colnames(bcc.exp.sel))
+  
+  command = sprintf("CUDA_VISIBLE_DEVICES=2 python train.py  --data_dir  ~/project/deeplearning/icb/data/icb/scrna_transer/howard/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/icb/scrna_transer/howard/.  --tensorboard_prefix vargene_%s_", cell.type.sel)
+  system(command = command, wait = T,ignore.stdout = F)
+}
+
+## read the output files 
+
+library(Seurat)
+predictor_celltype_dir= list.files(path="~/project/deeplearning/icb/data/icb/scrna_transer/howard/tensorboardLog/", pattern = "^vargene_", full.names=T)
+
+out = list() 
+csv.datas = list()
+for (ct.dir in predictor_celltype_dir) {
+  temp = basename(ct.dir)
+  cell.type = substring(temp, 9, nchar(temp) - 16)
+  out[[cell.type]] = sapply(list.files(path=ct.dir, pattern="^best_val", full.names = T), function(tt) {
+    aa = fread(tt)
+    tryCatch(
+      pROC::auc(aa$response, aa$response.output, quiet=T, direction = "<"),
+      error = function(e) NA)
+  })
+}
+
+out.mat = do.call(rbind, out)
+colnames(out.mat) = c("Howard",  unique(icb.response.dt$dataset))
+
+predictor.dt = data.table(melt(out.mat))
+predictor.dt = predictor.dt[!is.na(value)][Var2!="Liu2019_PD1_Melanoma_RNASeq_Ipi.Prog"]
+p.predictor = ggplot(data=predictor.dt, aes(y = value, x = as.factor(Var2)))  +
+  geom_bar(aes(fill = as.factor(Var1)), stat="identity", position = position_dodge(preserve = 'single')) + 
+  geom_hline(yintercept = 0.5) +
+  coord_flip() + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+  theme(legend.position = "none")
+print(p.predictor)
+
+##
+out1 =  out.mat[,!(colnames(out.mat) =="Liu2019_PD1_Melanoma_RNASeq_Ipi.Prog")]
+# out1 = out1[, apply(out,2,max) > 0.81]
+out1 = out1[order(apply(out1, 1, median)),order(apply(out1, 2, median))]
+
+m <- matrix(c(rnorm(1000)), ncol=100)
+distmat <- dist(t(m))
+
+# Returns a vector of 'num.colors.in.palette'+1 colors. The first 'cutoff.fraction'
+# fraction of the palette interpolates between colors[1] and colors[2], the remainder
+# between colors[3] and colors[4]. 'num.colors.in.palette' must be sufficiently large
+# to get smooth color gradients.
+makeColorRampPalette <- function(colors, cutoff.fraction, num.colors.in.palette)
+{
+  stopifnot(length(colors) == 4)
+  ramp1 <- colorRampPalette(colors[1:2])(num.colors.in.palette * cutoff.fraction)
+  ramp2 <- colorRampPalette(colors[3:4])(num.colors.in.palette * (1 - cutoff.fraction))
+  return(c(ramp1, ramp2))
+}
+
+cutoff.distance <- 3  
+cols <- makeColorRampPalette(c("white", "red",    # distances 0 to 3 colored from white to red
+                               "green", "black"), # distances 3 to max(distmat) colored from green to black
+                             cutoff.distance / max(distmat),
+                             100)
+
+library(pheatmap)
+col1 = colorRampPalette(c("darkgreen", "white", "white","darkred"))(300)
+col = col1[c(1:100, seq(101,200,2), 201:300)]
+p = pheatmap(t(out1), cluster_rows=F, cluster_cols=F, fontsize_col = 10, color = col, filename="~/Rplot1.pdf", width = 13, height = 7)
+# print(p)
+
+```
+## pathway enrichment of differentially expressed genes in single cell data. 
+
+```{r}
+# unloadNamespace(c("clusterProfiler", "enrichplot", "DOSE", "GOSemSim", "GO.db"))
+# unloadNamespace(c("DOSE"))
+# unloadNamespace(c("enrichplot"))
+# unloadNamespace(c( "GOSemSim", "enrichplot", "DOSE"))
+# unloadNamespace(c( "GOSemSim", "GO.db"))
+# unloadNamespace(c("biomaRt"))
+# unloadNamespace(c("DO.db"))
+# 
+# unloadNamespace(c("GO.db", "biomaRt", "DO.db"))
+# unloadNamespace(c("GO.db", "biomaRt", "DO.db"))
+# unloadNamespace("AnnotationDbi")
+# detach('package:AnnotationDbi',unload = T)
+# libPaths(aa[c(2,1,3:5)])
+# library(clusterProfiler)
+
+gene.eg.dt = clusterProfiler::bitr(unique(diff.exp.dt$gene), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+universe = clusterProfiler::bitr(rownames(bcc.sco.subset), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+
+diff.exp.dt$ENTREZID = gene.eg.dt[match(diff.exp.dt$gene,gene.eg.dt$SYMBOL),]$ENTREZID
+
+if(FALSE){
+  kk <- clusterProfiler::enrichKEGG(gene         = diff.exp.dt[type=="CD8_mem_T_cells"]$ENTREZID,
+                                    organism     = 'hsa',
+                                    pvalueCutoff = 0.05)
+  clusterProfiler::dotplot(kk, showCategory=30) 
+}
+
+# For all genes 
+
+diff.exp.dt[, up_or_down:=ifelse(logFC > 0 , "upregulated", "downregulated")]
+formula_res_scrna <- clusterProfiler::compareCluster(ENTREZID~up_or_down+type, data=diff.exp.dt[P< 1E-3][!is.na(up_or_down)], fun="clusterProfiler::enrichKEGG", organism="hsa", pvalueCutoff=0.05, universe=universe$ENTREZID)
+
+# ck <- clusterProfiler::compareCluster(geneCluster = gcSample, fun = "enrichKEGG")
+# head(as.data.frame(ck))
+p = clusterProfiler::dotplot(formula_res_scrna, x=~type) + ggplot2::facet_grid(~up_or_down) + 
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
+ggplot2::ggsave(filename = "~/p.scrna.pathway.resp.noresp.pdf",p, width = 10, height = 10)
+
+
+```
+## pathway enrichment of differentially expressed genes in bulk rnaseq data. 
+
+```{r,echo=F}
+require(parallel)
+
+library(matrixTests)
+expression.merge.match = expression.merge[match(icb.response.dt[,paste(Patient, dataset), ],meta.info.dt$label),]
+
+
+differential.expression.bulk <- function(expression.mat, icb.response.dt) {
+  
+    dataset.inx = unique(icb.response.dt$dataset)
+    icb.genes = rownames(expression.mat)
+    all.stat = list()
+    for (grp in dataset.inx) {
+       icb.response.curr = icb.response.dt[(dataset == grp)]
+        exp.curr = expression.mat[,icb.response.curr$inx]
+        responder.grp = which(icb.response.curr$response==1) 
+        nonresponder.grp = which(icb.response.curr$response==0) 
+        x = exp.curr[,responder.grp]
+        y = exp.curr[, nonresponder.grp]
+        aa = matrixTests::row_wilcoxon_twosample(x,y)
+        all.stat[[grp]] = data.table(P=aa$pvalue, responder.mean = rowMeans(x,na.rm = T), nonresponder.mean = rowMeans(y,na.rm = T)) %>%
+          .[,Padj:=p.adjust(P)] %>%
+          .[,type:=grp] %>%
+        .[,gene:=icb.genes] 
+        
+    }
+    
+    all.stat.dt = data.table(do.call(rbind, all.stat))
+    all.stat.dt
+}
+
+icb.response.dt[,inx:=seq(.N)][,response:=Response1]
+bulk.icb.dt = differential.expression.bulk(t(expression.merge.match), icb.response.dt)
+bulk.icb.dt = bulk.icb.dt[!is.na(P)]
+bulk.combined.dt = rbind(
+  bulk.icb.dt %>%
+  .[,up_or_down:=ifelse(responder.mean > nonresponder.mean, "upregulated", "downregulated")] %>%
+  .[,.(P, up_or_down, Padj, type, gene=gene)],
+  icb.response.genes.dt %>%
+    .[,type:="combined"] %>%
+  .[,up_or_down:=ifelse(estimate > 0, "upregulated", "downregulated")] %>%
+    .[,Padj:=p.adjust(P)] %>%
+  .[,.(P, up_or_down, Padj, type, gene=genes)])
+
+
+
+gene.eg.dt = clusterProfiler::bitr(unique(bulk.combined.dt$gene), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db")
+
+bulk.combined.dt$ENTREZID = gene.eg.dt[match(bulk.combined.dt$gene,gene.eg.dt$SYMBOL),]$ENTREZID
+bulk.combined.dt = bulk.combined.dt[!is.na(ENTREZID)]
+formula_res <- clusterProfiler::compareCluster(ENTREZID~up_or_down+type, data=bulk.combined.dt[P< 1E-2][!is.na(up_or_down)], fun="clusterProfiler::enrichKEGG", organism="hsa", pvalueCutoff=0.05, universe=gene.eg.dt$ENTREZID)
+
+
+formula_res_bulk <- compareCluster.unverselist(ENTREZID~up_or_down+type, data=bulk.combined.dt[P< 5E-2][!is.na(up_or_down)], fun="clusterProfiler::enrichKEGG", organism="hsa", pvalueCutoff=0.1, universe.dt=bulk.combined.dt, universe.var = "ENTREZID")
+
+p1 = clusterProfiler::dotplot(formula_res_bulk, x=~type) + ggplot2::facet_grid(~up_or_down) + 
+  ggplot2::theme(axis.text.x = ggplot2::element_text(size=6,angle = 90))+
+  ggplot2::theme(axis.text.y = ggplot2::element_text(size=10))
+# print(p1)
+ggplot2::ggsave(filename = "~/p.bulk.pathway.resp.noresp.pdf",p1, width = 15, height = 10)
+```
+
+## combining the scRNA and bulk 
+```{r}
+formula_res_combined = formula_res_bulk
+formula_res_combined@compareClusterResult = rbind(formula_res_bulk@compareClusterResult, formula_res_scrna@compareClusterResult)
+formula_res_combined@geneClusters = c(formula_res_bulk@geneClusters, formula_res_scrna@geneClusters)
+p1 = clusterProfiler::dotplot(formula_res_combined, x=~type) + ggplot2::facet_grid(~up_or_down) + 
+  ggplot2::theme(axis.text.x = ggplot2::element_text(size=6,angle = 90))+
+  ggplot2::theme(axis.text.y = ggplot2::element_text(size=10))
+# print(p1)
+ggplot2::ggsave(filename = "~/p.combined.pathway.resp.noresp.pdf",p1, width = 15, height = 10)
+```
+
+
+## cytokines enrichment 
+
+```{r}
+cytokines = fread("/liulab/xmwang/oxphos_proj/loading_data/surface/cytokine.txt", header=F)
+surface.genes = fread("/liulab/xmwang/oxphos_proj/loading_data/surface/ExpressionLigRec.txt", header=T)
+cytokines = intersect(cytokines$V2, all.genes)
+cytokine.deg.scrna = diff.exp.dt[which(gene %in% cytokines)] %>%
+  .[,estimate:=ifelse(P<0.005, logFC,NA)] %>%
+  .[,estimate:=sign(logFC)*sapply(logFC, function(tt) min(2,abs(tt)))] 
+# aa = cytokine.deg.scrna[gene%in% "TNFRSF18"][order(P)]
+# bb= cytokine.deg.scrna[type %in% "Endothelial"]
+# length(unique(cytokine.deg.scrna$gene))
+out = dcast(cytokine.deg.scrna, gene~type, value.var="estimate" ) 
+out1.scrna = out[,-1,with=F]%>%
+  as.matrix(.,rownames=out$gene) %>%
+  .[rowMeans(is.na(.)) <1,colMeans(is.na(.)) <1]
+  
+library(pheatmap)
+p.scrna = pheatmap(out1.scrna, cluster_cols = T,fontsize_col = 5, fontsize_row = 5, filename="~/cytokine.deg.scrna.pdf", width = 15, height = 10)
+
+```
+## Cytokines in the bulk tumors. 
+```{r}
+cytokine.deg.bulk = bulk.combined.dt[which(gene %in% rownames(out1))] %>%
+  .[,estimate:=ifelse(P<0.05, ifelse(up_or_down=="upregulated",1,-1), 0)]
+out = dcast(cytokine.deg.bulk, gene~type, value.var="estimate" ) 
+out1.bulk = out[,-1,with=F]%>%
+  as.matrix(.,rownames=out$gene) %>%
+  .[p.scrna$tree_row$order,colMeans(is.na(.)) <1]
+
+library(pheatmap)
+pheatmap(out1.bulk, cluster_cols = T, cluster_row=F, fontsize_col = 5, fontsize_row = 5, filename="~/cytokine.deg.bulk.pdf", width = 15, height = 10)
+```
+## Combine Nir (Moshe et. al.) data to the analysis
+
+```{r}
+# gorgan = readRDS("~/liulab_home/data/single_cell/GSE139555/GSE139555_all_integrated.rds")
+# getz = readRDS("/liulab/asahu/data/ssgsea/xiaoman/getz/SKCM_ICB_SeuratObj.rds")
+# library(magrittr)
+getz = readRDS("/liulab/asahu/data/single_cell/GSE120575/GSE120575_human_aPD1aCTLA4_res.rds")$RNA
+getz.resp =  fread("/liulab/asahu/data/ssgsea/xiaoman/getz/GSE120575_patient_ID_single_cells.txt", skip=20, header=F) %>%
+.[,1:7,with=F] %>%
+.[,V2:=gsub(V2, pattern="-", replacement=".")] %>%
+.[,response.bin:=ifelse(V6=="Responder", 1, 0)] %>%
+.[,treatment:=ifelse(substring(V5,1,2) == "Pr", "pre", "post")]
+
+differential.expression.new <- function(expression.mat, meta.data) {
+    cell.types = unique(meta.data$cluster)
+    icb.genes = rownames(expression.mat)
+    all.stat =list()
+    for (grp in cell.types) {
+        responder.grp = meta.data[(response==1) & (treatment == "pre") & (cluster == grp)]$inx
+        nonresponder.grp = meta.data[(response==0) & (treatment == "pre") & (cluster == grp)]$inx
+
+        x = expression.mat[,responder.grp]
+        y = expression.mat[, nonresponder.grp]
+        aa = matrixTests::row_wilcoxon_twosample(x,y)
+        all.stat[[grp]] = data.table(P=aa$pvalue, responder.mean = rowMeans(x,na.rm = T), nonresponder.mean = rowMeans(y,na.rm = T)) %>%
+          .[,Padj:=p.adjust(P)] %>%
+          .[,type:=grp] %>%
+        .[,gene:=icb.genes] 
+        
+    }
+    all.stat.dt = data.table(do.call(rbind, all.stat))
+    all.stat.dt
+}
+
+
+getz@meta.data %<>% 
+cbind(.,
+getz.resp[match(colnames(getz),V2)][,.(response=response.bin, treatment=treatment, drug=V7, Patient=V5)]) %>%
+as.data.frame()
+
+# getz.variablegenes<- Seurat::VariableFeatures(Seurat::FindVariableFeatures(getz, selection.method = "vst", nfeatures = 3500))
+getz.variablegenes<- rownames(getz) 
+
+getz.subset = intersect(getz.variablegenes, rownames(bcc.sco.subset)) %>%
+getz[.,(getz@meta.data$drug=="anti-PD1") & (getz@meta.data$treatment=="pre")]
+
+meta.data.curr = data.table(getz.subset@meta.data)%>%
+.[,inx:=seq(.N)] %>%
+.[,cluster:=assign.CIBERSORT]
+
+getz.diff.exp.getz.dt = differential.expression.new(as.matrix(getz.subset[["RNA"]]@data), meta.data.curr)
+getz.diff.exp.getz.dt1 = getz.diff.exp.getz.dt[,logFC:=responder.mean-nonresponder.mean] %>% 
+.[,bulk.icb.deg:=icb.response.genes.dt[match(getz.diff.exp.getz.dt$gene, icb.response.genes.dt$genes)]$estimate]
+
+getz.avi.dt = getz.diff.exp.getz.dt1[!is.na(P)][,logP:=-log10(P+1E-39)]
+getz.avi.dt = getz.avi.dt[order(P)]
+getz.avi.dt$label = ""
+for (var in unique(getz.avi.dt$type)) {
+     getz.avi.dt[type==var][1:20]$label = getz.avi.dt[type==var][1:20]$gene
+}
+
+library(ggrepel)
+p.getz.scrna.volcano = ggplot(data=getz.avi.dt, aes(y=logP, x= logFC))  +
+    geom_point(alpha=0.4,size=0.5) + 
+      geom_text_repel(aes(label=label), size=2, alpha=0.8) +
+    facet_wrap(~type, scales = "free") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+    # xlim(c(-1.2, 1.2)) + 
+    theme(legend.position = "none")
+
+ggsave(".figs/p.getz.scrna.volcano.pdf", p.getz.scrna.volcano, width=10, height=7)
+
+
+p.getz.bulk.scrna = ggplot(data=getz.avi.dt, aes(y=bulk.icb.deg, x= logFC))  +
+    geom_point(alpha=0.5,size=0.5) + 
+      geom_text(aes(label=label), size=2, alpha=0.8) +
+    facet_wrap(~type, scales = "free") +
+    theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                       panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+    # xlim(c(-1.2, 1.2)) + 
+    theme(legend.position = "none")
+
+ggsave(".figs/p.getz.bulk.scrna.pdf", p.getz.bulk.scrna, width=10, height=7)
+
+
+## pathway enrichment 
+gene.eg.dt = clusterProfiler::bitr(unique(getz.diff.exp.getz.dt$gene), fromType="SYMBOL", toType="ENTREZID", OrgDb="org.Hs.eg.db") %>%
+data.table(.) %>%
+setkey(., SYMBOL) 
+
+getz.diff.exp.getz.dt[,ENTREZID:= gene.eg.dt[match(getz.diff.exp.getz.dt$gene, SYMBOL)]$ENTREZID]%>%
+.[, up_or_down:=ifelse(logFC > 0 , "upregulated", "downregulated")]
+formula_res_scrna <- clusterProfiler::compareCluster(ENTREZID~up_or_down+type, data=getz.diff.exp.getz.dt[P< 1E-3][!is.na(up_or_down)], fun="clusterProfiler::enrichKEGG", organism="hsa", pvalueCutoff=0.05, universe=unique(getz.diff.exp.getz.dt$ENTREZID))
+p = clusterProfiler::dotplot(formula_res_scrna, x=~type) + ggplot2::facet_grid(~up_or_down) + 
+  ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 90))
+ggplot2::ggsave(filename = ".figs/p.getz.scrna.pathway.resp.noresp.pdf", p, width = 10, height = 10)
+
+```
+
+
+## Check if T-cell dysfunction + T-cell exclusion + Treg are better predictive of respose in CTLA4 cohort.
+1. Check FOXP3 expression better predictor of response in CTLA4 cohort than PD1 cohort
+2. Also run cox regression to check survival 
+
+# Process gene names in Van Allen data
+```{r}
+# t(t(sapply(expression.mat.list, function(tt) "FOXP3" %in% colnames(tt))))
+
+followup.curr = followups[["VanAllen2015_CTLA4_Melanoma_RNASeq"]]
+sra.curr= fread("~/liulab_home/data/immunotherapy-trials/icb/my_SraRunTable/Mel_CTLA4_VanAllen_SRP011540_SraRunTable.txt") %>% 
+.[,.(sra.name=Run, Patient.name=`Sample Name`)] %>%
+.[,Patient:=sapply(Patient.name, function(tt) strsplit(tt, split="_")[[1]][4])]%>%
+.[Patient %in% followup.curr$Patient]
+# setdiff(followup.curr$Patient, sra.curr$Patient)]
+expression.curr = fread("~/liulab_home/data/immunotherapy-trials/immunotherapy-trials/TPM/Mel_CTLA4_VanAllen.TPM")
+	# colnames(expression.curr) %in% sra.curr$sra.name
+sra.map  = sra.curr[match(colnames(expression.curr)[-1], sra.name),]
+new.patient.name  = sra.map$Patient
+emsembl2hgnc.dt = avinash::ensembl2hgnc()
+gene.map = data.table(expression.curr$ENSEMBL_GeneID) %>%
+  .[,V2:=sapply(V1, function(tt) strsplit(tt, split="\\.")[[1]][1])] %>% 
+  .[,inx:=seq(.N)] %>% 
+  .[,gene:=emsembl2hgnc.dt$hgnc_symbol[match(V2, emsembl2hgnc.dt$ensembl_gene_id)]] %>%
+    .[!is.na(gene)] 
+expression.sel = expression.curr[gene.map$inx] %>%
+setnames(.,seq(ncol(expression.curr)), c("Symbol", new.patient.name)) %>%
+.[,Symbol:=gene.map$gene] 
+
+expression.new = apply(as.matrix(expression.sel[,-1,with=F]), 1, avinash::znorm)%>%
+t() %>%
+data.table() %>%
+.[,Symbol:= expression.sel$Symbol] %>%
+setcolorder(., colnames(expression.sel))
+
+
+write.table(file = "~/liulab_home/data/immunotherapy-trials/icb/my_expression/VanAllen2015_CTLA4_Melanoma_RNASeq", x = expression.new, row.names = F, col.names = T,
+sep = "\t", quote = F)
+    expression.mat.list[["VanAllen2015_CTLA4_Melanoma_RNASeq"]]  =
+    as.matrix(t(expression.new[,-1,with=F])) %>%
+ set_colnames(expression.new$Symbol)
+
+
+```
+## Foxp3 analysis
+
+```{r}
+cal.auc.de = function(response, val){
+	response = ifelse(response > 0,1,0)
+	aa = pROC::auc(response, val, quiet=T, direction = "<")
+	c(c(unlist(aa[[1]])), 
+		mean(val[which(response==1)],na.rm=T),
+		mean(val[which(response==0)],na.rm=T),
+		(wilcox.test(val[which(response==1)], val[which(response==0)]))$p.value
+		)
+} 
+
+foxp3.auc = lapply(dataset.name, function(ii){
+	tryCatch({
+exp.curr = expression.mat.list[[ii]][,"FOXP3"]
+followups[[ii]][match(names(exp.curr), Patient)][["Response"]]%>%
+ cal.auc.de(., exp.curr)
+}, error = function(e) rep(NA,4))
+})
+
+col.names =  c("auc", "response.val", "nonresponse.val", "P")
+
+foxp3.auc.dt = do.call(rbind, foxp3.auc) %>%
+data.table() %>%
+	.[,dataset:=c(dataset.name)] %>%
+	setnames(., seq(4), col.names) %>%
+	.[!is.na(P)]# %>%
+
+
+p.predictor = ggplot(data=foxp3.auc.dt, aes(y = auc, x = as.factor(dataset)))  +
+  geom_bar(stat="identity") + 
+  geom_hline(yintercept = 0.5) +
+  coord_flip() + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+  theme(legend.position = "none")
+
+ggsave(filename=".figs/foxp3.auc.pdf", p.predictor)
+
+## using CD3 as makers
+
+cd3.genes = c( "CD3G", "CD3D",   "CD3E")
+
+cd3.auc = lapply(dataset.name, function(ii){
+	tryCatch({
+		aa = expression.mat.list[[ii]]
+cd3.curr= aa[,colnames(aa) %in% cd3.genes]
+if(ncol(cd3.curr) > 0 ) cd3.curr = rowSums(cd3.curr,na.rm=T)
+exp.curr = cd3.curr
+
+followups[[ii]][match(names(exp.curr), Patient)][["Response"]]%>%
+ cal.auc.de(., exp.curr)
+}, error = function(e) rep(NA,4))
+})
+
+col.names =  c("auc", "response.val", "nonresponse.val", "P")
+
+cd3.auc.dt = do.call(rbind, cd3.auc) %>%
+data.table() %>%
+	.[,dataset:=c(dataset.name)] %>%
+	setnames(., seq(4), col.names) %>%
+	.[!is.na(P)]# %>%
+
+
+p.predictor = ggplot(data=cd3.auc.dt, aes(y = auc, x = as.factor(dataset)))  +
+  geom_bar(stat="identity") + 
+  geom_hline(yintercept = 0.5) +
+  coord_flip() + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank(), axis.line = element_line(colour = "black")) + 
+  theme(legend.position = "none")
+
+ggsave(filename=".figs/cd3.auc.pdf", p.predictor)
+
+
+## comparision of foxp3 and cd3 predictions 
+foxp3.auc.dt$cd3.auc = cd3.auc.dt[match(foxp3.auc.dt$dataset, dataset)]$auc
+
+library(ggrepel)
+p.predictor = ggplot(data=foxp3.auc.dt, aes(y = auc, x = cd3.auc))  +
+geom_point(color="red") + 
+# geom_text(aes(label=dataset)) #+  
+geom_text_repel(aes(label=dataset), size=3) +  
+geom_abline(slope=1) +
+xlab("CD3 auc") + ylab("FOXP3 auc") + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank()) + 
+  theme(legend.position = "none") 
+
+ggsave(filename=".figs/foxp3.cd3.auc.pdf", p.predictor)
+
+
+```
+## survival 
+## PFS
+
+
+```{r}
+library(survival)
+cal.cox = function(dtx){
+    tryCatch(
+        {
+            dtx = dtx[!is.na(col)]
+            aa =  coxph(Surv(Survival, Event) ~., dtx)
+            summary(aa)$coefficients["col",c(1,5)]
+        },
+        error=  function(e) rep(NA,2),
+        warning=  function(e) rep(NA,2)
+)
+}
+
+cal.surv.de = function(followup.curr, exp){
+	followup = followup.curr[match(rownames(exp), Patient)]
+	foxp3.exp = exp[,"FOXP3"]
+	cd3.curr= exp[,colnames(exp) %in% cd3.genes, drop=F]
+	
+	OS =  tryCatch(followup[,.(Survival=OS, Event=OS.Event)],
+		error=  function(e) NA)
+	OS.foxp3 = tryCatch({
+		OS[,col:=foxp3.exp] %>%
+	cal.cox()	
+	}, error=function(e) rep(NA,2))
+	OS.foxp3.res = tryCatch({
+		OS[,col:=foxp3.exp] %>%
+		cbind(.,cd3.curr)%>%
+	cal.cox()	
+	}, error=function(e) rep(NA,2))
+
+
+	PFS =  tryCatch(followup[,.(Survival=PFS, Event=PFS.Event)],
+		error=  function(e) NA)
+	PFS.foxp3 = tryCatch({
+		PFS[,col:=foxp3.exp] %>%
+	cal.cox()	
+	}, error=function(e) rep(NA,2))
+	PFS.foxp3.res = tryCatch({
+		PFS[,col:=foxp3.exp] %>%
+		cbind(.,cd3.curr)%>%
+	cal.cox()	
+	}, error=function(e) rep(NA,2))
+
+c(
+	OS.foxp3, OS.foxp3.res,
+	PFS.foxp3, PFS.foxp3.res
+	)
+
+} 
+
+
+foxp3.surv = lapply(dataset.name, function(ii)
+ tryCatch(cal.surv.de(followups[[ii]], expression.mat.list[[ii]]),
+ error=function(e) NA)
+ )
+
+names(foxp3.surv) = dataset.name
+foxp3.surv = foxp3.surv[!is.na(foxp3.surv)]
+
+col.names =  paste(c("coef", "P"), rep(c("OS", "OS.res", "PFS", "PFS.res"), each=2),sep="_")
+foxp3.surv.dt = do.call(rbind, foxp3.surv) %>%
+data.table() %>%
+	.[,dataset:=names(foxp3.surv)] %>%
+	setnames(., seq(length(col.names)), col.names) 
+
+
+p.predictor = ggplot(data=foxp3.surv.dt, aes(y = coef_OS, x = coef_OS.res))  +
+geom_point(color="red") + 
+# geom_text(aes(label=dataset)) #+  
+geom_text_repel(aes(label=dataset), size=2) +  
+geom_abline(slope=1) +
+xlab("FOXP3 OS (control for CD3)") + ylab("FOXP3 OS") + 
+  theme_bw() + theme(panel.border = element_blank(), panel.grid.major = element_blank(),
+                     panel.grid.minor = element_blank()) + 
+  theme(legend.position = "none") 
+
+ggsave(filename=".figs/foxp3.cd3.OS.pdf", p.predictor)
+
+```
+
+## UMAP for scRNA  + Tcga-immune-phenotype on all ICB cohorts. 
+```{r}
+```
+

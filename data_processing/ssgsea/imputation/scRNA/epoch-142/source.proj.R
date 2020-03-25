@@ -1,5 +1,3 @@
-recompile_avinash = function() 
-    install.packages("~/shortcuts/avinash", repos=NULL, clean = TRUE, INSTALL_opts = "--no-lock", type="source")
 recompile_r_avinash = function()
     recompile_r(lib.name ="avinash", path="~/shortcuts/avinash", lib = "/homes6/asahu/R/x86_64-pc-linux-gnu-library/3.6")
 recompile_r = function(path, lib.name, reload=T, ...){
@@ -11,6 +9,9 @@ recompile_r = function(path, lib.name, reload=T, ...){
     install.packages(path, repos=NULL, clean = TRUE,INSTALL_opts = install.opts, ...) 
     if(reload) require(lib.name, character.only = TRUE)
 }
+
+recompile_avinash = function() 
+    install.packages("~/shortcuts/avinash", repos=NULL, clean = TRUE, INSTALL_opts = "--no-lock", type="source")
 calc.stat.new = function(response.curr, value){
     aa = tryCatch(
         as.numeric(auc(response.curr, value, levels=c(0,1))),

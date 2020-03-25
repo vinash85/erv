@@ -1,0 +1,54 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## Read differential expressed genes
+```{r}
+aa = fread("/liulab/xmwang/oxphos_proj/loading_data/cistrome/differential expression of genes in all datasets.txt")
+aa[,P_value:=as.numeric(P_value)]
+aa.sub = aa[which(P_value < 1E-2)][(Gene %in% genes.analyzed)]
+# library(reshape2)
+aa.mat = data.table::dcast(data = aa.sub, Sample_ID~Gene,value.var = "Log2FC", fill=0)
+
+missing.genes =  setdiff(genes.analyzed, colnames(aa.mat))
+missing.genes.mat =  matrix(NA, nrow=length(aa.mat$Sample_ID), ncol= length(missing.genes), dimnames = list(aa.mat$Sample_ID, missing.genes))
+tfko.mat = cbind(aa.mat, missing.genes.mat)
+
+chemo.dat = readRDS("~/liulab_home/data/ssgsea/xiaoman/wubin/ChemoTherapy_AllGenes_LogFC_0929.rds")
+chemo.mat = t(chemo.dat[match(colnames(tfko.mat)[-1],rownames(chemo.dat)),])
+chemo.mat = data.table(Sample_ID=rownames(chemo.mat), chemo.mat)
+setnames(chemo.mat, seq(ncol(chemo.mat)), colnames(tfko.mat))
+
+targeted.dat = readRDS("~/liulab_home/data/ssgsea/xiaoman/wubin/TargetedTherapy_AllGenes_LogFC_0929.rds")
+targeted.mat = t(targeted.dat[match(colnames(tfko.mat)[-1],rownames(targeted.dat)),])
+targeted.mat = data.table(Sample_ID=rownames(targeted.mat), targeted.mat)
+setnames(targeted.mat, seq(ncol(targeted.mat)), colnames(tfko.mat))
+
+all.mat = rbind(rbind(tfko.mat,chemo.mat),targeted.mat)
+
+setcolorder(all.mat, c("Sample_ID", genes.analyzed))
+
+write.table(file = "~/liulab_home/data/ssgsea/xiaoman/wubin/combined.drug.log2fc.txt", x = all.mat, quote = F, sep = "\t", row.names = F, col.names = T)
+
+```
+## write a directory for xin 
+file that was transferred to xin : ll ../data/tcga/tf/binarize/tensorboardLog/Neo_20200217-233533/last.pth.tar
+```{r}
+tcga.dataset.curr = tcga.dataset[cancertype=="SKCM"]
+output.dir = "~/project/deeplearning/icb/data/tcga/tf/binarize/skcm"
+tcga.samplename = fread("~/project/deeplearning/icb/data/tcga/tf/binarize/samples_name.txt")$x
+sample.name.curr = tcga.samplename[tcga.dataset$cancertype=="SKCM"]
+write.dataset(output.dir =output.dir , dataset = tcga.dataset.curr, sample.name = sample.name.curr)
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/tensorboardLog/Neo_20200217-233533/params.json", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_test_list.txt", output.dir)
+```
+```{r}
+tcga.dataset.curr = tcga.dataset[cancertype=="LUSC"]
+output.dir = "~/project/deeplearning/icb/data/tcga/tf/binarize/lusc"
+tcga.samplename = fread("~/project/deeplearning/icb/data/tcga/tf/binarize/samples_name.txt")$x
+sample.name.curr = tcga.samplename[tcga.dataset$cancertype=="LUSC"]
+write.dataset(output.dir =output.dir , dataset = tcga.dataset.curr, sample.name = sample.name.curr)
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/tensorboardLog/Neo_20200217-233533/params.json", output.dir)
+file.copy("~/project/deeplearning/icb/data/tcga/tf/binarize/datasets_test_list.txt", output.dir)
+```

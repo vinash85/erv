@@ -116,6 +116,7 @@ experiments/
 
 plots/
 
+.figs/
 runs/
 .Rproj.user
 .RData

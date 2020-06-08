@@ -110,7 +110,8 @@ venv.bak/
 # model file 
 
 *.tar
-
+*.Rdata
+*.RData
 
 experiments/
 

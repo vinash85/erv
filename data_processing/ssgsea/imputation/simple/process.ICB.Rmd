@@ -2829,18 +2829,27 @@ set.seed(20191031)
 lee.sce = SingleCellExperiment(assays = list(counts = lee.exp), colData=lee.meta.data)
 saveRDS(lee.sce, file="~/liulab_home/data/single_cell/Lee_data/lee.sce.RDS")
 # save(file="~/liulab_home/data/single_cell/Lee_data/lee.exp.list.RData", lee.exp.list)
+
+```
+
+## 
+```{r}
+lee.sce =readRDS("~/liulab_home/data/single_cell/Lee_data/lee.sce.RDS")
 lee.cd3 = lee.sce[,lee.sce@colData$CD3.status=="CD3+"]
 rm(lee.exp.list, lee.exp, lee.sce)
 gc()
 set.seed(1000)
 library(Matrix)
-rand.samp = sample(ncol(lee.cd3), 30000)
+library(magrittr)
+rand.samp = sample(ncol(lee.cd3), 3000)
 lee.small = lee.cd3[,sort(rand.samp)]
+profvis({
 lee.small = hippo(lee.small, 
             K = 10, 
             z_threshold = 2, 
             outlier_proportion = 0.005,
             verbose=TRUE)
+})
 library(umap)
 library(ggplot2)
 lee.small = myhippo_dimension_reduction(lee.small, method="umap", pca=50, distance=cosine)
@@ -2864,3 +2873,169 @@ facet_wrap(~responseAndtreatment)
 ggsave(p, file=".figs/lee.small.response.treatment.pdf")
 
 ```
+```{r}
+library(profvis)
+lee.small.mat = assay(lee.small)
+
+profvis({
+big.prcomp = function(data, num.pcs, center=TRUE, scale=TRUE){
+    data1 = scale(data, center=center, scale=scale)
+    out = bigpca::big.PCA(data1,  pcs.to.keep = num.pcs)$PCs
+    out
+}
+
+mypreprocess_heterogeneous = function(X) {
+    gene_mean = rowMeans(X)
+    # zero_proportion = rowMeans(X == 0)
+    where = which(gene_mean > 0)
+    gene_var = rep(NA, nrow(X))
+    gene_var[where] = RowVar(X[where, ])
+    df = data.frame(gene = rownames(X), gene_mean = rowMeans(X),
+                    zero_proportion = rowMeans(X == 0),
+                    gene_var = gene_var)
+    df$samplesize = ncol(X)
+    df = compute_test_statistic(df)
+    return(df)
+}
+
+	
+myone_level_clustering = function(subX, z_threshold, subsample= NULL) {
+  subdf = preprocess_heterogeneous(subX)
+  # subdf = compute_test_statistic(subdf)
+  features = subdf[subdf$zvalue > z_threshold, ]
+  nullfeatures = data.frame(matrix(ncol = 11, nrow = 0))
+  colnames(nullfeatures) = c("gene", "gene_mean", "zero_proportion",
+                             "gene_var", "samplesize", "expected_pi", "se",
+                             "minus_logp","zvalue", "subsetK", "K")
+  if (nrow(features) < 10) {
+    return(list(features = nullfeatures, pcs = NA, km = NA))
+  }
+  if (nrow(features) < 10) {
+    return(list(features = nullfeatures, pcs = NA, km = NA,
+                unscaled_pcs = NA,subdf = NA))
+  }
+  pcs = tryCatch(expr = {
+      
+
+    # irlba::irlba(log(subX[features$gene, ] + 1), min(9, nrow(features) -1, ncol(subX) - 1))$v
+    submat = mat = t(log(subX[features$gene, ] + 1))
+    
+    if(!is.null(subsample)){
+        size.curr = max(100, nrow(mat) * subsample)
+        if(size.curr< nrow(mat))
+            submat = mat[sample(nrow(mat), size=size.curr),]  
+    }
+        eigenvec = big.prcomp(submat, min(9, nrow(features) -1, ncol(subX) - 1))
+        pcs = mat %*% eigenvec
+  }, error = function(e) {
+    NA
+  }, warning = function(w) {
+    NA
+  })
+  if (is.na(pcs[1])) {
+    return(list(features = nullfeatures, pcs = NA, km = NA,
+                unscaled_pcs = NA,
+                subdf = NA))
+  } else {
+    # unscaledpc = irlba::prcomp_irlba(log(Matrix::t((subX[features$gene,])) + 1),
+    #                                  n = min(9, nrow(features) - 1,
+    #                                          ncol(subX) - 1),
+    #                                  scale. = FALSE, center = FALSE)$x
+    km = kmeans(pcs, 2, nstart = 10, iter.max = 50)
+  }
+  return(list(features = features,
+              pcs = pcs,
+              km = km,
+              # unscaled_pcs = unscaledpc,
+              subdf = subdf))
+}
+
+
+myhippo = function(X, K = 20,
+                 z_threshold = 2,
+                 outlier_proportion = 0.001,
+                 verbose = TRUE, subsample_pca = NULL) {
+
+  if (outlier_proportion > 1 | outlier_proportion < 0) {
+    stop("Outlier_proportion must be a number between 0 and 1.
+         Default is 5%")
+  }
+
+  param = list(z_threshold = z_threshold,
+               outlier_proportion = outlier_proportion,
+               maxK = K)
+  outlier_number = nrow(X) * outlier_proportion
+  labelmatrix = matrix(NA, ncol(X), K)
+  labelmatrix[, 1] = 1
+  eachlevel = list()
+  subX = X
+  subXind = seq(ncol(X))
+  withinss = rep(0, K)
+  oldk = 1
+  features = list()
+  featuredata = list()
+  for (k in 2:K) {
+    thisk = myone_level_clustering(subX, z_threshold, subsample = subsample_pca)
+    if (is.na(thisk$features$gene[1])) {
+      if(verbose){
+        message("not enough important features left; terminate the procedure")
+      }
+      labelmatrix = labelmatrix[, seq((k - 1))]
+      break
+    }
+    if (nrow(thisk$features) < outlier_number) {
+      if(verbose){
+        message("not enough important features; terminate the procedure")
+      }
+      labelmatrix = labelmatrix[, seq((k - 1))]
+      break
+    }
+
+    if (verbose) {message(paste0("K = ", k, ".."))}
+    labelmatrix[, k] = labelmatrix[, k - 1]
+    labelmatrix[subXind[thisk$km$cluster == 2], k] = k
+    oneind = thisk$km$cluster == 1
+    twoind = thisk$km$cluster == 2
+
+    withinss[c(oldk,k)] = thisk$km$withins/thisk$km$size
+
+    ind = which(table(thisk$km$cluster) <= 5)
+    if (length(ind) >= 1){
+      valid_indices = seq(k-1)[-ind]
+      oldk = which(withinss == max(withinss[valid_indices]))
+    }else{
+      oldk = which.max(withinss[seq(k-1)])
+    }
+    if (sum(labelmatrix[, k] == oldk) < 2) {
+      if(verbose){
+        message("too few cells in one cluster; terminating the procedure")
+      }
+      labelmatrix = labelmatrix[, seq(k)]
+      break
+    }
+    subX = X[thisk$features$gene, which(labelmatrix[, k] == oldk)]
+    subXind = which(labelmatrix[, k] == oldk)
+    thisk$features$subsetK = oldk
+    thisk$features$K = k
+    features[[k - 1]] = thisk$features
+  }
+  hippo = list(X = X,
+                                features = features,labelmatrix = labelmatrix,
+                                z_threshold = z_threshold, param = param,
+                                outlier_proportion = outlier_proportion)
+  return(hippo)
+}
+
+
+
+mylee.small.subsample1 = myhippo(lee.small, 
+            K = 3, 
+            z_threshold = 2, 
+            outlier_proportion = 0.005,
+            verbose=TRUE, subsample_pca = .1)
+})
+
+
+
+```
+

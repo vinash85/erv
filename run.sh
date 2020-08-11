@@ -573,5 +573,12 @@ mv  ../data/genentech.tpm/tf/binarize//val_prediction.csv ~/project/deeplearning
  ## finetune neoantigen genentech data. 
  
 CUDA_VISIBLE_DEVICES=1 python evaluate.py  --data_dir  ~/project/deeplearning/icb/data/genentech.tpm/tf/binarize/datasets_test_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Neo_20200217-233533/.  --restore_file ~/project/deeplearning/icb/data/tcga/tf//binarize/tensorboardLog/Neo_20200217-233533/last.pth.tar 
- ## finetune OS 
 
+
+## gamma-delta t-cells.
+# see gdt project directory 
+CUDA_VISIBLE_DEVICES=1  python  eval_pfam.py --models_dir /liulab/asahu/projects/icb/data/pretrained/pretrained_models/ -f  ~/liulab_home/softwares/protein-sequence-embedding-iclr2019/data/tcga/for.gdt.cdr3.fa -d -1
+
+
+## For drugInducedtranscripts.Rmd
+CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/nanostring/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/nanostring/. --tensorboard_prefix survival

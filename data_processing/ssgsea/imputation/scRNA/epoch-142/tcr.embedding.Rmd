@@ -3,7 +3,7 @@ title: "TCR embedding from https://github.com/tbepler/protein-sequence-embedding
 output: html_notebook
 ---
 ## Write fasta files and check other file format 
-1. Directory data /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/
+-1. Directory data /liulab/asahu/softwares/protein-sequence-embedding-iclr2019/
 ```{r}
 cwd = "/liulab/asahu/softwares/protein-sequence-embedding-iclr2019/data/Getz"
 dir.create(cwd)

@@ -634,10 +634,10 @@ bulk.deg.mat = bulk.deg.temp[,-1,with=F] %>%
 
 
 ## Pathways 
-1. LM22
+<!-- 1. LM22
 2. IF
 3. Others 
-4.INGs
+4.INGs -->
 ```{r}
 myFastCor.multicores = function(x,y, method="spearman", num=20000, nthreads=1){
     if(is.null(num))  num=0
@@ -719,11 +719,11 @@ dt1 = bulk.deg.dt[type=="Mariathasan2018_PDL1_Bladder_RNASeq_mUC"]
 ```
 
 ## Loading all gene signatures
-1. Msigdb 
+<!-- 1. Msigdb 
 2. ScMatch 
 3. Davis
 4. Chenfei
-5. Cluster markers
+5. Cluster markers -->
 ```{r}
 msigdb = msigdbr::msigdbr(species = "Homo sapiens")
 
@@ -1142,10 +1142,10 @@ corrplot::corrplot(scrna.cor.dataset, is.corr = F, diag = F)
 ```
 ## 
 Other Single cell data
-1. Correlate with singleR gene expression 
-2. Correlate with  LEE 
-3. Correlate with bulk 
-4. Evaluate the fraction of Tgd in responder vs. non-resp
+-1. Correlate with singleR gene expression 
+-2. Correlate with  LEE 
+-3. Correlate with bulk 
+-4. Evaluate the fraction of Tgd in responder vs. non-resp
 ```{r}
 
 mytheme <- function() {
@@ -1488,7 +1488,8 @@ ggsave(file=".figs/gse145281/lymph.HumanPrimaryCellAtlasData.fine.scores.pdf", p
 ```
 
 ## Perform differential expression analysis between NK and gdT; T-cell and gdT
-1. Then calculate correlation of differential expression 
+ Then calculate correlation of differential expression 
+
 ```{r}
 bulk.deg = function(exp.curr, group1, group2) {
     exp.g1 = exp.curr[,group1]

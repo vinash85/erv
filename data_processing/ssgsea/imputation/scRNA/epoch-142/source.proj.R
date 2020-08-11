@@ -473,7 +473,7 @@ subset.lm.embedding= function(mat, dt, subset){
     mat[sub.inx,]
 }
 
-aggregate.embedding = function(mat, dt, mode="mean"){
+aggregate.embedding = function(mat, dt, mode="mean", remove.pc=FALSE){
     width = dt$aa.len 
     stopifnot(sum(width)==nrow(mat))
     end = cumsum(width)

@@ -186,6 +186,7 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
     for epoch in range(params.num_epochs):
         # Run one epoch
         logging.info("Epoch {}/{}".format(epoch + 1, params.num_epochs))
+        is_last = epoch >= (params.num_epochs - 1)
 
         train_metrics_all = []
         val_metrics_all = []
@@ -206,7 +207,8 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
 
             # Evaluate for one epoch on validation set
             if 'val' in dataloader.keys():
-                validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (epoch >= params.num_epochs - 1) else None
+                # validation_file = os.path.join(tensorboard_dir, "last_val_{0}.csv".format(index)) if (params.save_val & (epoch >= params.num_epochs - 1)) else None
+                validation_file = None  # disabled the valiation file
                 val_metrics = evaluate(embedding_model, outputs, dataloader['val'], metrics, params, validation_file, writer=writer, epoch=epoch, index=index, tsne=tsne)
                 val_metrics_all.append(val_metrics)
                 # val_string['val_' + str(index) + dataset_name] = val_metrics
@@ -240,8 +242,6 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         val_metrics = {metric: eval(params.aggregate)([x[metric] for x in val_metrics_all]) for metric in val_metrics_all[0]}
 
         # val_metrics = eval(params.aggregate)(val_metrics)
-        # val_acc = val_metrics[params.best_model_metric]  # use differnt functions
-        # val_acc = min(val_metrics['c_index'], val_metrics['auc'])  # use differnt functions
         val_acc = val_metrics[params.best_model_metric]
         if best_val_acc is None:
             is_best = True
@@ -251,14 +251,15 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
         # Save weight
         save_inx = epoch + 1 if not params.dont_save_every_epoch else None
 
-        utils.save_checkpoint({'epoch': epoch + 1,
-                               'embedding_state_dict': embedding_model.state_dict(),
-                               'outputs_state_dict': outputs.state_dict(),
-                               'embedding_optim_dict': embedding_optimizer.state_dict(),
-                               'outputs_optim_dict': outputs_optimizer.state_dict()
-                               },
-                              is_best=is_best,
-                              checkpoint=tensorboard_dir, epoch=save_inx)
+        if (not params.dont_save_every_epoch) or is_best or is_last:
+            utils.save_checkpoint({'epoch': epoch + 1,
+                                   'embedding_state_dict': embedding_model.state_dict(),
+                                   'outputs_state_dict': outputs.state_dict(),
+                                   'embedding_optim_dict': embedding_optimizer.state_dict(),
+                                   'outputs_optim_dict': outputs_optimizer.state_dict()
+                                   },
+                                  is_best=is_best,
+                                  checkpoint=tensorboard_dir, epoch=save_inx)
 
         # If best_eval, best_save_path
         if is_best:
@@ -270,10 +271,8 @@ def train_and_evaluate(embedding_model, outputs, datasets, embedding_optimizer, 
                 tensorboard_dir, "metrics_val_best_weights.json")
             utils.save_dict_to_json(val_metrics, best_json_path)
             # save best model
-            best_val_meterics_all = [evaluate(embedding_model, outputs, dataset[0]['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
-            best_json_path_dataset = os.path.join(
-                tensorboard_dir, "metrics_val_best_weights_datasets.json")
-            utils.save_dict_to_json(best_val_meterics_all, best_json_path_dataset)
+            # best_val_meterics_all = [evaluate(embedding_model, outputs, dataset[0]['val'], metrics, params, os.path.join(tensorboard_dir, "best_val_{0}.csv".format(index))) for index, dataset in enumerate(datasets)]
+
         # Save latest val metrics in a json file in the model directory
         last_json_path = os.path.join(
             tensorboard_dir, "metrics_val_last_weights.json")

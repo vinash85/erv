@@ -582,3 +582,6 @@ CUDA_VISIBLE_DEVICES=1  python  eval_pfam.py --models_dir /liulab/asahu/projects
 
 ## For drugInducedtranscripts.Rmd
 CUDA_VISIBLE_DEVICES=1 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/nanostring/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/nanostring/. --tensorboard_prefix survival
+
+## Image Slides 
+CUDA_VISIBLE_DEVICES=0 python train.py  --data_dir  ~/project/deeplearning/icb/data/tcga/imageSlides/datasets_tsne_list.txt --model_dir ~/project/deeplearning/icb/data/tcga/imageSlides/. --tensorboard_prefix all_pheno

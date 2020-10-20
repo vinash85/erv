@@ -1,8 +1,8 @@
-# Hand Signs Recognition with PyTorch
+# AI-predictor of immunotherapy response. 
 
-*Authors: Surag Nair, Olivier Moindrot and Guillaume Genthial*
+*Authors: Avinash Das Sahu, Keith Flaherty and X. Shiley Liu 
 
-Take the time to read the [tutorials](https://cs230-stanford.github.io/project-starter-code.html).
+The pytorch package is based on [tutorials](https://cs230-stanford.github.io/project-starter-code.html).
 
 Note: all scripts must be run in folder `pytorch/vision`.
 
@@ -20,8 +20,7 @@ When you're done working on the project, deactivate the virtual environment with
 
 ## Task
 
-Given an image of a hand doing a sign representing 0, 1, 2, 3, 4 or 5, predict the correct label.
-
+Given the immunotherapy and non-immunotherapy training data predict immunotherapy response using transfer learning.  
 
 ## Download the SIGNS dataset
 
@@ -116,6 +115,7 @@ Once you get something working for your dataset, feel free to edit any part of t
 
 - [PyTorch documentation](http://pytorch.org/docs/0.3.0/)
 - [Tutorials](http://pytorch.org/tutorials/)
+- [Tutorials of package](https://cs230-stanford.github.io/project-starter-code.html)
 - [PyTorch warm-up](https://github.com/jcjohnson/pytorch-examples)
 
 [SIGNS]: https://drive.google.com/file/d/1ufiR6hUKhXoAyiBNsySPkUwlvE_wfEHC/view?usp=sharing
